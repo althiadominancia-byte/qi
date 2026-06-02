@@ -396,11 +396,33 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
     setCvLoading(true); setCvError("");
     try {
       let textoBruto: string | null = null;
-      if (cvFile && /\.docx?$/i.test(cvFile.name) && cvMime !== "application/pdf") {
+      const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      if (arquivoCv && /\.docx?$/i.test(arquivoCv.name) && cvMime !== "application/pdf") {
         const mammoth = await import("mammoth");
-        const ab = await cvFile.arrayBuffer();
+        const ab = await arquivoCv.arrayBuffer();
         const r = await mammoth.extractRawText({ arrayBuffer: ab });
         textoBruto = r.value;
+      } else if (arquivoCv && (cvMime === "application/pdf" || /\.pdf$/i.test(arquivoCv.name))) {
+        // PDF: extraímos texto no navegador. O gateway compatível com OpenAI só aceita
+        // imagens via image_url; PDF como data URL não é lido pela Gemini por essa rota.
+        try {
+          const pdfjs: any = await import("pdfjs-dist");
+          const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+          pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+          const ab = await arquivoCv.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: ab }).promise;
+          const partes: string[] = [];
+          const maxPag = Math.min(doc.numPages, 8);
+          for (let i = 1; i <= maxPag; i++) {
+            const page = await doc.getPage(i);
+            const tc = await page.getTextContent();
+            partes.push(tc.items.map((it: any) => it.str).join(" "));
+          }
+          const texto = partes.join("\n").trim();
+          if (texto.length > 40) textoBruto = texto;
+        } catch (e) {
+          console.warn("PDF text extract falhou", e);
+        }
       }
       const parsed = await analisarCv({
         data: { candidatoId: candId, storagePath: cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
@@ -681,89 +703,9 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               </div>
             </Card>
 
-            <div style={{ margin: "10px 0 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 700, color: ROXO, textTransform: "uppercase", letterSpacing: 1 }}>
-              <BarChart3 size={15} /> Pré-visualização da análise
-            </div>
-
-            <Card>
-              <div data-result-head style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontSize: 12, color: CINZA, fontWeight: 600 }}>Perfil comportamental identificado</div>
-                  <div className="h" style={{ fontSize: 26, fontWeight: 800, color: resultado.perfil.cor, lineHeight: 1.1, margin: "3px 0" }}>{resultado.perfil.nome}</div>
-                  <span style={{ fontSize: 11.5, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "3px 9px", borderRadius: 99 }}>{resultado.perfil.tag}</span>
-                </div>
-                <MatchRing match={resultado.finalMatch} label={resultado.label} />
-              </div>
-              <p style={{ fontSize: 14, color: CINZA, lineHeight: 1.6, marginTop: 14 }}>{resultado.perfil.resumo}</p>
-
-              <div className="h" style={{ fontWeight: 700, fontSize: 13, margin: "16px 0 9px" }}>Mapa DISC</div>
-              {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => (
-                <div key={d} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div data-disc-bar-label style={{ width: 92, fontSize: 12, fontWeight: 600, color: ROXO_DARK }}>{DIM_INFO[d].nome}</div>
-                  <div style={{ flex: 1, height: 14, background: "#F0EDF7", borderRadius: 9, overflow: "hidden" }}>
-                    <div style={{ height: 14, width: `${resultado.discPct[d]}%`, background: DIM_INFO[d].cor, borderRadius: 9, transition: "width .5s" }} />
-                  </div>
-                  <div style={{ width: 38, textAlign: "right", fontSize: 12, fontWeight: 700, color: DIM_INFO[d].cor }}>{resultado.discPct[d]}%</div>
-                </div>
-              ))}
-
-              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
-                <Box titulo="Forças para a vaga" icon={Star} cor={LARANJA} items={resultado.perfil.forcas} />
-                <Box titulo="Pontos de atenção" icon={Target} cor={ROXO} items={resultado.perfil.atencao} />
-              </div>
-              <div data-mini-row style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                <Mini label="Postura no atendimento" v={`${resultado.sitAvg}%`} sub="Situações reais" />
-                <Mini label="Aderência à vaga" v={`${resultado.finalMatch}%`} sub="60% perfil + 40% postura" />
-              </div>
-            </Card>
-
-            <Card>
-              <Titulo icon={FileText} sub="Leitura automática do currículo e da experiência informada.">Análise de currículo</Titulo>
-              {cvLoading && <div style={{ display: "flex", alignItems: "center", gap: 10, color: ROXO, fontSize: 14, fontWeight: 600, padding: "10px 0" }}><Loader2 size={20} className="spin" /> Lendo e analisando o currículo...</div>}
-              {cvError && !cvLoading && (
-                <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 12, padding: 14, fontSize: 13, color: "#B91C1C" }}>
-                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}><AlertCircle size={17} /> {cvError}</div>
-                </div>
-              )}
-              {cvAnalysis && !cvLoading && (
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <span style={{ fontSize: 12.5, color: CINZA, fontWeight: 600 }}>Aderência do histórico à vaga:</span>
-                    <NivelBadge nivel={cvAnalysis.aderencia_televendas} />
-                    {cvAnalysis.anos_relevantes && <span style={{ fontSize: 12, color: "#9b93b0" }}>· {cvAnalysis.anos_relevantes}</span>}
-                  </div>
-                  <p style={{ fontSize: 14, color: ROXO_DARK, lineHeight: 1.6, margin: "0 0 16px" }}>{cvAnalysis.resumo}</p>
-                  {(cvAnalysis.experiencias || []).length > 0 && (
-                    <div style={{ marginBottom: 16 }}>
-                      <div className="h" style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 9, color: ROXO_DARK }}><Briefcase size={15} color={ROXO} /> Experiências identificadas</div>
-                      {cvAnalysis.experiencias.map((ex: any, i: number) => (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "9px 12px", border: `1px solid ${BORDA}`, borderRadius: 11, marginBottom: 7 }}>
-                          <div>
-                            <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK }}>{ex.cargo || "—"}{ex.empresa ? ` · ${ex.empresa}` : ""}</div>
-                            {ex.periodo && <div style={{ fontSize: 11.5, color: "#9b93b0" }}>{ex.periodo}</div>}
-                          </div>
-                          <NivelBadge nivel={ex.relevancia} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <Box titulo="Pontos fortes" icon={Star} cor={VERDE} items={cvAnalysis.pontos_fortes} />
-                    <Box titulo="Lacunas / a desenvolver" icon={AlertCircle} cor={LARANJA} items={cvAnalysis.lacunas} />
-                  </div>
-                  {(cvAnalysis.perguntas_entrevista || []).length > 0 && (
-                    <div style={{ marginTop: 14, background: ROXO_TINT, borderRadius: 12, padding: 14 }}>
-                      <div className="h" style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 13, marginBottom: 9, color: ROXO_DARK }}><Lightbulb size={15} color={ROXO} /> Sugestões para a entrevista</div>
-                      {cvAnalysis.perguntas_entrevista.map((q: string, i: number) => <div key={i} style={{ fontSize: 12.5, color: CINZA, marginBottom: 6, display: "flex", gap: 6 }}><span style={{ color: ROXO }}>{i + 1}.</span> {q}</div>)}
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-
             <div style={{ background: "#F0EDF7", borderRadius: 12, padding: 14, display: "flex", gap: 11, fontSize: 12, color: CINZA, lineHeight: 1.55 }}>
               <ShieldCheck size={18} color={ROXO} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>A aderência usa <strong>somente</strong> DISC + situações + experiência. Cor/raça, gênero, orientação sexual, PCD e posicionamento político <strong>não entram na pontuação</strong> — ficam só no painel de diversidade, em conformidade com a LGPD.</span>
+              <span>Seus dados são tratados com sigilo, em conformidade com a LGPD. Apenas o RH da Distribuidora Estrela tem acesso à análise.</span>
             </div>
           </>
         )}
