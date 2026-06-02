@@ -22,6 +22,7 @@ const PTS_ROT: Record<number, [string, string]> = { 100: ["Melhor", VERDE], 70: 
 function PreviaPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const gerar = useServerFn(gerarFormularioVaga);
 
   const vagaQ = useQuery({
