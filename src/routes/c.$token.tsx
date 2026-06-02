@@ -483,7 +483,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               Quer fazer parte da vaga de <span style={{ color: LARANJA }}>{vaga.titulo}</span>?
             </h1>
             <p style={{ color: CINZA, fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-              {vaga.descricao || "Este formulário abre o processo seletivo interno da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊"}
+              {vaga.descricao || `Este formulário abre o processo seletivo${vaga.interna !== false ? " interno" : ""} da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊`}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, margin: "20px 0" }}>
               {[
