@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, Wand2, Loader2, Plus, X, CheckCircle2, AlertCircle, Save, Send, Brain, MessageCircle, Link2, Copy, Check, ExternalLink } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
@@ -22,6 +22,7 @@ const PTS_ROT: Record<number, [string, string]> = { 100: ["Melhor", VERDE], 70: 
 function PreviaPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const gerar = useServerFn(gerarFormularioVaga);
 
   const vagaQ = useQuery({
@@ -118,6 +119,8 @@ function PreviaPage() {
       const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token").maybeSingle();
       if (error) throw error;
       setAprovado(publicar); setDirty(false);
+      qc.invalidateQueries({ queryKey: ["vagas"] });
+      qc.invalidateQueries({ queryKey: ["vaga-previa", id] });
       if (publicar) {
         const token = (updated as any)?.link_token || (vaga as any)?.link_token;
         if (token) {
