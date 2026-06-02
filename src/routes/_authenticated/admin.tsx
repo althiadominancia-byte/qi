@@ -146,8 +146,8 @@ function AdminPage() {
           ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
-              onEditar={(v) => setEditando(v)}
-              onVerCand={(v) => { setVagaSel(v.id); setAba("candidatos"); }}
+              onEditar={(v: Vaga) => setEditando(v)}
+              onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
               onEncerrar={encerrarVaga} />
         )}
 
