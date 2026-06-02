@@ -92,6 +92,22 @@ function AdminPage() {
   });
   const empresaAtiva = (empresasQ.data ?? []).find((e: any) => e.id === empresaAtivaId) ?? null;
 
+  const unidadesQ = useQuery({
+    queryKey: ["unidades", empresaAtivaId ?? "none"],
+    queryFn: async () => {
+      if (!empresaAtivaId) return [];
+      const { data, error } = await supabase
+        .from("unidades")
+        .select("id, nome, cidade, tipo")
+        .eq("empresa_id", empresaAtivaId)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !isSuper || !!empresaAtivaId,
+  });
+  const unidadePadraoId = (unidadesQ.data ?? [])[0]?.id ?? null;
+
   const vagasQ = useQuery({
     queryKey: ["vagas", empresaAtivaId ?? "all"],
     queryFn: async () => {
@@ -144,12 +160,15 @@ function AdminPage() {
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
     };
+    if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
       const { error } = await supabase.from("vagas").update(payload).eq("id", (v as any).id);
       if (error) { alert("Erro ao salvar: " + error.message); return; }
     } else {
       if (!empresaAtivaId) { alert("Selecione uma empresa antes de criar a vaga."); return; }
-      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId });
+      const unidadeId = (v as any).unidade_id || unidadePadraoId;
+      if (!unidadeId) { alert("Cadastre ou selecione uma unidade antes de criar a vaga."); return; }
+      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId, unidade_id: unidadeId });
       if (error) { alert("Erro ao criar: " + error.message); return; }
     }
     setEditando(null);
@@ -288,10 +307,10 @@ function AdminPage() {
         )}
 
         {aba === "vagas" && (editando
-          ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+          ? <ConstrutorVaga vaga={editando} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
-              onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
+              onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined, unidade_id: unidadePadraoId ?? undefined } as any)}
               onEditar={(v: Vaga) => setEditando(v)}
               onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
               onEncerrar={encerrarVaga} />
@@ -387,7 +406,7 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
 }
 
 /* ========== Aba Vagas — Construtor ========== */
-function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any) => void; onCancel: () => void }) {
+function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
   const [v, setV] = useState<any>(vaga);
   const set = (k: string, val: any) => setV((p: any) => ({ ...p, [k]: val }));
   const [novaHab, setNovaHab] = useState("");
@@ -397,6 +416,10 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
   const [simPostura, setSimPostura] = useState(85);
   const [gerando, setGerando] = useState(false);
   const [erroIA, setErroIA] = useState("");
+
+  useEffect(() => {
+    if (!v.unidade_id && unidades[0]?.id) set("unidade_id", unidades[0].id);
+  }, [unidades, v.unidade_id]);
 
   const base = v.pesos[simPerfil];
   const matchSim = Math.round(base * 0.6 + simPostura * 0.4);
@@ -436,6 +459,15 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
+        <CampoLabel label="Unidade">
+          <select style={inp} value={v.unidade_id || ""} onChange={(e) => set("unidade_id", e.target.value)}>
+            <option value="" disabled>Selecione a unidade</option>
+            {unidades.map((u: any) => (
+              <option key={u.id} value={u.id}>{u.nome}{u.cidade ? ` · ${u.cidade}` : ""}</option>
+            ))}
+          </select>
+          {unidades.length === 0 && <div style={{ fontSize: 11, color: VERMELHO, marginTop: 6 }}>Cadastre uma unidade para esta empresa antes de salvar a vaga.</div>}
+        </CampoLabel>
         <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Nº de posições"><input type="number" min={1} style={inp} value={v.vagas} onChange={(e) => set("vagas", Number(e.target.value))} /></CampoLabel>
           <CampoLabel label="Status">
