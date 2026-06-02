@@ -290,13 +290,14 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
 
       let cvPath: string | null = null;
       let cvMime: string | null = null;
-      if (cvFile) {
-        const ext = cvFile.name.split(".").pop() ?? "bin";
+      const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      if (arquivoCv) {
+        const ext = arquivoCv.name.split(".").pop() ?? "bin";
         const path = `${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, cvFile, { contentType: cvFile.type || undefined });
+        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, { contentType: arquivoCv.type || undefined, cacheControl: "3600" });
         if (upErr) throw upErr;
         cvPath = path;
-        cvMime = cvFile.type || null;
+        cvMime = arquivoCv.type || null;
       }
 
       if (a.raca || a.genero || a.orientacao || a.pcd || a.politico) {
