@@ -777,11 +777,36 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
   const disc = c.disc_pontuacao || {};
   const cv = c.cv_analise;
   const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvMime, setCvMime] = useState<string>("");
 
   useEffect(() => {
     if (!c.cv_storage_path) return;
-    supabase.storage.from("curriculos").createSignedUrl(c.cv_storage_path, 300).then(({ data }) => { if (data?.signedUrl) setCvUrl(data.signedUrl); });
+    let revoke: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.storage.from("curriculos").download(c.cv_storage_path!);
+      if (error || !data || cancelled) return;
+      const path = c.cv_storage_path!.toLowerCase();
+      const ext = path.split(".").pop() || "";
+      const mimeByExt: Record<string, string> = {
+        pdf: "application/pdf",
+        png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+        heic: "image/heic", heif: "image/heif", gif: "image/gif",
+        doc: "application/msword",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        odt: "application/vnd.oasis.opendocument.text",
+        txt: "text/plain",
+      };
+      const mime = data.type && data.type !== "application/octet-stream" ? data.type : (mimeByExt[ext] || "application/octet-stream");
+      const blob = new Blob([data], { type: mime });
+      const url = URL.createObjectURL(blob);
+      revoke = url;
+      setCvUrl(url);
+      setCvMime(mime);
+    })();
+    return () => { cancelled = true; if (revoke) URL.revokeObjectURL(revoke); };
   }, [c.cv_storage_path]);
+
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(58,37,102,.45)", display: "flex", justifyContent: "flex-end", zIndex: 50 }}>
