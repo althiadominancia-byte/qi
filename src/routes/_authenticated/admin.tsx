@@ -159,6 +159,7 @@ function AdminPage() {
       pesos: v.pesos, habilidades: v.habilidades, competencias: v.competencias,
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
+      interna: v.interna ?? true,
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
