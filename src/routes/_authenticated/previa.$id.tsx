@@ -116,17 +116,18 @@ function PreviaPage() {
     try {
       const payload: any = { disc_blocks: blocks, situacoes: sits, formulario_aprovado: publicar ? true : false };
       if (publicar) payload.status = "Aberta";
-      const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token").maybeSingle();
+      const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token, short_code").maybeSingle();
       if (error) throw error;
       setAprovado(publicar); setDirty(false);
       qc.invalidateQueries({ queryKey: ["vagas"] });
       qc.invalidateQueries({ queryKey: ["vaga-previa", id] });
       if (publicar) {
+        // Domínio público da empresa + código curto (/s/{código}).
+        const DOMINIO_PUBLICO = "https://recrutamento.distribuidoraestrela.com";
+        const sc = (updated as any)?.short_code || (vaga as any)?.short_code;
         const token = (updated as any)?.link_token || (vaga as any)?.link_token;
-        if (token) {
-          setPublishedUrl(`${window.location.origin}/c/${token}`);
-          setCopiado(false);
-        }
+        const url = sc ? `${DOMINIO_PUBLICO}/s/${sc}` : token ? `${DOMINIO_PUBLICO}/c/${token}` : null;
+        if (url) { setPublishedUrl(url); setCopiado(false); }
       } else {
         setMsg({ tipo: "ok", t: "Rascunho salvo." });
       }
