@@ -92,6 +92,22 @@ function AdminPage() {
   });
   const empresaAtiva = (empresasQ.data ?? []).find((e: any) => e.id === empresaAtivaId) ?? null;
 
+  const unidadesQ = useQuery({
+    queryKey: ["unidades", empresaAtivaId ?? "none"],
+    queryFn: async () => {
+      if (!empresaAtivaId) return [];
+      const { data, error } = await supabase
+        .from("unidades")
+        .select("id, nome, cidade, tipo")
+        .eq("empresa_id", empresaAtivaId)
+        .order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !isSuper || !!empresaAtivaId,
+  });
+  const unidadePadraoId = (unidadesQ.data ?? [])[0]?.id ?? null;
+
   const vagasQ = useQuery({
     queryKey: ["vagas", empresaAtivaId ?? "all"],
     queryFn: async () => {
@@ -149,7 +165,9 @@ function AdminPage() {
       if (error) { alert("Erro ao salvar: " + error.message); return; }
     } else {
       if (!empresaAtivaId) { alert("Selecione uma empresa antes de criar a vaga."); return; }
-      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId });
+      const unidadeId = (v as any).unidade_id || unidadePadraoId;
+      if (!unidadeId) { alert("Cadastre ou selecione uma unidade antes de criar a vaga."); return; }
+      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId, unidade_id: unidadeId });
       if (error) { alert("Erro ao criar: " + error.message); return; }
     }
     setEditando(null);
@@ -288,10 +306,10 @@ function AdminPage() {
         )}
 
         {aba === "vagas" && (editando
-          ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+          ? <ConstrutorVaga vaga={editando} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
-              onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
+              onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined, unidade_id: unidadePadraoId ?? undefined } as any)}
               onEditar={(v: Vaga) => setEditando(v)}
               onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
               onEncerrar={encerrarVaga} />
