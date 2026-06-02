@@ -14,16 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      candidatos_televendas: {
+        Row: {
+          celular: string
+          created_at: string
+          cv_analise: Json | null
+          cv_nome_arquivo: string | null
+          cv_storage_path: string | null
+          disc_pontuacao: Json
+          disc_respostas: Json
+          email: string
+          endereco: string | null
+          experiencia_texto: string | null
+          id: string
+          lgpd_aceite: boolean
+          match_final: number | null
+          match_label: string | null
+          motivacao_texto: string | null
+          nome: string
+          perfil_key: string | null
+          perfil_nome: string | null
+          postura_score: number | null
+          setor_atual: string | null
+          situacionais: Json
+          tempo_empresa: string | null
+        }
+        Insert: {
+          celular: string
+          created_at?: string
+          cv_analise?: Json | null
+          cv_nome_arquivo?: string | null
+          cv_storage_path?: string | null
+          disc_pontuacao?: Json
+          disc_respostas?: Json
+          email: string
+          endereco?: string | null
+          experiencia_texto?: string | null
+          id?: string
+          lgpd_aceite?: boolean
+          match_final?: number | null
+          match_label?: string | null
+          motivacao_texto?: string | null
+          nome: string
+          perfil_key?: string | null
+          perfil_nome?: string | null
+          postura_score?: number | null
+          setor_atual?: string | null
+          situacionais?: Json
+          tempo_empresa?: string | null
+        }
+        Update: {
+          celular?: string
+          created_at?: string
+          cv_analise?: Json | null
+          cv_nome_arquivo?: string | null
+          cv_storage_path?: string | null
+          disc_pontuacao?: Json
+          disc_respostas?: Json
+          email?: string
+          endereco?: string | null
+          experiencia_texto?: string | null
+          id?: string
+          lgpd_aceite?: boolean
+          match_final?: number | null
+          match_label?: string | null
+          motivacao_texto?: string | null
+          nome?: string
+          perfil_key?: string | null
+          perfil_nome?: string | null
+          postura_score?: number | null
+          setor_atual?: string | null
+          situacionais?: Json
+          tempo_empresa?: string | null
+        }
+        Relationships: []
+      }
+      diversidade_candidatos: {
+        Row: {
+          created_at: string
+          genero: string | null
+          id: string
+          orientacao: string | null
+          pcd: string | null
+          politico: string | null
+          raca: string | null
+        }
+        Insert: {
+          created_at?: string
+          genero?: string | null
+          id?: string
+          orientacao?: string | null
+          pcd?: string | null
+          politico?: string | null
+          raca?: string | null
+        }
+        Update: {
+          created_at?: string
+          genero?: string | null
+          id?: string
+          orientacao?: string | null
+          pcd?: string | null
+          politico?: string | null
+          raca?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_recruiter: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "recrutador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +282,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "recrutador"],
+    },
   },
 } as const
