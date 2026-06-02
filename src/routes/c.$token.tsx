@@ -642,7 +642,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Box titulo="Pontos fortes" icon={Star} cor={VERDE} items={cvAnalysis.pontos_fortes} />
                     <Box titulo="Lacunas / a desenvolver" icon={AlertCircle} cor={LARANJA} items={cvAnalysis.lacunas} />
                   </div>
