@@ -238,7 +238,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                 </div>
               </div>
               <LinkPublico vaga={v} />
-              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <div data-vaga-actions style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                 <button onClick={() => onEditar(v)} style={btnSec}><Pencil size={14} /> Editar perfil</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
