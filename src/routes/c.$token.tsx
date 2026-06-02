@@ -83,8 +83,8 @@ function DivCampo({ label, opts, val, on }: any) {
   );
 }
 function Linha({ k, v }: any) {
-  return <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${BORDA}`, fontSize: 13.5 }}>
-    <span style={{ color: CINZA }}>{k}</span><span style={{ fontWeight: 600, color: ROXO_DARK, textAlign: "right", maxWidth: "60%" }}>{v}</span>
+  return <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${BORDA}`, fontSize: 13.5, gap: 12 }}>
+    <span style={{ color: CINZA, flexShrink: 0 }}>{k}</span><span style={{ fontWeight: 600, color: ROXO_DARK, textAlign: "right", maxWidth: "60%", overflowWrap: "anywhere", wordBreak: "break-word", minWidth: 0 }}>{v}</span>
   </div>;
 }
 function Nav({ back, next, pode, textoNext = "Continuar", aviso }: any) {
