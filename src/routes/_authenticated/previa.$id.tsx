@@ -56,10 +56,24 @@ function PreviaPage() {
 
   const mark = () => { setDirty(true); setAprovado(false); };
 
+  function ctxPayload() {
+    const v = vaga!;
+    return {
+      titulo: v.titulo, setor: v.setor, descricao: v.descricao,
+      modelo: (v as any).modelo, tipo: (v as any).tipo,
+      experiencia: (v as any).experiencia, escolaridade: (v as any).escolaridade,
+      requisitos: (v as any).requisitos,
+      habilidades: (v as any).habilidades ?? [],
+      competencias: (v as any).competencias ?? [],
+      pesos: (v as any).pesos ?? {},
+      usar_situacional: v.usar_situacional,
+    };
+  }
+
   async function gerarDisc() {
     setGerandoDisc(true); setMsg(null);
     try {
-      const r: any = await gerar({ data: { titulo: vaga!.titulo, setor: vaga!.setor, descricao: vaga!.descricao, modo: "disc", usar_situacional: vaga!.usar_situacional } });
+      const r: any = await gerar({ data: { ...ctxPayload(), modo: "disc" } });
       if (Array.isArray(r?.disc_blocks)) {
         setBlocks(r.disc_blocks);
         mark();
@@ -72,7 +86,7 @@ function PreviaPage() {
   async function gerarSit() {
     setGerandoSit(true); setMsg(null);
     try {
-      const r: any = await gerar({ data: { titulo: vaga!.titulo, setor: vaga!.setor, descricao: vaga!.descricao, modo: "situacoes", usar_situacional: true } });
+      const r: any = await gerar({ data: { ...ctxPayload(), modo: "situacoes" } });
       if (Array.isArray(r?.situacoes)) { setSits(r.situacoes); mark(); setMsg({ tipo: "ok", t: "Situações geradas." }); }
     } catch (e: any) { setMsg({ tipo: "err", t: e.message || "Falha ao gerar situações." }); }
     finally { setGerandoSit(false); }
