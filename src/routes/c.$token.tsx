@@ -385,12 +385,21 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       });
       if (insErr) throw insErr;
 
+      // Roda a análise de currículo SINCRONAMENTE antes de mostrar a tela final.
+      // Se a navegação acontecer antes, a Promise no navegador é abortada e
+      // cv_analise nunca é persistido (recrutador fica sem o bloco de IA).
+      try {
+        await rodarAnalise(candId, cvPath, cvMime);
+      } catch (e) {
+        console.warn("Análise de currículo falhou (inscrição já registrada):", e);
+      }
+
       setStep("resultado"); window.scrollTo({ top: 0, behavior: "smooth" });
-      void rodarAnalise(candId, cvPath, cvMime);
     } catch (err: any) {
       setSubmitError(err.message || "Erro ao enviar inscrição.");
     } finally { setSubmitting(false); }
   }
+
 
   async function rodarAnalise(candId: string, cvPath: string | null, cvMime: string | null) {
     setCvLoading(true); setCvError("");
