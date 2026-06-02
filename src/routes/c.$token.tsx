@@ -581,7 +581,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             </div>
 
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div data-result-head style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontSize: 12, color: CINZA, fontWeight: 600 }}>Perfil comportamental identificado</div>
                   <div className="h" style={{ fontSize: 26, fontWeight: 800, color: resultado.perfil.cor, lineHeight: 1.1, margin: "3px 0" }}>{resultado.perfil.nome}</div>
