@@ -6,6 +6,7 @@ import {
   Briefcase, Star, AlertCircle, Lightbulb, BarChart3, ShieldCheck, Calendar, Headphones,
   Filter, FileText, LogOut, Plus, Save, Pencil, Ban, CalendarClock, Wand2, Loader2,
   Circle, Info, Link2, Copy, Check, Target, Layers, GraduationCap, Settings2, Calculator,
+  Crown, Building2, ChevronDown,
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,8 +20,13 @@ import {
   type Vaga, type PerfilKey, type NivelHab,
 } from "@/lib/recrutamento/data";
 
+type AdminSearch = { empresa?: string };
+
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Painel do Recrutador · Estrela" }] }),
+  validateSearch: (s: Record<string, unknown>): AdminSearch => ({
+    empresa: typeof s.empresa === "string" ? s.empresa : undefined,
+  }),
   component: AdminPage,
 });
 
