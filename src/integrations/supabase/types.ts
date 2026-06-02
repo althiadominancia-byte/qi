@@ -24,6 +24,7 @@ export type Database = {
           disc_pontuacao: Json
           disc_respostas: Json
           email: string
+          empresa_id: string | null
           endereco: string | null
           experiencia_texto: string | null
           id: string
@@ -38,6 +39,7 @@ export type Database = {
           setor_atual: string | null
           situacionais: Json
           tempo_empresa: string | null
+          unidade_id: string | null
           vaga_id: string | null
         }
         Insert: {
@@ -49,6 +51,7 @@ export type Database = {
           disc_pontuacao?: Json
           disc_respostas?: Json
           email: string
+          empresa_id?: string | null
           endereco?: string | null
           experiencia_texto?: string | null
           id?: string
@@ -63,6 +66,7 @@ export type Database = {
           setor_atual?: string | null
           situacionais?: Json
           tempo_empresa?: string | null
+          unidade_id?: string | null
           vaga_id?: string | null
         }
         Update: {
@@ -74,6 +78,7 @@ export type Database = {
           disc_pontuacao?: Json
           disc_respostas?: Json
           email?: string
+          empresa_id?: string | null
           endereco?: string | null
           experiencia_texto?: string | null
           id?: string
@@ -88,6 +93,7 @@ export type Database = {
           setor_atual?: string | null
           situacionais?: Json
           tempo_empresa?: string | null
+          unidade_id?: string | null
           vaga_id?: string | null
         }
         Relationships: [
@@ -103,32 +109,103 @@ export type Database = {
       diversidade_candidatos: {
         Row: {
           created_at: string
+          empresa_id: string | null
           genero: string | null
           id: string
           orientacao: string | null
           pcd: string | null
           politico: string | null
           raca: string | null
+          unidade_id: string | null
+          vaga_id: string | null
         }
         Insert: {
           created_at?: string
+          empresa_id?: string | null
           genero?: string | null
           id?: string
           orientacao?: string | null
           pcd?: string | null
           politico?: string | null
           raca?: string | null
+          unidade_id?: string | null
+          vaga_id?: string | null
         }
         Update: {
           created_at?: string
+          empresa_id?: string | null
           genero?: string | null
           id?: string
           orientacao?: string | null
           pcd?: string | null
           politico?: string | null
           raca?: string | null
+          unidade_id?: string | null
+          vaga_id?: string | null
         }
         Relationships: []
+      }
+      empresas: {
+        Row: {
+          ativo: boolean
+          cnpj: string | null
+          created_at: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      unidades: {
+        Row: {
+          cidade: string | null
+          cnpj: string | null
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          tipo: string
+        }
+        Insert: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          tipo?: string
+        }
+        Update: {
+          cidade?: string | null
+          cnpj?: string | null
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unidades_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -151,6 +228,80 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_unidades: {
+        Row: {
+          unidade_id: string
+          usuario_id: string
+        }
+        Insert: {
+          unidade_id: string
+          usuario_id: string
+        }
+        Update: {
+          unidade_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_unidades_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuario_unidades_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuarios: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string
+          empresa_id: string | null
+          id: string
+          nome: string
+          perms: Json
+          role: Database["public"]["Enums"]["user_role"]
+          todas_unidades: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email: string
+          empresa_id?: string | null
+          id: string
+          nome?: string
+          perms?: Json
+          role?: Database["public"]["Enums"]["user_role"]
+          todas_unidades?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          empresa_id?: string | null
+          id?: string
+          nome?: string
+          perms?: Json
+          role?: Database["public"]["Enums"]["user_role"]
+          todas_unidades?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vagas: {
         Row: {
           competencias: Json
@@ -158,6 +309,7 @@ export type Database = {
           created_by: string | null
           data_limite: string | null
           descricao: string
+          empresa_id: string
           escolaridade: string
           experiencia: string
           habilidades: Json
@@ -170,6 +322,7 @@ export type Database = {
           status: string
           tipo: string
           titulo: string
+          unidade_id: string
           updated_at: string
           usar_situacional: boolean
           vagas: number
@@ -180,6 +333,7 @@ export type Database = {
           created_by?: string | null
           data_limite?: string | null
           descricao?: string
+          empresa_id: string
           escolaridade?: string
           experiencia?: string
           habilidades?: Json
@@ -192,6 +346,7 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          unidade_id: string
           updated_at?: string
           usar_situacional?: boolean
           vagas?: number
@@ -202,6 +357,7 @@ export type Database = {
           created_by?: string | null
           data_limite?: string | null
           descricao?: string
+          empresa_id?: string
           escolaridade?: string
           experiencia?: string
           habilidades?: Json
@@ -214,17 +370,27 @@ export type Database = {
           status?: string
           tipo?: string
           titulo?: string
+          unidade_id?: string
           updated_at?: string
           usar_situacional?: boolean
           vagas?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "vagas_unidade_fk"
+            columns: ["empresa_id", "unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["empresa_id", "id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      current_user_empresa: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -233,9 +399,16 @@ export type Database = {
         Returns: boolean
       }
       is_recruiter: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      user_can_access_unidade: {
+        Args: { _empresa: string; _unidade: string }
+        Returns: boolean
+      }
+      user_has_perm: { Args: { _perm: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "recrutador"
+      user_role: "super_admin" | "admin_empresa" | "recrutador" | "visualizador"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -364,6 +537,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "recrutador"],
+      user_role: ["super_admin", "admin_empresa", "recrutador", "visualizador"],
     },
   },
 } as const
