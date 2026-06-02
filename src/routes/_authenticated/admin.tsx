@@ -317,12 +317,12 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
 
       <CardBox><Cab icon={Briefcase} t="Dados da vaga" />
         <CampoLabel label="Título da vaga"><input style={inp} value={v.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Ex.: Televendas (Interna)" /></CampoLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           <CampoLabel label="Setor / área"><input style={inp} value={v.setor} onChange={(e) => set("setor", e.target.value)} /></CampoLabel>
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Nº de posições"><input type="number" min={1} style={inp} value={v.vagas} onChange={(e) => set("vagas", Number(e.target.value))} /></CampoLabel>
           <CampoLabel label="Status"><select style={inp} value={v.status} onChange={(e) => set("status", e.target.value)}><option>Rascunho</option><option>Aberta</option><option>Pausada</option><option>Fechada</option></select></CampoLabel>
         </div>
@@ -373,7 +373,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         <div style={{ background: ROXO_TINT, borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.5 }}>
           <strong>match = base × 0,6 + postura × 0,4</strong> — base é o peso do perfil do candidato nesta vaga; postura vem das situações.
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, alignItems: "center" }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Perfil do candidato (DISC)</div>
             <select style={inp} value={simPerfil} onChange={(e) => setSimPerfil(e.target.value as PerfilKey)}>
@@ -430,7 +430,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
 
       <CardBox><Cab icon={GraduationCap} t="Experiência & requisitos" />
         <CampoLabel label="Experiência desejada"><textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={v.experiencia} onChange={(e) => set("experiencia", e.target.value)} /></CampoLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Escolaridade mínima"><input style={inp} value={v.escolaridade} onChange={(e) => set("escolaridade", e.target.value)} /></CampoLabel>
           <CampoLabel label="Outros requisitos"><input style={inp} value={v.requisitos} onChange={(e) => set("requisitos", e.target.value)} /></CampoLabel>
         </div>
@@ -475,7 +475,7 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
         </select>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+      <div data-grid data-resumo style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
         <ResumoCard icon={Users} cor={ROXO} v={todos.length} l="Inscritos nesta vaga" />
         <ResumoCard icon={TrendingUp} cor={LARANJA} v={`${matchMedio}%`} l="Match médio" />
         <ResumoCard icon={Award} cor={VERDE} v={nAlto} l="Match alto (≥70%)" />
@@ -610,7 +610,7 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: corNivel(e.relevancia), padding: "2px 9px", borderRadius: 99 }}>{txtNivel(e.relevancia)}</span>
                 </div>
               ))}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 <BoxList t="Pontos fortes" icon={Star} cor={VERDE} items={cv.pontos_fortes} />
                 <BoxList t="Lacunas" icon={AlertCircle} cor={LARANJA} items={cv.lacunas} />
               </div>
