@@ -108,25 +108,63 @@ function AdminPage() {
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        *{box-sizing:border-box} .h{font-family:'Outfit',sans-serif}
+        *{box-sizing:border-box} html,body{overflow-x:hidden;max-width:100vw} .h{font-family:'Outfit',sans-serif}
         input:focus,select:focus,textarea:focus{outline:none;border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT}}
-        input[type=range]{accent-color:${ROXO}}
-        @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}`}</style>
+        input[type=range]{accent-color:${ROXO};min-height:36px}
+        @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}
+        @media (max-width:640px){
+          input,select,textarea{font-size:16px !important}
+          [data-pad]{padding:0 12px !important}
+          [data-grid]{grid-template-columns:1fr !important}
+          [data-tabs]{flex-wrap:nowrap !important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          [data-tabs]::-webkit-scrollbar{display:none}
+          [data-tabs] button{flex-shrink:0;min-height:44px}
+          [data-header-sub]{display:none !important}
+          [data-link-row]{flex-wrap:wrap !important;gap:8px !important}
+          [data-link-row] > code{flex:1 1 100% !important;white-space:normal !important;word-break:break-all;overflow:visible !important;text-overflow:clip !important}
+          [data-link-row] > button,[data-link-row] > span{width:100% !important;justify-content:center !important;min-height:44px;text-align:center}
+          [data-vaga-actions]{flex-direction:column !important}
+          [data-vaga-actions] button{width:100% !important;justify-content:center !important;min-height:44px}
+          [data-slider-row]{flex-wrap:wrap !important;gap:8px !important;padding:14px 0 !important}
+          [data-slider-row] > [data-slider-label]{flex:1 1 100% !important;width:auto !important}
+          [data-slider-row] > input[type=range]{flex:1 1 100% !important;width:100% !important}
+          [data-slider-row] > [data-slider-val]{width:auto !important;text-align:left !important;flex:0 0 auto}
+          [data-drawer]{width:100% !important;max-width:100% !important}
+          [data-drawer-close]{min-width:44px;min-height:44px}
+          [data-mini-row]{flex-direction:column !important}
+          [data-mini-row] > div{flex:1 1 auto !important;width:100%}
+          [data-cand-row]{flex-wrap:wrap !important;gap:10px !important}
+          [data-cand-row] > [data-cand-main]{flex:1 1 calc(100% - 56px) !important;min-width:0}
+          [data-cand-row] > [data-cand-perfil]{order:5}
+          [data-cand-row] > [data-cand-match]{order:6;margin-left:auto}
+          [data-cand-row] > [data-cand-arrow]{order:7}
+          [data-ai-card]{flex-direction:column !important;align-items:stretch !important}
+          [data-ai-card] > button{width:100% !important;justify-content:center !important;min-height:44px}
+          [data-vaga-meta]{font-size:11.5px !important;gap:8px !important}
+          [data-filtros]{flex-direction:column !important;align-items:stretch !important}
+          [data-filtros] > *{width:100% !important;flex:1 1 100% !important}
+          [data-vaga-sel] select{width:100% !important;min-width:0 !important}
+          [data-save-row]{flex-direction:column !important}
+          [data-save-row] button{width:100% !important;justify-content:center !important;min-height:48px}
+          [data-hab-add]{flex-wrap:wrap !important}
+          [data-hab-add] > input{flex:1 1 100% !important}
+        }
+      `}</style>
 
-      <div style={{ background: ROXO, padding: "15px 22px", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
         <MarcaEstrela size={32} branca />
-        <div style={{ lineHeight: 1 }}>
-          <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>DISTRIBUIDORA ESTRELA</div>
+        <div style={{ lineHeight: 1, minWidth: 0 }}>
+          <div data-header-sub className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>DISTRIBUIDORA ESTRELA</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Painel do Recrutador</div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center", color: "#fff" }}>
-          <span style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
-          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}><LogOut size={13} /> Sair</button>
+          <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
+          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
-        <div style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
+      <div data-pad style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
+        <div data-tabs style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
           {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users], ["diversidade", "Diversidade (agregado)", BarChart3]] as const).map(([k, t, Ic]) => (
             <button key={k} onClick={() => { setAba(k as any); setEditando(null); }} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
@@ -200,7 +238,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                 </div>
               </div>
               <LinkPublico vaga={v} />
-              <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <div data-vaga-actions style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                 <button onClick={() => onEditar(v)} style={btnSec}><Pencil size={14} /> Editar perfil</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
@@ -219,12 +257,12 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
   const ativa = !efetivamenteEncerrada(vaga) && vaga.status === "Aberta";
   const url = typeof window !== "undefined" ? `${window.location.origin}/c/${vaga.link_token}` : `/c/${vaga.link_token}`;
   return (
-    <div style={{ marginTop: 12, background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+    <div data-link-row style={{ marginTop: 12, background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
       <Link2 size={14} color={ativa ? ROXO : "#9b93b0"} />
-      <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</code>
+      <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{url}</code>
       {ativa ? (
         <button onClick={async () => { await navigator.clipboard.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }}
-          style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+          style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit", minHeight: 36 }}>
           {copiado ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
         </button>
       ) : (
@@ -279,12 +317,12 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
 
       <CardBox><Cab icon={Briefcase} t="Dados da vaga" />
         <CampoLabel label="Título da vaga"><input style={inp} value={v.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Ex.: Televendas (Interna)" /></CampoLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           <CampoLabel label="Setor / área"><input style={inp} value={v.setor} onChange={(e) => set("setor", e.target.value)} /></CampoLabel>
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Nº de posições"><input type="number" min={1} style={inp} value={v.vagas} onChange={(e) => set("vagas", Number(e.target.value))} /></CampoLabel>
           <CampoLabel label="Status"><select style={inp} value={v.status} onChange={(e) => set("status", e.target.value)}><option>Rascunho</option><option>Aberta</option><option>Pausada</option><option>Fechada</option></select></CampoLabel>
         </div>
@@ -296,13 +334,13 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
       </CardBox>
 
       <CardBox destaque>
-        <div style={{ display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
+        <div data-ai-card style={{ display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
           <div style={{ width: 40, height: 40, borderRadius: 11, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Wand2 size={20} color={ROXO} /></div>
-          <div style={{ flex: 1, minWidth: 210 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="h" style={{ fontWeight: 800, fontSize: 15, color: ROXO_DARK }}>Gerar o perfil da vaga com IA</div>
             <div style={{ fontSize: 12.5, color: CINZA, marginTop: 2 }}>A partir dos dados acima, a IA sugere pesos, habilidades, competências, experiência e requisitos — você só ajusta.</div>
           </div>
-          <button onClick={gerarIA} disabled={gerando} style={{ background: gerando ? "#D8D2E6" : LARANJA, color: "#fff", border: "none", padding: "11px 18px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: gerando ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit", flexShrink: 0 }}>
+          <button onClick={gerarIA} disabled={gerando} style={{ background: gerando ? "#D8D2E6" : LARANJA, color: "#fff", border: "none", padding: "11px 18px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: gerando ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", flexShrink: 0, minHeight: 44 }}>
             {gerando ? <><Loader2 size={16} className="spin" /> Gerando...</> : <><Wand2 size={16} /> Gerar com IA</>}
           </button>
         </div>
@@ -314,15 +352,15 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         {ORDEM_PERFIS.map((k) => {
           const p = PERFIS[k], val = v.pesos[k], [rot, cor] = rotuloPeso(val);
           return (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: `1px solid ${BORDA}` }}>
-              <div style={{ width: 160, flexShrink: 0 }}>
+            <div key={k} data-slider-row style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: `1px solid ${BORDA}` }}>
+              <div data-slider-label style={{ width: 160, flexShrink: 0 }}>
                 <div className="h" style={{ fontWeight: 700, fontSize: 13.5, color: p.cor, display: "flex", alignItems: "center", gap: 5 }}>
                   {p.nome} <InfoDot texto={p.plain} cor={p.cor} />
                 </div>
                 <div style={{ fontSize: 10.5, color: "#9b93b0", fontWeight: 600 }}>Perfil {p.dim}</div>
               </div>
               <input type="range" min={0} max={100} value={val} onChange={(e) => setPeso(k, Number(e.target.value))} style={{ flex: 1 }} />
-              <div style={{ width: 92, textAlign: "right", flexShrink: 0 }}>
+              <div data-slider-val style={{ width: 92, textAlign: "right", flexShrink: 0 }}>
                 <span className="h" style={{ fontWeight: 800, fontSize: 16, color: cor }}>{val}</span>
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: cor, marginLeft: 6 }}>{rot}</span>
               </div>
@@ -335,7 +373,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         <div style={{ background: ROXO_TINT, borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.5 }}>
           <strong>match = base × 0,6 + postura × 0,4</strong> — base é o peso do perfil do candidato nesta vaga; postura vem das situações.
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, alignItems: "center" }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Perfil do candidato (DISC)</div>
             <select style={inp} value={simPerfil} onChange={(e) => setSimPerfil(e.target.value as PerfilKey)}>
@@ -366,7 +404,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
           ))}
           {v.habilidades.length === 0 && <div style={{ fontSize: 12.5, color: "#9b93b0" }}>Nenhuma habilidade ainda.</div>}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <div data-hab-add style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           <input style={{ ...inp, flex: "1 1 160px" }} placeholder="Adicionar habilidade..." value={novaHab} onChange={(e) => setNovaHab(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addHab()} />
           <select value={nivelNovaHab} onChange={(e) => setNivelNovaHab(e.target.value as NivelHab)} style={selNivel(nivelNovaHab)}>
             <option value="essencial">Essencial</option><option value="importante">Importante</option><option value="desejavel">Desejável</option>
@@ -392,7 +430,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
 
       <CardBox><Cab icon={GraduationCap} t="Experiência & requisitos" />
         <CampoLabel label="Experiência desejada"><textarea style={{ ...inp, minHeight: 60, resize: "vertical" }} value={v.experiencia} onChange={(e) => set("experiencia", e.target.value)} /></CampoLabel>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Escolaridade mínima"><input style={inp} value={v.escolaridade} onChange={(e) => set("escolaridade", e.target.value)} /></CampoLabel>
           <CampoLabel label="Outros requisitos"><input style={inp} value={v.requisitos} onChange={(e) => set("requisitos", e.target.value)} /></CampoLabel>
         </div>
@@ -402,9 +440,9 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         </label>
       </CardBox>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
-        <button onClick={onCancel} style={{ ...btnSec, padding: "11px 18px" }}>Cancelar</button>
-        <button onClick={() => onSave(v)} style={{ background: LARANJA, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 11, fontSize: 14.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}><Save size={16} /> Salvar vaga</button>
+      <div data-save-row style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
+        <button onClick={onCancel} style={{ ...btnSec, padding: "11px 18px", justifyContent: "center" }}>Cancelar</button>
+        <button onClick={() => onSave(v)} style={{ background: LARANJA, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 11, fontSize: 14.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "inherit", minHeight: 48 }}><Save size={16} /> Salvar vaga</button>
       </div>
     </div>
   );
@@ -430,20 +468,20 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
 
   return (
     <>
-      <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div data-vaga-sel style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: CINZA }}>Vaga:</span>
         <select value={vagaSel || ""} onChange={(e) => setVagaSel(e.target.value)} style={{ ...inp, width: "auto", minWidth: 220, fontWeight: 700, color: ROXO_DARK }}>
           {vagas.map((v: Vaga) => <option key={v.id} value={v.id}>{v.titulo} ({v.status})</option>)}
         </select>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
+      <div data-grid data-resumo style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 16 }}>
         <ResumoCard icon={Users} cor={ROXO} v={todos.length} l="Inscritos nesta vaga" />
         <ResumoCard icon={TrendingUp} cor={LARANJA} v={`${matchMedio}%`} l="Match médio" />
         <ResumoCard icon={Award} cor={VERDE} v={nAlto} l="Match alto (≥70%)" />
       </div>
 
-      <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 14, marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+      <div data-filtros style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 14, marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1 1 200px" }}>
           <Search size={15} color="#9b93b0" style={{ position: "absolute", left: 11, top: 11 }} />
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome..." style={{ ...inp, padding: "9px 12px 9px 32px" }} />
@@ -461,26 +499,26 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
           const p = c.perfil_key && (PERFIS as any)[c.perfil_key];
           const match = c.match ?? 0;
           return (
-            <button type="button" key={c.id} onClick={() => onAbrir(c)} style={{
+            <button type="button" key={c.id} onClick={() => onAbrir(c)} data-cand-row style={{
               display: "flex", alignItems: "center", gap: 14, textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-              background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 13, padding: "13px 16px",
+              background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 13, padding: "13px 16px", width: "100%",
             }}>
               <div style={{ width: 42, height: 42, borderRadius: 99, background: ROXO_TINT, color: ROXO, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }} className="h">
                 {c.nome.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div data-cand-main style={{ flex: 1, minWidth: 0 }}>
                 <div className="h" style={{ fontWeight: 700, fontSize: 15, color: ROXO_DARK }}>{c.nome}</div>
-                <div style={{ fontSize: 12, color: "#9b93b0", display: "flex", gap: 10, marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "#9b93b0", display: "flex", gap: 10, marginTop: 2, flexWrap: "wrap" }}>
                   <span>{c.setor_atual || "—"}</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Calendar size={11} /> {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              {p && <span style={{ fontSize: 11.5, fontWeight: 700, color: "#fff", background: p.cor, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{p.nome}</span>}
-              <div style={{ textAlign: "right", flexShrink: 0, minWidth: 70 }}>
+              {p && <span data-cand-perfil style={{ fontSize: 11.5, fontWeight: 700, color: "#fff", background: p.cor, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{p.nome}</span>}
+              <div data-cand-match style={{ textAlign: "right", flexShrink: 0, minWidth: 70 }}>
                 <div className="h" style={{ fontSize: 19, fontWeight: 800, color: corMatch(match) }}>{match}%</div>
                 <div style={{ fontSize: 10.5, fontWeight: 600, color: corMatch(match) }}>{labelMatch(match)}</div>
               </div>
-              <ChevronRight size={18} color="#C9C1DC" />
+              <ChevronRight data-cand-arrow size={18} color="#C9C1DC" />
             </button>
           );
         })}
@@ -572,7 +610,7 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
                   <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: corNivel(e.relevancia), padding: "2px 9px", borderRadius: 99 }}>{txtNivel(e.relevancia)}</span>
                 </div>
               ))}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 <BoxList t="Pontos fortes" icon={Star} cor={VERDE} items={cv.pontos_fortes} />
                 <BoxList t="Lacunas" icon={AlertCircle} cor={LARANJA} items={cv.lacunas} />
               </div>

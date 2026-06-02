@@ -32,7 +32,7 @@ const tagBtn = (on: boolean, cor: string): React.CSSProperties => ({
   border: `1.5px solid ${on ? cor : BORDA}`, background: on ? cor : "#fff", color: on ? "#fff" : CINZA, fontFamily: "inherit",
 });
 
-function Card({ children }: any) { return <div style={{ background: "#fff", borderRadius: 18, padding: 24, border: `1px solid ${BORDA}`, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)", marginBottom: 14 }}>{children}</div>; }
+function Card({ children }: any) { return <div data-card style={{ background: "#fff", borderRadius: 18, padding: 24, border: `1px solid ${BORDA}`, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)", marginBottom: 14 }}>{children}</div>; }
 function Badge({ children }: any) { return <span style={{ fontSize: 11.5, fontWeight: 700, background: LARANJA_TINT, color: LARANJA, padding: "5px 11px", borderRadius: 99, letterSpacing: 0.5 }}>{children}</span>; }
 function Titulo({ icon: Icon, children, sub }: any) {
   return (
@@ -90,9 +90,9 @@ function Nav({ back, next, pode, textoNext = "Continuar", aviso }: any) {
   return (
     <div>
       {aviso && <div style={{ fontSize: 12, color: LARANJA, marginBottom: 10, fontWeight: 600 }}>{aviso}</div>}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
-        <button type="button" onClick={back} style={{ background: "none", border: "none", color: CINZA, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit", fontSize: 14 }}><ChevronLeft size={17} /> Voltar</button>
-        <button type="button" onClick={next} disabled={!pode} style={{ background: pode ? ROXO : "#D8D2E6", color: "#fff", border: "none", padding: "12px 22px", borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: pode ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>{textoNext} <ChevronRight size={17} /></button>
+      <div data-nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, gap: 10 }}>
+        <button type="button" onClick={back} style={{ background: "none", border: "none", color: CINZA, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, minHeight: 44, padding: "0 8px" }}><ChevronLeft size={17} /> Voltar</button>
+        <button type="button" onClick={next} disabled={!pode} style={{ background: pode ? ROXO : "#D8D2E6", color: "#fff", border: "none", padding: "12px 22px", borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: pode ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit", minHeight: 48 }}>{textoNext} <ChevronRight size={17} /></button>
       </div>
     </div>
   );
@@ -137,13 +137,13 @@ function NivelBadge({ nivel }: any) {
 
 function HeaderRoxo({ titulo = "Processo Seletivo" }: { titulo?: string }) {
   return (
-    <div style={{ background: ROXO, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+    <div style={{ background: ROXO, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
       <MarcaEstrela size={34} branca />
       <div style={{ lineHeight: 1 }}>
         <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 11, opacity: 0.85 }}>DISTRIBUIDORA</div>
         <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}>ESTRELA</div>
       </div>
-      <div style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}>
+      <div data-header-sub style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
         <Headphones size={15} /> {titulo}
       </div>
     </div>
@@ -358,28 +358,52 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       minHeight: "100vh", color: ROXO_DARK, padding: "0 0 48px",
     }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        *{box-sizing:border-box} input:focus,select:focus,textarea:focus{border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT2}}
-        .h{font-family:'Outfit',sans-serif} @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}`}</style>
+        *{box-sizing:border-box} html,body{overflow-x:hidden;max-width:100vw} input:focus,select:focus,textarea:focus{border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT2}}
+        .h{font-family:'Outfit',sans-serif} @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}
+        [data-step-counter]{display:none}
+        @media (max-width:640px){
+          input,select,textarea{font-size:16px !important}
+          [data-pad]{padding:0 12px !important}
+          [data-grid]{grid-template-columns:1fr !important}
+          [data-nav]{flex-direction:column-reverse !important;align-items:stretch !important;gap:10px}
+          [data-nav] button{width:100% !important;justify-content:center !important;min-height:48px}
+          [data-disc-row]{flex-wrap:wrap !important}
+          [data-disc-row] > span{flex:1 1 100% !important;order:-1;margin-bottom:4px}
+          [data-disc-row] > button{flex:1 1 calc(50% - 4px) !important;min-height:44px;justify-content:center;text-align:center}
+          [data-mini-row]{flex-direction:column !important}
+          [data-mini-row] > div{flex:1 1 auto !important;width:100%}
+          [data-step-label]{display:none !important}
+          [data-step-counter]{display:block !important}
+          [data-step-circle]{width:24px !important;height:24px !important;border-width:2px !important}
+          [data-header-sub]{display:none !important}
+          [data-card]{padding:16px !important;border-radius:14px !important}
+          [data-result-head]{flex-direction:column !important;align-items:center !important;text-align:center}
+          [data-disc-bar-label]{width:72px !important;font-size:11px !important}
+        }
+      `}</style>
 
       <HeaderRoxo titulo={vaga.titulo} />
 
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
+      <div data-pad style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
         {formIdx >= 0 && (
           <div style={{ margin: "22px 0 26px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9 }}>
+            <div data-step-counter style={{ fontSize: 12, fontWeight: 700, color: ROXO, marginBottom: 8, letterSpacing: 1 }}>
+              ETAPA {formIdx + 1} DE {FORM_STEPS.length} — {STEP_META[FORM_STEPS[formIdx]].n}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, gap: 4 }}>
               {FORM_STEPS.map((s, i) => {
                 const Ic = STEP_META[s].icon;
                 const done = i < formIdx, cur = i === formIdx;
                 return (
-                  <div key={s} style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{
+                  <div key={s} style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
+                    <div data-step-circle style={{
                       width: 34, height: 34, borderRadius: 99, margin: "0 auto 5px",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: done ? LARANJA : cur ? ROXO : "#fff",
                       border: `2px solid ${done ? LARANJA : cur ? ROXO : BORDA}`,
                       color: done || cur ? "#fff" : "#B6AECB",
-                    }}>{done ? <CheckCircle2 size={17} /> : <Ic size={16} />}</div>
-                    <div style={{ fontSize: 10.5, fontWeight: cur ? 700 : 500, color: cur ? ROXO : "#9b93b0" }}>{STEP_META[s].n}</div>
+                    }}>{done ? <CheckCircle2 size={15} /> : <Ic size={14} />}</div>
+                    <div data-step-label style={{ fontSize: 10.5, fontWeight: cur ? 700 : 500, color: cur ? ROXO : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{STEP_META[s].n}</div>
                   </div>
                 );
               })}
@@ -422,12 +446,12 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
           <Card>
             <Titulo icon={User} sub="Para entrarmos em contato com você.">Seus dados</Titulo>
             <Campo icon={User} label="Nome completo" obrig><input style={inputStyle} value={a.nome || ""} onChange={(e) => set("nome", e.target.value)} placeholder="Seu nome" /></Campo>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Campo icon={Mail} label="E-mail" obrig><input style={inputStyle} type="email" value={a.email || ""} onChange={(e) => set("email", e.target.value)} placeholder="voce@email.com" /></Campo>
               <Campo icon={Phone} label="Celular / WhatsApp" obrig><input style={inputStyle} value={a.celular || ""} onChange={(e) => set("celular", e.target.value)} placeholder="(96) 9 9999-9999" /></Campo>
             </div>
             <Campo icon={MapPin} label="Endereço (bairro e cidade)"><input style={inputStyle} value={a.endereco || ""} onChange={(e) => set("endereco", e.target.value)} placeholder="Bairro, Cidade - UF" /></Campo>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
               <Campo label="Tempo de empresa">
                 <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
@@ -490,7 +514,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                   const mais = a["disc_" + bi + "_mais"] === oi;
                   const menos = a["disc_" + bi + "_menos"] === oi;
                   return (
-                    <div key={oi} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`, borderRadius: 11, padding: "7px 8px", marginBottom: 7 }}>
+                    <div key={oi} data-disc-row style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`, borderRadius: 11, padding: "7px 8px", marginBottom: 7 }}>
                       <button type="button" onClick={() => setMais(bi, oi)} style={tagBtn(mais, ROXO)}>+ Mais</button>
                       <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: ROXO_DARK, lineHeight: 1.3 }}>{o.txt}</span>
                       <button type="button" onClick={() => setMenos(bi, oi)} style={tagBtn(menos, LARANJA)}>− Menos</button>
@@ -557,7 +581,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             </div>
 
             <Card>
-              <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div data-result-head style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 200 }}>
                   <div style={{ fontSize: 12, color: CINZA, fontWeight: 600 }}>Perfil comportamental identificado</div>
                   <div className="h" style={{ fontSize: 26, fontWeight: 800, color: resultado.perfil.cor, lineHeight: 1.1, margin: "3px 0" }}>{resultado.perfil.nome}</div>
@@ -570,7 +594,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <div className="h" style={{ fontWeight: 700, fontSize: 13, margin: "16px 0 9px" }}>Mapa DISC</div>
               {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => (
                 <div key={d} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={{ width: 92, fontSize: 12, fontWeight: 600, color: ROXO_DARK }}>{DIM_INFO[d].nome}</div>
+                  <div data-disc-bar-label style={{ width: 92, fontSize: 12, fontWeight: 600, color: ROXO_DARK }}>{DIM_INFO[d].nome}</div>
                   <div style={{ flex: 1, height: 14, background: "#F0EDF7", borderRadius: 9, overflow: "hidden" }}>
                     <div style={{ height: 14, width: `${resultado.discPct[d]}%`, background: DIM_INFO[d].cor, borderRadius: 9, transition: "width .5s" }} />
                   </div>
@@ -578,11 +602,11 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                 </div>
               ))}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                 <Box titulo="Forças para a vaga" icon={Star} cor={LARANJA} items={resultado.perfil.forcas} />
                 <Box titulo="Pontos de atenção" icon={Target} cor={ROXO} items={resultado.perfil.atencao} />
               </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+              <div data-mini-row style={{ display: "flex", gap: 10, marginTop: 16 }}>
                 <Mini label="Postura no atendimento" v={`${resultado.sitAvg}%`} sub="Situações reais" />
                 <Mini label="Aderência à vaga" v={`${resultado.finalMatch}%`} sub="60% perfil + 40% postura" />
               </div>
@@ -618,7 +642,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Box titulo="Pontos fortes" icon={Star} cor={VERDE} items={cvAnalysis.pontos_fortes} />
                     <Box titulo="Lacunas / a desenvolver" icon={AlertCircle} cor={LARANJA} items={cvAnalysis.lacunas} />
                   </div>
