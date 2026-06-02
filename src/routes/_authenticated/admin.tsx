@@ -897,6 +897,16 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
             </Bloco>
           )}
 
+          {!cv && c.cv_storage_path && (
+            <Bloco>
+              <Cab icon={FileText} t="Análise de currículo (IA)" />
+              <div style={{ fontSize: 12.5, color: CINZA, lineHeight: 1.55 }}>
+                Análise automática não disponível para esta inscrição. Isso pode acontecer se o candidato fechou a página antes da IA terminar de processar o currículo. O arquivo continua acessível acima.
+              </div>
+            </Bloco>
+          )}
+
+
           <div style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 11.5, color: "#9b93b0", marginTop: 4 }}>
             <ShieldCheck size={14} /> Dados de diversidade não são exibidos nesta ficha (LGPD / antidiscriminação).
           </div>

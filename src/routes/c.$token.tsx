@@ -385,12 +385,21 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       });
       if (insErr) throw insErr;
 
+      // Roda a análise de currículo SINCRONAMENTE antes de mostrar a tela final.
+      // Se a navegação acontecer antes, a Promise no navegador é abortada e
+      // cv_analise nunca é persistido (recrutador fica sem o bloco de IA).
+      try {
+        await rodarAnalise(candId, cvPath, cvMime);
+      } catch (e) {
+        console.warn("Análise de currículo falhou (inscrição já registrada):", e);
+      }
+
       setStep("resultado"); window.scrollTo({ top: 0, behavior: "smooth" });
-      void rodarAnalise(candId, cvPath, cvMime);
     } catch (err: any) {
       setSubmitError(err.message || "Erro ao enviar inscrição.");
     } finally { setSubmitting(false); }
   }
+
 
   async function rodarAnalise(candId: string, cvPath: string | null, cvMime: string | null) {
     setCvLoading(true); setCvError("");
@@ -685,7 +694,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei 13.709/2018).</span>
             </label>
             {submitError && <div style={{ fontSize: 12.5, color: "#B91C1C", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: 11, marginBottom: 10 }}>{submitError}</div>}
-            <Nav back={back} next={next} pode={!!a.lgpd && !submitting} textoNext={submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
+            <Nav back={back} next={next} pode={!!a.lgpd && !submitting && !cvLoading} textoNext={cvLoading ? "Analisando currículo..." : submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
           </Card>
         )}
 
