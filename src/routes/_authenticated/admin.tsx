@@ -189,6 +189,7 @@ function AdminPage() {
         {aba === "vagas" && (editando
           ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
+              onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
               onEditar={(v: Vaga) => setEditando(v)}
               onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
@@ -209,7 +210,7 @@ function AdminPage() {
 }
 
 /* ========== Aba Vagas — Lista ========== */
-function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar }: any) {
+function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar, onPrevia }: any) {
   if (loading) return <div style={{ textAlign: "center", padding: 30, color: CINZA }}>Carregando...</div>;
   return (
     <>
@@ -232,6 +233,11 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, color: st.cor, background: st.cor + "18", padding: "3px 10px", borderRadius: 99 }}>
                       <Circle size={7} fill={st.cor} color={st.cor} /> {st.label}
                     </span>
+                    {!(v as any).formulario_aprovado && (
+                      <span title="Formulário ainda não aprovado" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#9a6b00", background: "#FEF3C7", padding: "3px 9px", borderRadius: 99 }}>
+                        <AlertCircle size={11} /> Formulário não aprovado
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12.5, color: "#9b93b0", marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
                     <span>{v.setor}</span><span>{v.modelo} · {v.tipo}</span><span>{v.vagas} posição(ões)</span>
@@ -246,6 +252,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
               <LinkPublico vaga={v} />
               <div data-vaga-actions style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                 <button onClick={() => onEditar(v)} style={btnSec}><Pencil size={14} /> Editar perfil</button>
+                <button onClick={() => onPrevia(v)} style={btnSec}><FileText size={14} /> Prévia do formulário</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
               </div>
@@ -330,7 +337,26 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         </div>
         <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Nº de posições"><input type="number" min={1} style={inp} value={v.vagas} onChange={(e) => set("vagas", Number(e.target.value))} /></CampoLabel>
-          <CampoLabel label="Status"><select style={inp} value={v.status} onChange={(e) => set("status", e.target.value)}><option>Rascunho</option><option>Aberta</option><option>Pausada</option><option>Fechada</option></select></CampoLabel>
+          <CampoLabel label="Status">
+            <select style={inp} value={v.status} onChange={(e) => {
+              const val = e.target.value;
+              if (val === "Aberta" && !v.formulario_aprovado) {
+                alert("Aprove o formulário na Prévia antes de abrir esta vaga.");
+                return;
+              }
+              set("status", val);
+            }}>
+              <option>Rascunho</option>
+              <option disabled={!v.formulario_aprovado}>Aberta{!v.formulario_aprovado ? " (aprove o formulário)" : ""}</option>
+              <option>Pausada</option>
+              <option>Fechada</option>
+            </select>
+            {!v.formulario_aprovado && (
+              <div style={{ fontSize: 11, color: "#9a6b00", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                <AlertCircle size={12} /> Para abrir a vaga, aprove o formulário em <strong>Prévia do formulário</strong>.
+              </div>
+            )}
+          </CampoLabel>
         </div>
         <CampoLabel label="Data limite de inscrições (opcional)">
           <input type="date" style={inp} value={v.data_limite || ""} onChange={(e) => set("data_limite", e.target.value || null)} />
