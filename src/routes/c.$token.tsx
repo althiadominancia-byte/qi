@@ -594,7 +594,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <div className="h" style={{ fontWeight: 700, fontSize: 13, margin: "16px 0 9px" }}>Mapa DISC</div>
               {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => (
                 <div key={d} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <div style={{ width: 92, fontSize: 12, fontWeight: 600, color: ROXO_DARK }}>{DIM_INFO[d].nome}</div>
+                  <div data-disc-bar-label style={{ width: 92, fontSize: 12, fontWeight: 600, color: ROXO_DARK }}>{DIM_INFO[d].nome}</div>
                   <div style={{ flex: 1, height: 14, background: "#F0EDF7", borderRadius: 9, overflow: "hidden" }}>
                     <div style={{ height: 14, width: `${resultado.discPct[d]}%`, background: DIM_INFO[d].cor, borderRadius: 9, transition: "width .5s" }} />
                   </div>
