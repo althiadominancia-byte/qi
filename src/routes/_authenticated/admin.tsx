@@ -506,19 +506,19 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
               <div style={{ width: 42, height: 42, borderRadius: 99, background: ROXO_TINT, color: ROXO, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }} className="h">
                 {c.nome.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div data-cand-main style={{ flex: 1, minWidth: 0 }}>
                 <div className="h" style={{ fontWeight: 700, fontSize: 15, color: ROXO_DARK }}>{c.nome}</div>
-                <div style={{ fontSize: 12, color: "#9b93b0", display: "flex", gap: 10, marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: "#9b93b0", display: "flex", gap: 10, marginTop: 2, flexWrap: "wrap" }}>
                   <span>{c.setor_atual || "—"}</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Calendar size={11} /> {new Date(c.created_at).toLocaleDateString("pt-BR")}</span>
                 </div>
               </div>
-              {p && <span style={{ fontSize: 11.5, fontWeight: 700, color: "#fff", background: p.cor, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{p.nome}</span>}
-              <div style={{ textAlign: "right", flexShrink: 0, minWidth: 70 }}>
+              {p && <span data-cand-perfil style={{ fontSize: 11.5, fontWeight: 700, color: "#fff", background: p.cor, padding: "4px 10px", borderRadius: 99, flexShrink: 0 }}>{p.nome}</span>}
+              <div data-cand-match style={{ textAlign: "right", flexShrink: 0, minWidth: 70 }}>
                 <div className="h" style={{ fontSize: 19, fontWeight: 800, color: corMatch(match) }}>{match}%</div>
                 <div style={{ fontSize: 10.5, fontWeight: 600, color: corMatch(match) }}>{labelMatch(match)}</div>
               </div>
-              <ChevronRight size={18} color="#C9C1DC" />
+              <ChevronRight data-cand-arrow size={18} color="#C9C1DC" />
             </button>
           );
         })}
