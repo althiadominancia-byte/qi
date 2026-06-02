@@ -264,7 +264,7 @@ export function computeResults(a: Record<string, any>, vaga?: { pesos: VagaPesos
   else if (primary === "D") key = secondary === "I" ? "fechador" : "executor";
   else key = "diplomatico";
 
-  let sitAvg = PERFIS[key].base;
+  let sitAvg: number = PERFIS[key].base;
   let usouSit = false;
   if (sitList.length > 0) {
     const vals = sitList.map((q, i) => {
