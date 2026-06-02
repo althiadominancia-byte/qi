@@ -610,7 +610,10 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
 
       <CardBox destaque><Cab icon={Calculator} t="Prévia do match" />
         <div style={{ background: ROXO_TINT, borderRadius: 12, padding: 14, marginBottom: 14, fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.5 }}>
-          <strong>match = base × 0,6 + postura × 0,4</strong> — base é o peso do perfil do candidato nesta vaga; postura vem das situações.
+          <strong>Com currículo analisado:</strong> match = base × 0,45 + postura × 0,30 + currículo × 0,25.<br/>
+          <strong>Sem currículo:</strong> match = base × 0,6 + postura × 0,4.<br/>
+          O componente <em>currículo</em> parte da aderência (alta/média/baixa) e desconta lacunas — lacunas de experiência/vivência pesam mais, pois a vaga exige vivência prévia.
+
         </div>
         <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 16, alignItems: "center" }}>
           <div>
