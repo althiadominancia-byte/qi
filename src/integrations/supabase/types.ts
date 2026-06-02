@@ -309,9 +309,11 @@ export type Database = {
           created_by: string | null
           data_limite: string | null
           descricao: string
+          disc_blocks: Json
           empresa_id: string
           escolaridade: string
           experiencia: string
+          formulario_aprovado: boolean
           habilidades: Json
           id: string
           link_token: string
@@ -319,6 +321,7 @@ export type Database = {
           pesos: Json
           requisitos: string
           setor: string
+          situacoes: Json
           status: string
           tipo: string
           titulo: string
@@ -333,9 +336,11 @@ export type Database = {
           created_by?: string | null
           data_limite?: string | null
           descricao?: string
+          disc_blocks?: Json
           empresa_id: string
           escolaridade?: string
           experiencia?: string
+          formulario_aprovado?: boolean
           habilidades?: Json
           id?: string
           link_token?: string
@@ -343,6 +348,7 @@ export type Database = {
           pesos?: Json
           requisitos?: string
           setor?: string
+          situacoes?: Json
           status?: string
           tipo?: string
           titulo?: string
@@ -357,9 +363,11 @@ export type Database = {
           created_by?: string | null
           data_limite?: string | null
           descricao?: string
+          disc_blocks?: Json
           empresa_id?: string
           escolaridade?: string
           experiencia?: string
+          formulario_aprovado?: boolean
           habilidades?: Json
           id?: string
           link_token?: string
@@ -367,6 +375,7 @@ export type Database = {
           pesos?: Json
           requisitos?: string
           setor?: string
+          situacoes?: Json
           status?: string
           tipo?: string
           titulo?: string

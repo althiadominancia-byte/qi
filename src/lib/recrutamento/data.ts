@@ -162,6 +162,11 @@ export const corStatus = (s: string) => (s === "Aberta" ? VERDE : s === "Rascunh
 export const fmtData = (iso?: string | null) => (iso ? iso.split("-").reverse().slice(0, 2).join("/") : "");
 
 export type VagaPesos = Record<PerfilKey, number>;
+export type DiscOpcao = { dim: Dim; txt: string };
+export type DiscBlock = { opcoes: DiscOpcao[] };
+export type SitOpcao = { txt: string; pts: number };
+export type Situacao = { titulo: string; options: SitOpcao[] };
+
 export type Vaga = {
   id: string;
   titulo: string;
@@ -180,6 +185,9 @@ export type Vaga = {
   escolaridade: string;
   requisitos: string;
   usar_situacional: boolean;
+  disc_blocks: DiscBlock[];
+  situacoes: Situacao[];
+  formulario_aprovado: boolean;
   created_at?: string;
 };
 
@@ -199,18 +207,50 @@ export const novaVagaVazia = (): Omit<Vaga, "id" | "link_token"> & { link_token?
   pesos: { comunicador: 50, fechador: 50, diplomatico: 50, executor: 50, analitico: 50 },
   habilidades: [], competencias: [], experiencia: "", escolaridade: "", requisitos: "",
   usar_situacional: true,
+  disc_blocks: [], situacoes: [], formulario_aprovado: false,
 });
 
+/* ========== VALIDAÇÃO ========== */
+export function validateDiscBlocks(blocos: any): blocos is DiscBlock[] {
+  if (!Array.isArray(blocos) || blocos.length < 5 || blocos.length > 7) return false;
+  for (const b of blocos) {
+    const ops = b?.opcoes;
+    if (!Array.isArray(ops) || ops.length !== 4) return false;
+    const dims = new Set(ops.map((o: any) => o?.dim));
+    if (dims.size !== 4 || !["D","I","S","C"].every((d) => dims.has(d))) return false;
+    if (!ops.every((o: any) => typeof o?.txt === "string" && o.txt.trim().length > 0)) return false;
+  }
+  return true;
+}
+export function validateSituacoes(s: any): s is Situacao[] {
+  if (!Array.isArray(s)) return false;
+  return s.every((q: any) =>
+    typeof q?.titulo === "string" && Array.isArray(q?.options) && q.options.length === 4 &&
+    q.options.every((o: any) => typeof o?.txt === "string" && typeof o?.pts === "number")
+  );
+}
+export function getDiscBlocks(v: { disc_blocks?: any } | null | undefined): DiscBlock[] {
+  if (v && validateDiscBlocks(v.disc_blocks)) return v.disc_blocks as DiscBlock[];
+  return DISC_BLOCKS;
+}
+export function getSituacoes(v: { situacoes?: any } | null | undefined): Situacao[] {
+  if (v && Array.isArray(v.situacoes) && v.situacoes.length > 0 && validateSituacoes(v.situacoes)) return v.situacoes as Situacao[];
+  return [];
+}
+
 /* ========== CÁLCULO ========== */
-export function computeResults(a: Record<string, any>, vaga?: { pesos: VagaPesos } | null) {
+export function computeResults(a: Record<string, any>, vaga?: { pesos: VagaPesos; disc_blocks?: any; situacoes?: any; usar_situacional?: boolean } | null) {
+  const blocks = getDiscBlocks(vaga ?? null);
+  const sitList = vaga?.usar_situacional === false ? [] : getSituacoes(vaga ?? null);
+
   const disc: Record<Dim, number> = { D: 0, I: 0, S: 0, C: 0 };
-  DISC_BLOCKS.forEach((b, bi) => {
+  blocks.forEach((b, bi) => {
     const mais = a["disc_" + bi + "_mais"];
     const menos = a["disc_" + bi + "_menos"];
     if (mais !== undefined) disc[b.opcoes[mais].dim] += 1;
     if (menos !== undefined) disc[b.opcoes[menos].dim] -= 1;
   });
-  const N = DISC_BLOCKS.length;
+  const N = blocks.length;
   const pct = (s: number) => Math.max(5, Math.min(100, Math.round(((s + N) / (2 * N)) * 100)));
   const discPct = { D: pct(disc.D), I: pct(disc.I), S: pct(disc.S), C: pct(disc.C) };
 
@@ -224,20 +264,28 @@ export function computeResults(a: Record<string, any>, vaga?: { pesos: VagaPesos
   else if (primary === "D") key = secondary === "I" ? "fechador" : "executor";
   else key = "diplomatico";
 
-  const sitVals = SITUACIONAIS.map((q) => {
-    const opt = q.options.find((o) => o.key === a["sit_" + q.id]);
-    return opt ? opt.pts : 0;
-  });
-  const respondidas = SITUACIONAIS.filter((q) => a["sit_" + q.id]).length;
-  const sitAvg = respondidas > 0
-    ? Math.round(sitVals.reduce((s, v) => s + v, 0) / SITUACIONAIS.length)
-    : PERFIS[key].base; // fallback se a vaga não usa situacional
+  let sitAvg: number = PERFIS[key].base;
+  let usouSit = false;
+  if (sitList.length > 0) {
+    const vals = sitList.map((q, i) => {
+      const ans = a["sit_" + i];
+      if (typeof ans !== "string") return null;
+      const idx = Number(ans.replace(/^o/, ""));
+      const opt = q.options[idx];
+      return opt ? opt.pts : null;
+    });
+    const respondidas = vals.filter((v) => v !== null) as number[];
+    if (respondidas.length > 0) {
+      usouSit = true;
+      sitAvg = Math.round(respondidas.reduce((s, v) => s + v, 0) / sitList.length);
+    }
+  }
 
   const base = vaga?.pesos?.[key] ?? PERFIS[key].base;
-  const finalMatch = Math.round(base * 0.6 + sitAvg * 0.4);
+  const finalMatch = usouSit ? Math.round(base * 0.6 + sitAvg * 0.4) : base;
   const label = labelMatch(finalMatch);
 
-  return { disc, discPct, key, perfil: PERFIS[key], primary, secondary, sitAvg, finalMatch, label };
+  return { disc, discPct, key, perfil: PERFIS[key], primary, secondary, sitAvg, finalMatch, label, blocks, sitList };
 }
 
 export const matchDe = (vaga: { pesos: VagaPesos } | null | undefined, c: { perfil_key: string | null; postura_score: number | null }) => {
