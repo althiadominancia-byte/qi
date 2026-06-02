@@ -213,7 +213,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let sit: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_SIT(data.titulo, data.setor, data.descricao) }]);
+          const j = await callGemini([{ type: "text", text: PROMPT_SIT(data) }]);
           if (validaSit(j)) { sit = j.situacoes; break; }
         } catch {}
       }
