@@ -514,7 +514,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                   const mais = a["disc_" + bi + "_mais"] === oi;
                   const menos = a["disc_" + bi + "_menos"] === oi;
                   return (
-                    <div key={oi} style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`, borderRadius: 11, padding: "7px 8px", marginBottom: 7 }}>
+                    <div key={oi} data-disc-row style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`, borderRadius: 11, padding: "7px 8px", marginBottom: 7 }}>
                       <button type="button" onClick={() => setMais(bi, oi)} style={tagBtn(mais, ROXO)}>+ Mais</button>
                       <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: ROXO_DARK, lineHeight: 1.3 }}>{o.txt}</span>
                       <button type="button" onClick={() => setMenos(bi, oi)} style={tagBtn(menos, LARANJA)}>− Menos</button>
