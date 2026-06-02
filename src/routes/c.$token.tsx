@@ -90,9 +90,9 @@ function Nav({ back, next, pode, textoNext = "Continuar", aviso }: any) {
   return (
     <div>
       {aviso && <div style={{ fontSize: 12, color: LARANJA, marginBottom: 10, fontWeight: 600 }}>{aviso}</div>}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20 }}>
-        <button type="button" onClick={back} style={{ background: "none", border: "none", color: CINZA, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, fontFamily: "inherit", fontSize: 14 }}><ChevronLeft size={17} /> Voltar</button>
-        <button type="button" onClick={next} disabled={!pode} style={{ background: pode ? ROXO : "#D8D2E6", color: "#fff", border: "none", padding: "12px 22px", borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: pode ? "pointer" : "not-allowed", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}>{textoNext} <ChevronRight size={17} /></button>
+      <div data-nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, gap: 10 }}>
+        <button type="button" onClick={back} style={{ background: "none", border: "none", color: CINZA, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, minHeight: 44, padding: "0 8px" }}><ChevronLeft size={17} /> Voltar</button>
+        <button type="button" onClick={next} disabled={!pode} style={{ background: pode ? ROXO : "#D8D2E6", color: "#fff", border: "none", padding: "12px 22px", borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: pode ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit", minHeight: 48 }}>{textoNext} <ChevronRight size={17} /></button>
       </div>
     </div>
   );
