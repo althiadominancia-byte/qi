@@ -257,12 +257,12 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
   const ativa = !efetivamenteEncerrada(vaga) && vaga.status === "Aberta";
   const url = typeof window !== "undefined" ? `${window.location.origin}/c/${vaga.link_token}` : `/c/${vaga.link_token}`;
   return (
-    <div style={{ marginTop: 12, background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8 }}>
+    <div data-link-row style={{ marginTop: 12, background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
       <Link2 size={14} color={ativa ? ROXO : "#9b93b0"} />
-      <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{url}</code>
+      <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{url}</code>
       {ativa ? (
         <button onClick={async () => { await navigator.clipboard.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }}
-          style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+          style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit", minHeight: 36 }}>
           {copiado ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
         </button>
       ) : (
