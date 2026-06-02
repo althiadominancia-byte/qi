@@ -440,9 +440,9 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         </label>
       </CardBox>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
-        <button onClick={onCancel} style={{ ...btnSec, padding: "11px 18px" }}>Cancelar</button>
-        <button onClick={() => onSave(v)} style={{ background: LARANJA, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 11, fontSize: 14.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 7, fontFamily: "inherit" }}><Save size={16} /> Salvar vaga</button>
+      <div data-save-row style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
+        <button onClick={onCancel} style={{ ...btnSec, padding: "11px 18px", justifyContent: "center" }}>Cancelar</button>
+        <button onClick={() => onSave(v)} style={{ background: LARANJA, color: "#fff", border: "none", padding: "11px 20px", borderRadius: 11, fontSize: 14.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "inherit", minHeight: 48 }}><Save size={16} /> Salvar vaga</button>
       </div>
     </div>
   );
