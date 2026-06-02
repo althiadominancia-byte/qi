@@ -10,6 +10,7 @@ import {
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { analisarCv } from "@/lib/recrutamento.functions";
+import { prepararCv, fmtSize, CV_MAX_ORIGINAL_MB, type CvPreparado } from "@/lib/recrutamento/cv-upload";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, ROXO_TINT2, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE,
   DIM_INFO, getDiscBlocks, getSituacoes,
@@ -234,6 +235,8 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
   const set = (k: string, v: any) => setA((p) => ({ ...p, [k]: v }));
 
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvPrep, setCvPrep] = useState<CvPreparado | null>(null);
+  const [cvProcessando, setCvProcessando] = useState(false);
   const [cvAnalysis, setCvAnalysis] = useState<any>(null);
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState("");
@@ -287,13 +290,14 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
 
       let cvPath: string | null = null;
       let cvMime: string | null = null;
-      if (cvFile) {
-        const ext = cvFile.name.split(".").pop() ?? "bin";
+      const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      if (arquivoCv) {
+        const ext = arquivoCv.name.split(".").pop() ?? "bin";
         const path = `${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, cvFile, { contentType: cvFile.type || undefined });
+        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, { contentType: arquivoCv.type || undefined, cacheControl: "3600" });
         if (upErr) throw upErr;
         cvPath = path;
-        cvMime = cvFile.type || null;
+        cvMime = arquivoCv.type || null;
       }
 
       if (a.raca || a.genero || a.orientacao || a.pcd || a.politico) {
@@ -472,10 +476,45 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem)">
               <div style={{ border: `2px dashed ${cvFile ? ROXO : BORDA}`, borderRadius: 13, padding: 22, textAlign: "center", background: ROXO_TINT }}>
                 <Upload size={26} color={ROXO} style={{ marginBottom: 8 }} />
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK }}>{a.cvNome ? `📎 ${a.cvNome}` : "Clique para selecionar o arquivo"}</div>
-                <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" style={{ marginTop: 10, fontSize: 12 }}
-                  onChange={(e) => { const f = e.target.files && e.target.files[0]; set("cvNome", f ? f.name : ""); setCvFile(f || null); setCvAnalysis(null); setCvError(""); }} />
-                <div style={{ fontSize: 11, color: CINZA, marginTop: 8 }}>Sem currículo pronto? Sem problema — preencha os campos abaixo que a análise usa o que você escrever.</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK }}>
+                  {cvProcessando ? "Processando arquivo..." : a.cvNome ? `📎 ${a.cvNome}` : "Clique para selecionar o arquivo"}
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.heic,.heif,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  style={{ marginTop: 10, fontSize: 12 }}
+                  onChange={async (e) => {
+                    const f = e.target.files && e.target.files[0];
+                    setCvAnalysis(null); setCvError(""); setCvPrep(null);
+                    if (!f) { setCvFile(null); set("cvNome", ""); return; }
+                    setCvProcessando(true);
+                    try {
+                      const prep = await prepararCv(f);
+                      setCvFile(prep.arquivo);
+                      setCvPrep(prep);
+                      set("cvNome", prep.arquivo.name);
+                    } catch (err: any) {
+                      setCvFile(null); set("cvNome", "");
+                      setCvError(err.message || "Não foi possível processar o arquivo.");
+                    } finally { setCvProcessando(false); }
+                  }}
+                />
+                {cvPrep && (
+                  <div style={{ fontSize: 11.5, color: ROXO, marginTop: 8, fontWeight: 600 }}>
+                    {cvPrep.kind === "pdf" && "PDF · "}
+                    {cvPrep.kind === "image" && "Imagem · "}
+                    {cvPrep.kind === "doc" && "Documento Word · "}
+                    {cvPrep.comprimido
+                      ? `${fmtSize(cvPrep.tamanhoOriginal)} → ${fmtSize(cvPrep.tamanhoFinal)} (comprimido)`
+                      : fmtSize(cvPrep.tamanhoFinal)}
+                  </div>
+                )}
+                {cvError && (
+                  <div style={{ fontSize: 12, color: "#B91C1C", marginTop: 8, fontWeight: 600 }}>{cvError}</div>
+                )}
+                <div style={{ fontSize: 11, color: CINZA, marginTop: 8 }}>
+                  PDF é o formato ideal. Imagens são comprimidas automaticamente. Limite: {CV_MAX_ORIGINAL_MB} MB.
+                </div>
               </div>
             </Campo>
             <Campo label="Já trabalhou com algo relacionado à vaga? Conte rapidamente.">
