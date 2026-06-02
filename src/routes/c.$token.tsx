@@ -602,11 +602,11 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                 </div>
               ))}
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
                 <Box titulo="Forças para a vaga" icon={Star} cor={LARANJA} items={resultado.perfil.forcas} />
                 <Box titulo="Pontos de atenção" icon={Target} cor={ROXO} items={resultado.perfil.atencao} />
               </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+              <div data-mini-row style={{ display: "flex", gap: 10, marginTop: 16 }}>
                 <Mini label="Postura no atendimento" v={`${resultado.sitAvg}%`} sub="Situações reais" />
                 <Mini label="Aderência à vaga" v={`${resultado.finalMatch}%`} sub="60% perfil + 40% postura" />
               </div>
