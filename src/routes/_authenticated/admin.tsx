@@ -189,7 +189,7 @@ function AdminPage() {
         {aba === "vagas" && (editando
           ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
-              onPrevia={(v: Vaga) => navigate({ to: "/_authenticated/previa/$id" as any, params: { id: v.id } as any }).catch(() => { window.location.href = `/previa/${v.id}`; })}
+              onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
               onEditar={(v: Vaga) => setEditando(v)}
               onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
