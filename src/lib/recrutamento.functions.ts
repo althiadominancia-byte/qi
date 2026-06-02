@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const AnalyzeInput = z.object({
+  candidatoId: z.string().uuid().optional(),
   storagePath: z.string().nullable().optional(),
   mimeType: z.string().nullable().optional(),
   textoExtra: z.string().optional().default(""),
@@ -58,7 +59,16 @@ Regras: foque no que importa para a vaga. No máximo 3 experiências mais releva
     } else {
       userContent.push({ type: "text", text: INSTRUCAO + "\n\nDESCRIÇÃO FORNECIDA PELO CANDIDATO:\n" + (data.textoExtra || "Nenhuma informação adicional foi fornecida.") });
     }
-    return callGemini(userContent);
+    const analysis = await callGemini(userContent);
+    if (data.candidatoId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error } = await supabaseAdmin
+        .from("candidatos_televendas")
+        .update({ cv_analise: analysis })
+        .eq("id", data.candidatoId);
+      if (error) throw new Error("Falha ao salvar análise do currículo: " + error.message);
+    }
+    return analysis;
   });
 
 const GerarVagaInput = z.object({
