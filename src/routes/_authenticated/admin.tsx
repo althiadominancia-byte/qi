@@ -210,17 +210,64 @@ function AdminPage() {
         }
       `}</style>
 
-      <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
+      <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30, flexWrap: "wrap" }}>
         <MarcaEstrela size={32} branca />
         <div style={{ lineHeight: 1, minWidth: 0 }}>
-          <div data-header-sub className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>DISTRIBUIDORA ESTRELA</div>
+          <div data-header-sub className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>
+            {empresaAtiva?.nome?.toUpperCase() || "DISTRIBUIDORA ESTRELA"}
+          </div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Painel do Recrutador</div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center", color: "#fff" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", color: "#fff", flexWrap: "wrap" }}>
+          {isSuper && (
+            <>
+              <select
+                value={empresaAtivaId ?? ""}
+                onChange={(e) => {
+                  const id = e.target.value;
+                  if (!id) return;
+                  try { sessionStorage.setItem("empresa_ativa_id", id); } catch {}
+                  navigate({ to: "/admin", search: { empresa: id } });
+                }}
+                style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.3)", padding: "7px 10px", borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", maxWidth: 220 }}
+              >
+                {(empresasQ.data ?? []).map((e: any) => (
+                  <option key={e.id} value={e.id} style={{ color: ROXO_DARK }}>
+                    {e.nome}{!e.ativo ? " (inativa)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button onClick={() => { try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}; navigate({ to: "/super" }); }}
+                title="Voltar à Administração"
+                style={{ background: LARANJA, color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
+                <Crown size={13} /> Administração
+              </button>
+            </>
+          )}
           <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
         </div>
       </div>
+
+      {isSuper && empresaAtiva && (
+        <div style={{ background: ROXO_TINT, borderBottom: `1px solid ${BORDA}`, padding: "10px 18px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", fontSize: 12.5, color: ROXO_DARK }}>
+          <Crown size={14} color={ROXO} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            Você está como <strong>Super Admin</strong> visualizando <strong>{empresaAtiva.nome}</strong>
+            {!empresaAtiva.ativo && <span style={{ marginLeft: 8, color: VERMELHO, fontWeight: 700 }}>· EMPRESA INATIVA</span>}
+          </div>
+          <button onClick={() => { try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}; navigate({ to: "/super" }); }}
+            style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <Building2 size={12} /> Trocar empresa
+          </button>
+          <button onClick={() => { try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}; navigate({ to: "/super" }); }}
+            style={{ background: ROXO, color: "#fff", border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            Sair do contexto
+          </button>
+        </div>
+      )}
+
+
 
       <div data-pad style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
         <div data-tabs style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
