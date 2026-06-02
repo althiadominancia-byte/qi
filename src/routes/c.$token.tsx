@@ -137,13 +137,13 @@ function NivelBadge({ nivel }: any) {
 
 function HeaderRoxo({ titulo = "Processo Seletivo" }: { titulo?: string }) {
   return (
-    <div style={{ background: ROXO, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
+    <div style={{ background: ROXO, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
       <MarcaEstrela size={34} branca />
       <div style={{ lineHeight: 1 }}>
         <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 11, opacity: 0.85 }}>DISTRIBUIDORA</div>
         <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}>ESTRELA</div>
       </div>
-      <div style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}>
+      <div data-header-sub style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
         <Headphones size={15} /> {titulo}
       </div>
     </div>
