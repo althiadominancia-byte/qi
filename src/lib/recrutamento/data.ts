@@ -169,6 +169,8 @@ export type Situacao = { titulo: string; options: SitOpcao[] };
 
 export type Vaga = {
   id: string;
+  empresa_id?: string;
+  unidade_id?: string;
   titulo: string;
   setor: string;
   modelo: string;
