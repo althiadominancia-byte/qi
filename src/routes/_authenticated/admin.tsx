@@ -148,7 +148,8 @@ function AdminPage() {
       const { error } = await supabase.from("vagas").update(payload).eq("id", (v as any).id);
       if (error) { alert("Erro ao salvar: " + error.message); return; }
     } else {
-      const { error } = await supabase.from("vagas").insert(payload);
+      if (!empresaAtivaId) { alert("Selecione uma empresa antes de criar a vaga."); return; }
+      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId });
       if (error) { alert("Erro ao criar: " + error.message); return; }
     }
     setEditando(null);
