@@ -233,6 +233,11 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, color: st.cor, background: st.cor + "18", padding: "3px 10px", borderRadius: 99 }}>
                       <Circle size={7} fill={st.cor} color={st.cor} /> {st.label}
                     </span>
+                    {!(v as any).formulario_aprovado && (
+                      <span title="Formulário ainda não aprovado" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#9a6b00", background: "#FEF3C7", padding: "3px 9px", borderRadius: 99 }}>
+                        <AlertCircle size={11} /> Formulário não aprovado
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12.5, color: "#9b93b0", marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
                     <span>{v.setor}</span><span>{v.modelo} · {v.tipo}</span><span>{v.vagas} posição(ões)</span>
@@ -247,6 +252,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
               <LinkPublico vaga={v} />
               <div data-vaga-actions style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                 <button onClick={() => onEditar(v)} style={btnSec}><Pencil size={14} /> Editar perfil</button>
+                <button onClick={() => onPrevia(v)} style={btnSec}><FileText size={14} /> Prévia do formulário</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
               </div>
