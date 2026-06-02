@@ -1,35 +1,29 @@
-## Diagnóstico
+Plano para corrigir o problema certo: a análise não deve aparecer ao candidato; ela precisa aparecer completa no painel do recrutador.
 
-A ficha do candidato no admin (`Detalhe` em `src/routes/_authenticated/admin.tsx`) **já tem** todos os blocos completos: perfil DISC, postura, match, currículo embutido (PDF/imagem/Word) e a Análise de IA com aderência, experiências, pontos fortes, lacunas e perguntas para entrevista.
+1. Corrigir a causa principal do currículo não estar chegando ao backend
+- O banco mostra inscrições recentes com `cv_nome_arquivo` preenchido, mas `cv_storage_path` vazio e `cv_analise` vazio.
+- Isso indica que o formulário salvou apenas o nome do arquivo no rascunho local, mas no envio final não havia mais o objeto real do arquivo para fazer upload.
+- Vou ajustar o formulário para nunca tratar um nome salvo em cache como currículo real.
+- Se o candidato voltar ao formulário e o arquivo real não existir mais, o sistema vai pedir para anexar novamente antes de enviar.
 
-O motivo de aparecer só o "perfil comportamental" no print é que as colunas `cv_storage_path` e `cv_analise` do registro estão `NULL`. A causa é a alteração que tirou os cards de análise da tela de sucesso do candidato:
+2. Garantir que o upload do currículo seja obrigatório para gerar a análise
+- Na etapa de currículo/revisão, o botão de envio só ficará disponível quando houver um arquivo real selecionado.
+- No envio, se houver nome de currículo mas não houver arquivo real, o envio será bloqueado com mensagem clara para reanexar.
+- Assim não serão criadas novas inscrições “sem currículo” por perda de cache/aba/navegador.
 
-- Antes: o candidato ficava parado na tela vendo a análise rodar — o `void rodarAnalise(...)` no `src/routes/c.$token.tsx` tinha tempo de terminar e gravar `cv_analise`.
-- Agora: a tela mostra só "Inscrição enviada", o candidato fecha a aba, e a Promise do `analisarCv` (que roda no navegador) é abortada antes de chegar a fazer o `update cv_analise` no servidor. Resultado: análise nunca é persistida → bloco "Análise de currículo (IA)" some no admin.
+3. Corrigir a análise de PDF
+- O fluxo atual tenta extrair texto do PDF no navegador; isso está certo.
+- Vou impedir que PDF seja enviado para a IA como imagem quando a extração falhar, porque isso não funciona nesse gateway.
+- Para PDFs com texto extraível, a análise será feita pelo texto extraído e salva no candidato.
+- Para PDFs escaneados/sem texto extraível, o sistema vai informar que não conseguiu ler o conteúdo do PDF e não vai fingir uma análise completa.
 
-Confirmação extra: o bloco "Currículo enviado" do admin só renderiza se `c.cv_storage_path` existir. Se o upload tiver falhado silenciosamente (ou o candidato não enviou arquivo), o card também não aparece — então também precisamos garantir que erros de upload não passem despercebidos.
+4. Melhorar a aba Candidatos para o recrutador
+- O painel do recrutador já tem o bloco de análise completa, mas ele só aparece quando `cv_analise` existe.
+- Vou deixar mais explícito no detalhe do candidato quando faltar upload/análise, separando os casos:
+  - currículo não foi anexado de fato;
+  - currículo anexado, mas análise não disponível;
+  - análise disponível, exibindo resumo, experiências, pontos fortes, lacunas, aderência e perguntas de entrevista.
 
-## Plano de correção
-
-1. **Tornar a análise síncrona no envio** (`src/routes/c.$token.tsx`)
-   - No `enviarInscricao`, fazer `await rodarAnalise(...)` **antes** de chamar `setStep("resultado")`.
-   - Mostrar um estado intermediário "Analisando seu currículo…" enquanto roda (sem expor o resultado ao candidato — apenas um spinner com texto neutro).
-   - Se a análise falhar, ainda completar com sucesso (a inscrição já está gravada): só logar o erro e mostrar "Inscrição enviada" normalmente. O importante é não abortar a Promise por navegação prematura.
-
-2. **Garantir que o upload de CV não seja silencioso**
-   - Manter `throw upErr` (já existe), mas adicionar mensagem clara em `submitError` quando o upload falhar para o candidato refazer.
-   - Validar que `arquivoCv` exista antes de tentar análise (já está).
-
-3. **Pequeno ajuste no `Detalhe` do admin**
-   - Quando `c.cv_storage_path` existir mas `c.cv_analise` ainda for `null` (ex.: inscrições antigas feitas durante a janela quebrada), mostrar um aviso curto "Análise de currículo não disponível para esta inscrição" no lugar do bloco de IA, para o recrutador entender o estado.
-   - Sem mudanças no schema do banco.
-
-4. **Backfill opcional (não obrigatório)**
-   - Não vou mexer em dados existentes. As novas inscrições passam a gravar `cv_analise` corretamente. Caso queira reanalisar inscrições antigas, posso adicionar depois um botão "Reanalisar currículo" no `Detalhe` que chama `analisarCv` do admin.
-
-## Arquivos tocados
-
-- `src/routes/c.$token.tsx` — await da análise + estado "Analisando…".
-- `src/routes/_authenticated/admin.tsx` — aviso quando `cv_analise` está ausente mas existe CV.
-
-Sem migrations, sem mudanças em RLS, sem mudanças em server functions.
+5. Validar dados existentes
+- As inscrições antigas que já foram criadas sem `cv_storage_path` não têm arquivo salvo para analisar agora.
+- A correção garante que as próximas inscrições cheguem completas ao recrutador.

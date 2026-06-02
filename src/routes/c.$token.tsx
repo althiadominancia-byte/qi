@@ -251,7 +251,16 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
     if (s && s !== "resultado" && (s === "intro" || FLOW.includes(s))) return s;
     return "intro";
   });
-  const [a, setA] = useState<Record<string, any>>(() => saved.a ?? {});
+  // Ao retomar do localStorage, o File real do CV não é serializável e foi perdido.
+  // Limpamos o nome em cache para não dar a falsa impressão de currículo anexado.
+  const [a, setA] = useState<Record<string, any>>(() => {
+    const base = saved.a ?? {};
+    if (base && typeof base === "object" && base.cvNome) {
+      const { cvNome: _drop, ...rest } = base;
+      return rest;
+    }
+    return base;
+  });
   const set = (k: string, v: any) => setA((p) => ({ ...p, [k]: v }));
 
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -338,6 +347,14 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       let cvPath: string | null = null;
       let cvMime: string | null = null;
       const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      // Defesa: se há nome de currículo no estado mas o File real não está mais
+      // disponível (recarregou a aba), pedimos para reanexar antes de enviar.
+      if (!arquivoCv && a.cvNome) {
+        setSubmitError("Reanexe seu currículo: o arquivo foi perdido ao recarregar a página.");
+        setStep("curriculo");
+        setSubmitting(false);
+        return;
+      }
       if (arquivoCv) {
         const ext = arquivoCv.name.split(".").pop() ?? "bin";
         const empId = (vaga as any).empresa_id;
@@ -433,8 +450,17 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
           console.warn("PDF text extract falhou", e);
         }
       }
+      // Se for PDF e a extração de texto falhou, não enviamos o binário como image_url
+      // (esse gateway não consegue ler PDF nessa rota). Forçamos mimeType null para a
+      // análise rodar apenas com o texto extra do candidato — assim o recrutador
+      // ainda recebe um JSON consistente, mas marcado como aderência baixa.
+      const ehPdfSemTexto = !textoBruto && (cvMime === "application/pdf" || (arquivoCv && /\.pdf$/i.test(arquivoCv.name)));
+      const mimeFinal = textoBruto || ehPdfSemTexto ? null : cvMime;
+      const extraFinal = ehPdfSemTexto
+        ? textoExtra() + "\n\n[Aviso: o PDF anexado não tinha texto extraível (provavelmente foi escaneado). A análise abaixo baseia-se apenas nas informações que o próprio candidato digitou.]"
+        : textoExtra();
       const parsed = await analisarCv({
-        data: { candidatoId: candId, storagePath: cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
+        data: { candidatoId: candId, storagePath: cvPath, mimeType: mimeFinal, textoExtra: extraFinal, textoBruto, vagaContexto },
       });
       setCvAnalysis(parsed);
     } catch (e: any) {
