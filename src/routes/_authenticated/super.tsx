@@ -169,8 +169,8 @@ function SuperAdminPage() {
               empresa_id: empresas[0]?.id ?? null, todas_unidades: true,
               perms: { ...PRESET.recrutador }, ativo: true, unidades: [], _novo: true,
             })}
-            onEditar={(u) => setEditUser({ ...u, unidades: unidadesUsuario(u.id) })}
-            onToggle={async (u) => {
+            onEditar={(u: Usuario) => setEditUser({ ...u, unidades: unidadesUsuario(u.id) })}
+            onToggle={async (u: Usuario) => {
               try {
                 await toggleUserAtivo({ data: { id: u.id, ativo: !u.ativo } });
                 qc.invalidateQueries({ queryKey: ["super:usuarios"] });
