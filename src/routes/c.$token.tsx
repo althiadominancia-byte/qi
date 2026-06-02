@@ -492,12 +492,12 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
           <Card>
             <Titulo icon={MessageCircle} sub="Imagine que você já está na vaga. Escolha o que mais combina com você.">Situações reais de atendimento</Titulo>
             {SITUACIONAIS.map((q, i) => (
-              <div key={q.id} style={{ marginBottom: 22 }}>
+              <div key={i} style={{ marginBottom: 22 }}>
                 <div className="h" style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10, color: ROXO_DARK }}>
                   <span style={{ color: LARANJA }}>{i + 1}.</span> {q.titulo}
                 </div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {q.options.map((o) => <Pill key={o.key} ativo={a["sit_" + q.id] === o.key} onClick={() => set("sit_" + q.id, o.key)}>{o.txt}</Pill>)}
+                  {q.options.map((o, oi) => <Pill key={oi} ativo={a["sit_" + i] === "o" + oi} onClick={() => set("sit_" + i, "o" + oi)}>{o.txt}</Pill>)}
                 </div>
               </div>
             ))}
@@ -554,7 +554,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Linha k="Vaga" v={vaga.titulo} />
             <Linha k="Nome" v={a.nome} /><Linha k="E-mail" v={a.email} /><Linha k="Celular" v={a.celular} />
             <Linha k="Endereço" v={a.endereco || "—"} /><Linha k="Currículo" v={a.cvNome || "Não anexado"} />
-            {vaga.usar_situacional && <Linha k="Situações respondidas" v={`${SITUACIONAIS.filter((q) => a["sit_" + q.id]).length}/${SITUACIONAIS.length}`} />}
+            {usarSit && <Linha k="Situações respondidas" v={`${SITUACIONAIS.filter((_q, i) => a["sit_" + i]).length}/${SITUACIONAIS.length}`} />}
             <Linha k="Blocos DISC respondidos" v={`${discDone}/${DISC_BLOCKS.length}`} />
             <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "18px 0", fontSize: 12.5, color: CINZA, lineHeight: 1.5 }}>
               <input type="checkbox" checked={!!a.lgpd} onChange={(e) => set("lgpd", e.target.checked)} style={{ marginTop: 2 }} />
