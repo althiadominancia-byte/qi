@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, Wand2, Loader2, Plus, X, CheckCircle2, AlertCircle, Save, Send, Brain, MessageCircle, Link2, Copy, Check, ExternalLink } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
