@@ -47,7 +47,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("vagas").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Vaga[];
+      return (data ?? []) as unknown as Vaga[];
     },
   });
 
@@ -146,8 +146,8 @@ function AdminPage() {
           ? <ConstrutorVaga vaga={editando} onSave={salvarVaga} onCancel={() => setEditando(null)} />
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined } as any)}
-              onEditar={(v) => setEditando(v)}
-              onVerCand={(v) => { setVagaSel(v.id); setAba("candidatos"); }}
+              onEditar={(v: Vaga) => setEditando(v)}
+              onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
               onEncerrar={encerrarVaga} />
         )}
 
