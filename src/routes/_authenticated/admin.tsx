@@ -354,6 +354,11 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, color: st.cor, background: st.cor + "18", padding: "3px 10px", borderRadius: 99 }}>
                       <Circle size={7} fill={st.cor} color={st.cor} /> {st.label}
                     </span>
+                    {v.interna === false && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#2563EB", background: "#EFF6FF", padding: "3px 9px", borderRadius: 99 }}>
+                        Externa
+                      </span>
+                    )}
                     {!(v as any).formulario_aprovado && (
                       <span title="Formulário ainda não aprovado" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#9a6b00", background: "#FEF3C7", padding: "3px 9px", borderRadius: 99 }}>
                         <AlertCircle size={11} /> Formulário não aprovado
