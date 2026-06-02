@@ -352,15 +352,15 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         {ORDEM_PERFIS.map((k) => {
           const p = PERFIS[k], val = v.pesos[k], [rot, cor] = rotuloPeso(val);
           return (
-            <div key={k} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: `1px solid ${BORDA}` }}>
-              <div style={{ width: 160, flexShrink: 0 }}>
+            <div key={k} data-slider-row style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: `1px solid ${BORDA}` }}>
+              <div data-slider-label style={{ width: 160, flexShrink: 0 }}>
                 <div className="h" style={{ fontWeight: 700, fontSize: 13.5, color: p.cor, display: "flex", alignItems: "center", gap: 5 }}>
                   {p.nome} <InfoDot texto={p.plain} cor={p.cor} />
                 </div>
                 <div style={{ fontSize: 10.5, color: "#9b93b0", fontWeight: 600 }}>Perfil {p.dim}</div>
               </div>
               <input type="range" min={0} max={100} value={val} onChange={(e) => setPeso(k, Number(e.target.value))} style={{ flex: 1 }} />
-              <div style={{ width: 92, textAlign: "right", flexShrink: 0 }}>
+              <div data-slider-val style={{ width: 92, textAlign: "right", flexShrink: 0 }}>
                 <span className="h" style={{ fontWeight: 800, fontSize: 16, color: cor }}>{val}</span>
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: cor, marginLeft: 6 }}>{rot}</span>
               </div>
