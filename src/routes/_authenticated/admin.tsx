@@ -337,7 +337,26 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
         </div>
         <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Nº de posições"><input type="number" min={1} style={inp} value={v.vagas} onChange={(e) => set("vagas", Number(e.target.value))} /></CampoLabel>
-          <CampoLabel label="Status"><select style={inp} value={v.status} onChange={(e) => set("status", e.target.value)}><option>Rascunho</option><option>Aberta</option><option>Pausada</option><option>Fechada</option></select></CampoLabel>
+          <CampoLabel label="Status">
+            <select style={inp} value={v.status} onChange={(e) => {
+              const val = e.target.value;
+              if (val === "Aberta" && !v.formulario_aprovado) {
+                alert("Aprove o formulário na Prévia antes de abrir esta vaga.");
+                return;
+              }
+              set("status", val);
+            }}>
+              <option>Rascunho</option>
+              <option disabled={!v.formulario_aprovado}>Aberta{!v.formulario_aprovado ? " (aprove o formulário)" : ""}</option>
+              <option>Pausada</option>
+              <option>Fechada</option>
+            </select>
+            {!v.formulario_aprovado && (
+              <div style={{ fontSize: 11, color: "#9a6b00", marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                <AlertCircle size={12} /> Para abrir a vaga, aprove o formulário em <strong>Prévia do formulário</strong>.
+              </div>
+            )}
+          </CampoLabel>
         </div>
         <CampoLabel label="Data limite de inscrições (opcional)">
           <input type="date" style={inp} value={v.data_limite || ""} onChange={(e) => set("data_limite", e.target.value || null)} />
