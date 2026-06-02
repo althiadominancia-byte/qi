@@ -404,7 +404,7 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
           ))}
           {v.habilidades.length === 0 && <div style={{ fontSize: 12.5, color: "#9b93b0" }}>Nenhuma habilidade ainda.</div>}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+        <div data-hab-add style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           <input style={{ ...inp, flex: "1 1 160px" }} placeholder="Adicionar habilidade..." value={novaHab} onChange={(e) => setNovaHab(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addHab()} />
           <select value={nivelNovaHab} onChange={(e) => setNivelNovaHab(e.target.value as NivelHab)} style={selNivel(nivelNovaHab)}>
             <option value="essencial">Essencial</option><option value="importante">Importante</option><option value="desejavel">Desejável</option>
