@@ -367,8 +367,12 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       const sitResp: Record<string, string> = {};
       SITUACIONAIS.forEach((_q, i) => { if (a["sit_" + i]) sitResp["q" + i] = a["sit_" + i]; });
 
-      const { data: cand, error: insErr } = await supabase.from("candidatos_televendas").insert({
+      const candId = crypto.randomUUID();
+      const { error: insErr } = await supabase.from("candidatos_televendas").insert({
+        id: candId,
         vaga_id: vaga.id,
+        empresa_id: (vaga as any).empresa_id,
+        unidade_id: (vaga as any).unidade_id ?? null,
         nome: a.nome, email: a.email, celular: a.celular,
         endereco: a.endereco ?? null, setor_atual: a.setor ?? null, tempo_empresa: a.tempo ?? null,
         experiencia_texto: a.exp ?? null, motivacao_texto: a.motivo ?? null,
@@ -378,11 +382,11 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         perfil_key: r.key, perfil_nome: r.perfil.nome,
         match_final: r.finalMatch, match_label: r.label,
         lgpd_aceite: !!a.lgpd,
-      }).select("id").single();
+      });
       if (insErr) throw insErr;
 
       setStep("resultado"); window.scrollTo({ top: 0, behavior: "smooth" });
-      void rodarAnalise(cand!.id, cvPath, cvMime);
+      void rodarAnalise(candId, cvPath, cvMime);
     } catch (err: any) {
       setSubmitError(err.message || "Erro ao enviar inscrição.");
     } finally { setSubmitting(false); }
@@ -399,10 +403,9 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         textoBruto = r.value;
       }
       const parsed = await analisarCv({
-        data: { storagePath: textoBruto ? null : cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
+        data: { candidatoId: candId, storagePath: cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
       });
       setCvAnalysis(parsed);
-      await supabase.from("candidatos_televendas").update({ cv_analise: parsed }).eq("id", candId);
     } catch (e: any) {
       setCvError(e.message || "Não consegui analisar o currículo automaticamente.");
     } finally { setCvLoading(false); }
