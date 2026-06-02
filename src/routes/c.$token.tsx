@@ -230,8 +230,28 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
   const FLOW = useMemo(() => usarSit ? FLOW_BASE : FLOW_BASE.filter((s) => s !== "situacional"), [usarSit]);
   const FORM_STEPS = useMemo(() => usarSit ? FORM_BASE : FORM_BASE.filter((s) => s !== "situacional"), [usarSit]);
 
-  const [step, setStep] = useState("intro");
-  const [a, setA] = useState<Record<string, any>>({});
+  // Persistência local: se o candidato sair da tela (background do app, troca de aba,
+  // bloqueio do celular) e voltar depois, recuperamos onde parou em vez de reiniciar.
+  const STORAGE_KEY = `estrela:form:${vaga.id}`;
+  const loadSaved = (): { step?: string; a?: Record<string, any> } => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {}
+    return {};
+  };
+  const saved = useMemo(loadSaved, []);
+
+  const [step, setStep] = useState<string>(() => {
+    const s = saved.step;
+    // não retomamos na tela final; e só retomamos se for um passo válido do fluxo atual
+    if (s && s !== "resultado" && (s === "intro" || FLOW.includes(s))) return s;
+    return "intro";
+  });
+  const [a, setA] = useState<Record<string, any>>(() => saved.a ?? {});
   const set = (k: string, v: any) => setA((p) => ({ ...p, [k]: v }));
 
   const [cvFile, setCvFile] = useState<File | null>(null);
@@ -242,6 +262,33 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
   const [cvError, setCvError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  // Salva progresso a cada mudança de step/respostas. Não persistimos o arquivo do CV
+  // (objeto File não é serializável); o candidato precisa reanexar se sair na etapa do CV.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (step === "resultado") {
+      try { window.localStorage.removeItem(STORAGE_KEY); } catch {}
+      return;
+    }
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a })); } catch {}
+  }, [step, a, STORAGE_KEY]);
+
+  // Salva também quando a aba/app vai para background (iOS Safari/Android Chrome às vezes
+  // descartam a página sem disparar mais renders antes do unload).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const flush = () => {
+      if (step === "resultado") return;
+      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a })); } catch {}
+    };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("visibilitychange", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("visibilitychange", flush);
+    };
+  }, [step, a, STORAGE_KEY]);
 
   const idx = FLOW.indexOf(step);
   const formIdx = FORM_STEPS.indexOf(step);
