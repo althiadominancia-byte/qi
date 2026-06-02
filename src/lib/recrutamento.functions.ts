@@ -96,29 +96,70 @@ const GerarFormularioInput = z.object({
   titulo: z.string().min(1),
   setor: z.string().optional().default(""),
   descricao: z.string().optional().default(""),
+  modelo: z.string().optional().default(""),
+  tipo: z.string().optional().default(""),
+  experiencia: z.string().optional().default(""),
+  escolaridade: z.string().optional().default(""),
+  requisitos: z.string().optional().default(""),
+  habilidades: z.array(z.any()).optional().default([]),
+  competencias: z.array(z.any()).optional().default([]),
+  pesos: z.record(z.string(), z.number()).optional().default({}),
   modo: z.enum(["ambos", "disc", "situacoes"]).optional().default("ambos"),
   usar_situacional: z.boolean().optional().default(true),
 });
 
-const PROMPT_DISC = (titulo: string, setor: string, descricao: string) => `Você é especialista em DISC. Gere blocos de DISC FORÇADO (ipsativo) adaptados ao vocabulário e contexto da vaga.
+function ctxVaga(d: any): string {
+  const habs = Array.isArray(d.habilidades) && d.habilidades.length
+    ? d.habilidades.map((h: any) => typeof h === "string" ? h : `${h?.nome ?? ""}${h?.nivel ? ` (${h.nivel})` : ""}`).filter(Boolean).join(", ")
+    : "(não informadas)";
+  const comps = Array.isArray(d.competencias) && d.competencias.length ? d.competencias.join(", ") : "(não informadas)";
+  const pesos = d.pesos && Object.keys(d.pesos).length
+    ? Object.entries(d.pesos).map(([k, v]) => `${k}:${v}`).join(", ")
+    : "(padrão)";
+  return `Título: ${d.titulo}
+Setor/área: ${d.setor || "-"}
+Modelo: ${d.modelo || "-"} | Tipo: ${d.tipo || "-"}
+Experiência exigida: ${d.experiencia || "-"}
+Escolaridade: ${d.escolaridade || "-"}
+Requisitos: ${d.requisitos || "-"}
+Habilidades-chave: ${habs}
+Competências esperadas: ${comps}
+Perfil comportamental ideal (pesos 0-100): ${pesos}
+Descrição da vaga:
+${d.descricao || "(não informada)"}`;
+}
 
-ESTRUTURA INEGOCIÁVEL:
-- Gere exatamente 6 blocos.
-- Cada bloco tem EXATAMENTE 4 frases curtas, UMA de cada dimensão: D (Dominância), I (Influência), S (Estabilidade), C (Conformidade).
-- TODAS as 4 frases devem ser POSITIVAS, desejáveis e EQUILIBRADAS em desejabilidade — ninguém deve poder dizer que uma é "claramente melhor".
-- Português do Brasil, primeira pessoa, vocabulário do dia a dia da vaga.
+const PROMPT_DISC = (d: any) => `Você é especialista em DISC (Marston) aplicado à seleção. Gere blocos de DISC FORÇADO (ipsativo) ALTAMENTE ADAPTADOS ao vocabulário, rotina e desafios reais da vaga descrita abaixo. NÃO use frases genéricas — cada frase deve soar como algo que um profissional dessa função realmente diria sobre seu jeito de trabalhar no contexto específico (clientes, produtos, ferramentas, equipe, pressões típicas).
 
-Responda SOMENTE com JSON válido, sem markdown, neste formato exato:
+ESTRUTURA INEGOCIÁVEL (não altere):
+- Gere EXATAMENTE 6 blocos.
+- Cada bloco tem EXATAMENTE 4 frases, UMA de cada dimensão: D (Dominância), I (Influência), S (Estabilidade), C (Conformidade).
+- TODAS as 4 frases POSITIVAS, socialmente desejáveis e EQUILIBRADAS — nenhuma pode parecer "obviamente a melhor". Evite palavras-armadilha negativas.
+- Cada frase: 1ª pessoa, 8 a 16 palavras, vocabulário cotidiano do setor da vaga, CONCRETA (cita situação/objeto/pessoa real da rotina), sem chavões corporativos vazios ("proativo", "sinérgico").
+- Os 6 blocos devem cobrir contextos DIFERENTES da rotina (ex.: cliente difícil, prazo apertado, mudança de regra, conflito de equipe, decisão sob pressão, organização do próprio trabalho).
+- Português do Brasil, sem markdown.
+
+Responda SOMENTE com JSON válido neste formato exato:
 {"blocos":[{"opcoes":[{"dim":"D","txt":""},{"dim":"I","txt":""},{"dim":"S","txt":""},{"dim":"C","txt":""}]}]}
 
-VAGA: ${titulo} — setor ${setor || "-"}. Descrição: ${descricao || "(não informada)"}.`;
+CONTEXTO DA VAGA:
+${ctxVaga(d)}`;
 
-const PROMPT_SIT = (titulo: string, setor: string, descricao: string) => `Você é especialista em RH. Gere 4 situações REAIS típicas do dia a dia da vaga abaixo, com 4 opções de resposta cada uma, pontuadas: 100 (melhor postura), 70 (boa), 40 (fraca), 15 (ruim). As situações devem ser concretas, sem teor discriminatório e em PT-BR.
+const PROMPT_SIT = (d: any) => `Você é especialista em avaliação situacional (SJT) para seleção. Gere situações REAIS, ESPECÍFICAS e desafiadoras do dia a dia desta vaga — nada de cenários genéricos. Cada situação deve referenciar elementos concretos da função (clientes, ferramentas, prazos, regras, colegas, gestores) e colocar o candidato diante de um dilema verossímil.
 
-Responda SOMENTE com JSON válido, sem markdown, no formato exato:
+ESTRUTURA:
+- Gere EXATAMENTE 4 situações.
+- O campo "titulo" deve conter o ENUNCIADO completo da situação: 2 a 4 frases, 60 a 150 palavras, descrevendo cenário, envolvidos e a decisão que precisa ser tomada agora. (Pode começar com um título curto seguido de ":" e depois o enunciado.)
+- Cada situação tem EXATAMENTE 4 opções pontuadas: 100 (melhor postura), 70 (boa), 40 (fraca), 15 (ruim/risco real para o negócio).
+- Cada opção é uma AÇÃO concreta e plausível, 15 a 30 palavras. As 4 opções devem soar plausíveis — a errada não pode ser caricata.
+- Cubra ao longo das 4 situações: atendimento sob pressão, ética/integridade, autonomia vs. seguir processo, conflito interpessoal ou erro próprio/de colega.
+- Nada discriminatório, ilegal ou que peça dados sensíveis. Português do Brasil.
+
+Responda SOMENTE com JSON válido, sem markdown:
 {"situacoes":[{"titulo":"","options":[{"txt":"","pts":100},{"txt":"","pts":70},{"txt":"","pts":40},{"txt":"","pts":15}]}]}
 
-VAGA: ${titulo} — setor ${setor || "-"}. Descrição: ${descricao || "(não informada)"}.`;
+CONTEXTO DA VAGA:
+${ctxVaga(d)}`;
 
 function validaDisc(j: any): boolean {
   const b = j?.blocos;
@@ -160,7 +201,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let disc: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_DISC(data.titulo, data.setor, data.descricao) }]);
+          const j = await callGemini([{ type: "text", text: PROMPT_DISC(data) }]);
           if (validaDisc(j)) { disc = j.blocos; break; }
         } catch {}
       }
@@ -172,7 +213,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let sit: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_SIT(data.titulo, data.setor, data.descricao) }]);
+          const j = await callGemini([{ type: "text", text: PROMPT_SIT(data) }]);
           if (validaSit(j)) { sit = j.situacoes; break; }
         } catch {}
       }
