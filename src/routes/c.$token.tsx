@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { analisarCv } from "@/lib/recrutamento.functions";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, ROXO_TINT2, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE,
-  DISC_BLOCKS, SITUACIONAIS, DIM_INFO,
+  DIM_INFO, getDiscBlocks, getSituacoes,
   COR_RACA, GENERO, ORIENTACAO, PCD, POLITICO,
   computeResults, corNivel, efetivamenteEncerrada,
   type Vaga,
