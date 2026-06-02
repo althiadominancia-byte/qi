@@ -151,20 +151,20 @@ function AdminPage() {
         }
       `}</style>
 
-      <div style={{ background: ROXO, padding: "15px 22px", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
         <MarcaEstrela size={32} branca />
-        <div style={{ lineHeight: 1 }}>
-          <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>DISTRIBUIDORA ESTRELA</div>
+        <div style={{ lineHeight: 1, minWidth: 0 }}>
+          <div data-header-sub className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>DISTRIBUIDORA ESTRELA</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Painel do Recrutador</div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 12, alignItems: "center", color: "#fff" }}>
-          <span style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
-          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5 }}><LogOut size={13} /> Sair</button>
+          <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
+          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
         </div>
       </div>
 
-      <div style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
-        <div style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
+      <div data-pad style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
+        <div data-tabs style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
           {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users], ["diversidade", "Diversidade (agregado)", BarChart3]] as const).map(([k, t, Ic]) => (
             <button key={k} onClick={() => { setAba(k as any); setEditando(null); }} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
