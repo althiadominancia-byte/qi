@@ -108,10 +108,48 @@ function AdminPage() {
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        *{box-sizing:border-box} .h{font-family:'Outfit',sans-serif}
+        *{box-sizing:border-box} html,body{overflow-x:hidden;max-width:100vw} .h{font-family:'Outfit',sans-serif}
         input:focus,select:focus,textarea:focus{outline:none;border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT}}
-        input[type=range]{accent-color:${ROXO}}
-        @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}`}</style>
+        input[type=range]{accent-color:${ROXO};min-height:36px}
+        @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}
+        @media (max-width:640px){
+          input,select,textarea{font-size:16px !important}
+          [data-pad]{padding:0 12px !important}
+          [data-grid]{grid-template-columns:1fr !important}
+          [data-tabs]{flex-wrap:nowrap !important;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          [data-tabs]::-webkit-scrollbar{display:none}
+          [data-tabs] button{flex-shrink:0;min-height:44px}
+          [data-header-sub]{display:none !important}
+          [data-link-row]{flex-wrap:wrap !important;gap:8px !important}
+          [data-link-row] > code{flex:1 1 100% !important;white-space:normal !important;word-break:break-all;overflow:visible !important;text-overflow:clip !important}
+          [data-link-row] > button,[data-link-row] > span{width:100% !important;justify-content:center !important;min-height:44px;text-align:center}
+          [data-vaga-actions]{flex-direction:column !important}
+          [data-vaga-actions] button{width:100% !important;justify-content:center !important;min-height:44px}
+          [data-slider-row]{flex-wrap:wrap !important;gap:8px !important;padding:14px 0 !important}
+          [data-slider-row] > [data-slider-label]{flex:1 1 100% !important;width:auto !important}
+          [data-slider-row] > input[type=range]{flex:1 1 100% !important;width:100% !important}
+          [data-slider-row] > [data-slider-val]{width:auto !important;text-align:left !important;flex:0 0 auto}
+          [data-drawer]{width:100% !important;max-width:100% !important}
+          [data-drawer-close]{min-width:44px;min-height:44px}
+          [data-mini-row]{flex-direction:column !important}
+          [data-mini-row] > div{flex:1 1 auto !important;width:100%}
+          [data-cand-row]{flex-wrap:wrap !important;gap:10px !important}
+          [data-cand-row] > [data-cand-main]{flex:1 1 calc(100% - 56px) !important;min-width:0}
+          [data-cand-row] > [data-cand-perfil]{order:5}
+          [data-cand-row] > [data-cand-match]{order:6;margin-left:auto}
+          [data-cand-row] > [data-cand-arrow]{order:7}
+          [data-ai-card]{flex-direction:column !important;align-items:stretch !important}
+          [data-ai-card] > button{width:100% !important;justify-content:center !important;min-height:44px}
+          [data-vaga-meta]{font-size:11.5px !important;gap:8px !important}
+          [data-filtros]{flex-direction:column !important;align-items:stretch !important}
+          [data-filtros] > *{width:100% !important;flex:1 1 100% !important}
+          [data-vaga-sel] select{width:100% !important;min-width:0 !important}
+          [data-save-row]{flex-direction:column !important}
+          [data-save-row] button{width:100% !important;justify-content:center !important;min-height:48px}
+          [data-hab-add]{flex-wrap:wrap !important}
+          [data-hab-add] > input{flex:1 1 100% !important}
+        }
+      `}</style>
 
       <div style={{ background: ROXO, padding: "15px 22px", display: "flex", alignItems: "center", gap: 12 }}>
         <MarcaEstrela size={32} branca />
