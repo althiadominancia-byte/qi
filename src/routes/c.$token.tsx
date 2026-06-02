@@ -384,23 +384,26 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
 
       <HeaderRoxo titulo={vaga.titulo} />
 
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
+      <div data-pad style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
         {formIdx >= 0 && (
           <div style={{ margin: "22px 0 26px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9 }}>
+            <div data-step-counter style={{ fontSize: 12, fontWeight: 700, color: ROXO, marginBottom: 8, letterSpacing: 1 }}>
+              ETAPA {formIdx + 1} DE {FORM_STEPS.length} — {STEP_META[FORM_STEPS[formIdx]].n}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, gap: 4 }}>
               {FORM_STEPS.map((s, i) => {
                 const Ic = STEP_META[s].icon;
                 const done = i < formIdx, cur = i === formIdx;
                 return (
-                  <div key={s} style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{
+                  <div key={s} style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
+                    <div data-step-circle style={{
                       width: 34, height: 34, borderRadius: 99, margin: "0 auto 5px",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       background: done ? LARANJA : cur ? ROXO : "#fff",
                       border: `2px solid ${done ? LARANJA : cur ? ROXO : BORDA}`,
                       color: done || cur ? "#fff" : "#B6AECB",
-                    }}>{done ? <CheckCircle2 size={17} /> : <Ic size={16} />}</div>
-                    <div style={{ fontSize: 10.5, fontWeight: cur ? 700 : 500, color: cur ? ROXO : "#9b93b0" }}>{STEP_META[s].n}</div>
+                    }}>{done ? <CheckCircle2 size={15} /> : <Ic size={14} />}</div>
+                    <div data-step-label style={{ fontSize: 10.5, fontWeight: cur ? 700 : 500, color: cur ? ROXO : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{STEP_META[s].n}</div>
                   </div>
                 );
               })}
