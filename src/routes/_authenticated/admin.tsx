@@ -119,8 +119,8 @@ function AdminPage() {
   const diversidadeQ = useQuery({
     queryKey: ["diversidade", empresaAtivaId ?? "all"],
     queryFn: async () => {
-      let q = supabase.from("diversidade_candidatos").select("raca,genero,orientacao,pcd,politico,empresa_id" as any).limit(2000);
-      if (empresaAtivaId) q = (q as any).eq("empresa_id", empresaAtivaId);
+      let q: any = supabase.from("diversidade_candidatos").select("raca,genero,orientacao,pcd,politico").limit(2000);
+      if (empresaAtivaId) q = q.eq("empresa_id", empresaAtivaId);
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as DivRow[];
