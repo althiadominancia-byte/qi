@@ -358,8 +358,29 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       minHeight: "100vh", color: ROXO_DARK, padding: "0 0 48px",
     }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        *{box-sizing:border-box} input:focus,select:focus,textarea:focus{border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT2}}
-        .h{font-family:'Outfit',sans-serif} @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}`}</style>
+        *{box-sizing:border-box} html,body{overflow-x:hidden;max-width:100vw} input:focus,select:focus,textarea:focus{border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT2}}
+        .h{font-family:'Outfit',sans-serif} @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}
+        [data-step-counter]{display:none}
+        @media (max-width:640px){
+          input,select,textarea{font-size:16px !important}
+          [data-pad]{padding:0 12px !important}
+          [data-grid]{grid-template-columns:1fr !important}
+          [data-nav]{flex-direction:column-reverse !important;align-items:stretch !important;gap:10px}
+          [data-nav] button{width:100% !important;justify-content:center !important;min-height:48px}
+          [data-disc-row]{flex-wrap:wrap !important}
+          [data-disc-row] > span{flex:1 1 100% !important;order:-1;margin-bottom:4px}
+          [data-disc-row] > button{flex:1 1 calc(50% - 4px) !important;min-height:44px;justify-content:center;text-align:center}
+          [data-mini-row]{flex-direction:column !important}
+          [data-mini-row] > div{flex:1 1 auto !important;width:100%}
+          [data-step-label]{display:none !important}
+          [data-step-counter]{display:block !important}
+          [data-step-circle]{width:24px !important;height:24px !important;border-width:2px !important}
+          [data-header-sub]{display:none !important}
+          [data-card]{padding:16px !important;border-radius:14px !important}
+          [data-result-head]{flex-direction:column !important;align-items:center !important;text-align:center}
+          [data-disc-bar-label]{width:72px !important;font-size:11px !important}
+        }
+      `}</style>
 
       <HeaderRoxo titulo={vaga.titulo} />
 
