@@ -419,6 +419,7 @@ export type Database = {
         Returns: boolean
       }
       user_has_perm: { Args: { _perm: string }; Returns: boolean }
+      vaga_aceita_inscricao: { Args: { _vaga_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "recrutador"

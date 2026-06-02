@@ -349,13 +349,14 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       }
 
       if (a.raca || a.genero || a.orientacao || a.pcd || a.politico) {
-        await supabase.from("diversidade_candidatos").insert({
+        const { error: divErr } = await supabase.from("diversidade_candidatos").insert({
           vaga_id: vaga.id,
           empresa_id: (vaga as any).empresa_id,
           unidade_id: (vaga as any).unidade_id ?? null,
           raca: a.raca ?? null, genero: a.genero ?? null,
           orientacao: a.orientacao ?? null, pcd: a.pcd ?? null, politico: a.politico ?? null,
         });
+        if (divErr) throw divErr;
       }
 
       const discResp: Record<string, any> = {};
