@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Distribuidora Estrela" },
+      { name: "description", content: "Recrutamento e seleção" },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Distribuidora Estrela" },
+      { property: "og:description", content: "Recrutamento e seleção" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Distribuidora Estrela" },
+      { name: "twitter:description", content: "Recrutamento e seleção" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/lkXCLiEMqmORbkO8rz8Gmuv8biU2/social-images/social-1780432796794-Logo_Estrela_2x_(1).webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/lkXCLiEMqmORbkO8rz8Gmuv8biU2/social-images/social-1780432796794-Logo_Estrela_2x_(1).webp" },
     ],
     links: [
       {
