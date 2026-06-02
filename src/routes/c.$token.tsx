@@ -446,7 +446,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
           <Card>
             <Titulo icon={User} sub="Para entrarmos em contato com você.">Seus dados</Titulo>
             <Campo icon={User} label="Nome completo" obrig><input style={inputStyle} value={a.nome || ""} onChange={(e) => set("nome", e.target.value)} placeholder="Seu nome" /></Campo>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <Campo icon={Mail} label="E-mail" obrig><input style={inputStyle} type="email" value={a.email || ""} onChange={(e) => set("email", e.target.value)} placeholder="voce@email.com" /></Campo>
               <Campo icon={Phone} label="Celular / WhatsApp" obrig><input style={inputStyle} value={a.celular || ""} onChange={(e) => set("celular", e.target.value)} placeholder="(96) 9 9999-9999" /></Campo>
             </div>
