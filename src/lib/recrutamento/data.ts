@@ -190,6 +190,7 @@ export type Vaga = {
   disc_blocks: DiscBlock[];
   situacoes: Situacao[];
   formulario_aprovado: boolean;
+  interna: boolean;
   created_at?: string;
 };
 
