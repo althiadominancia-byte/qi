@@ -201,7 +201,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let disc: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_DISC(data.titulo, data.setor, data.descricao) }]);
+          const j = await callGemini([{ type: "text", text: PROMPT_DISC(data) }]);
           if (validaDisc(j)) { disc = j.blocos; break; }
         } catch {}
       }
