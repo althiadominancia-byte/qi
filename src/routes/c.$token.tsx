@@ -526,13 +526,13 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem)">
               <div style={{ border: `2px dashed ${cvFile ? ROXO : BORDA}`, borderRadius: 13, padding: 22, textAlign: "center", background: ROXO_TINT }}>
                 <Upload size={26} color={ROXO} style={{ marginBottom: 8 }} />
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK, overflowWrap: "anywhere", wordBreak: "break-word" }}>
                   {cvProcessando ? "Processando arquivo..." : a.cvNome ? `📎 ${a.cvNome}` : "Clique para selecionar o arquivo"}
                 </div>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.heic,.heif,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  style={{ marginTop: 10, fontSize: 12 }}
+                  style={{ marginTop: 10, fontSize: 12, maxWidth: "100%", display: "block", marginInline: "auto" }}
                   onChange={async (e) => {
                     const f = e.target.files && e.target.files[0];
                     setCvAnalysis(null); setCvError(""); setCvPrep(null);
