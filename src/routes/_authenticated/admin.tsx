@@ -524,6 +524,10 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
+        <label style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13, color: ROXO_DARK, marginTop: 6, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!v.interna} onChange={(e) => set("interna", e.target.checked)} />
+          <strong>Vaga interna</strong> — apenas colaboradores da empresa podem se candidatar (exibe setor/função e tempo de empresa no formulário)
+        </label>
         <CampoLabel label="Unidade">
           <select style={inp} value={v.unidade_id || ""} onChange={(e) => set("unidade_id", e.target.value)}>
             <option value="" disabled>Selecione a unidade</option>

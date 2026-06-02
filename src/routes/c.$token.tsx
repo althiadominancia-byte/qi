@@ -513,14 +513,16 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <Campo icon={Phone} label="Celular / WhatsApp" obrig><input style={inputStyle} value={a.celular || ""} onChange={(e) => set("celular", e.target.value)} placeholder="(96) 9 9999-9999" /></Campo>
             </div>
             <Campo icon={MapPin} label="Endereço (bairro e cidade)"><input style={inputStyle} value={a.endereco || ""} onChange={(e) => set("endereco", e.target.value)} placeholder="Bairro, Cidade - UF" /></Campo>
-            <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
-              <Campo label="Tempo de empresa">
-                <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
-                  <option value="">Selecione</option><option>Menos de 6 meses</option><option>6 meses a 1 ano</option><option>1 a 3 anos</option><option>Mais de 3 anos</option>
-                </select>
-              </Campo>
-            </div>
+            {vaga.interna !== false && (
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
+                <Campo label="Tempo de empresa">
+                  <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
+                    <option value="">Selecione</option><option>Menos de 6 meses</option><option>6 meses a 1 ano</option><option>1 a 3 anos</option><option>Mais de 3 anos</option>
+                  </select>
+                </Campo>
+              </div>
+            )}
             <Nav back={back} next={next} pode={podeAvancar} />
           </Card>
         )}
