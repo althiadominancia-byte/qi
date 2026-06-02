@@ -417,6 +417,10 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
   const [gerando, setGerando] = useState(false);
   const [erroIA, setErroIA] = useState("");
 
+  useEffect(() => {
+    if (!v.unidade_id && unidades[0]?.id) set("unidade_id", unidades[0].id);
+  }, [unidades, v.unidade_id]);
+
   const base = v.pesos[simPerfil];
   const matchSim = Math.round(base * 0.6 + simPostura * 0.4);
   const corSim = corMatch(matchSim);
