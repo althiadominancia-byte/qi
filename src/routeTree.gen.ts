@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
 
@@ -35,6 +36,11 @@ const CTokenRoute = CTokenRouteImport.update({
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
+  id: '/super',
+  path: '/super',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
 }
@@ -66,20 +74,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/_authenticated/previa/$id': typeof AuthenticatedPreviaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/admin' | '/c/$token' | '/previa/$id'
+  fullPaths: '/' | '/auth' | '/admin' | '/super' | '/c/$token' | '/previa/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/admin' | '/c/$token' | '/previa/$id'
+  to: '/' | '/auth' | '/admin' | '/super' | '/c/$token' | '/previa/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/_authenticated/super'
     | '/c/$token'
     | '/_authenticated/previa/$id'
   fileRoutesById: FileRoutesById
@@ -121,6 +131,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/super': {
+      id: '/_authenticated/super'
+      path: '/super'
+      fullPath: '/super'
+      preLoaderRoute: typeof AuthenticatedSuperRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -140,11 +157,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
   AuthenticatedPreviaIdRoute: typeof AuthenticatedPreviaIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedSuperRoute: AuthenticatedSuperRoute,
   AuthenticatedPreviaIdRoute: AuthenticatedPreviaIdRoute,
 }
 
