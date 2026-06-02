@@ -44,6 +44,7 @@ const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", border: 
 
 function AdminPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [aba, setAba] = useState<"vagas" | "candidatos" | "diversidade">("vagas");
   const [editando, setEditando] = useState<Vaga | null>(null);
   const [vagaSel, setVagaSel] = useState<string | null>(null);
@@ -53,33 +54,78 @@ function AdminPage() {
   const fetchScope = useServerFn(getMyScope);
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
+  const isSuper = scope?.role === "super_admin";
+
+  // Empresa ativa: super_admin escolhe via ?empresa=; outros são fixados pela própria empresa.
+  const empresaAtivaId = isSuper ? (search.empresa ?? null) : (scope?.empresa_id ?? null);
+
+  // super_admin sem empresa selecionada → volta para Administração
+  useEffect(() => {
+    if (scopeQ.isSuccess && isSuper && !search.empresa) {
+      // Tenta recuperar última empresa visitada
+      let last: string | null = null;
+      try { last = sessionStorage.getItem("empresa_ativa_id"); } catch {}
+      if (last) {
+        navigate({ to: "/admin", search: { empresa: last }, replace: true });
+      } else {
+        navigate({ to: "/super", replace: true });
+      }
+    }
+  }, [scopeQ.isSuccess, isSuper, search.empresa, navigate]);
+
+  // Persistir empresa ativa
+  useEffect(() => {
+    if (isSuper && search.empresa) {
+      try { sessionStorage.setItem("empresa_ativa_id", search.empresa); } catch {}
+    }
+  }, [isSuper, search.empresa]);
+
+  // Lista de empresas (apenas super_admin precisa do seletor)
+  const empresasQ = useQuery({
+    queryKey: ["empresas:list"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("empresas").select("id, nome, ativo").order("nome");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: isSuper,
+  });
+  const empresaAtiva = (empresasQ.data ?? []).find((e: any) => e.id === empresaAtivaId) ?? null;
 
   const vagasQ = useQuery({
-    queryKey: ["vagas"],
+    queryKey: ["vagas", empresaAtivaId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("vagas").select("*").order("created_at", { ascending: false });
+      let q = supabase.from("vagas").select("*").order("created_at", { ascending: false });
+      if (empresaAtivaId) q = q.eq("empresa_id", empresaAtivaId);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as unknown as Vaga[];
     },
+    enabled: !isSuper || !!empresaAtivaId,
   });
 
   const candidatosQ = useQuery({
-    queryKey: ["candidatos"],
+    queryKey: ["candidatos", empresaAtivaId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("candidatos_televendas").select("*").order("created_at", { ascending: false }).limit(1000);
+      let q = supabase.from("candidatos_televendas").select("*").order("created_at", { ascending: false }).limit(1000);
+      if (empresaAtivaId) q = q.eq("empresa_id", empresaAtivaId);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as Candidato[];
     },
+    enabled: !isSuper || !!empresaAtivaId,
   });
 
   const diversidadeQ = useQuery({
-    queryKey: ["diversidade"],
+    queryKey: ["diversidade", empresaAtivaId ?? "all"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("diversidade_candidatos").select("raca,genero,orientacao,pcd,politico").limit(2000);
+      let q = supabase.from("diversidade_candidatos").select("raca,genero,orientacao,pcd,politico,empresa_id" as any).limit(2000);
+      if (empresaAtivaId) q = (q as any).eq("empresa_id", empresaAtivaId);
+      const { data, error } = await q;
       if (error) throw error;
       return (data ?? []) as DivRow[];
     },
-    enabled: aba === "diversidade",
+    enabled: aba === "diversidade" && (!isSuper || !!empresaAtivaId),
   });
 
   const vagas = vagasQ.data ?? [];
@@ -88,6 +134,7 @@ function AdminPage() {
   useEffect(() => {
     if (!vagaSel && vagas[0]) setVagaSel(vagas[0].id);
   }, [vagas, vagaSel]);
+
 
   async function salvarVaga(v: Vaga | (Omit<Vaga, "id" | "link_token"> & { id?: string; link_token?: string })) {
     const payload: any = {
