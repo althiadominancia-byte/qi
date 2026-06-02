@@ -340,7 +340,8 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       const arquivoCv = cvPrep?.arquivo ?? cvFile;
       if (arquivoCv) {
         const ext = arquivoCv.name.split(".").pop() ?? "bin";
-        const path = `${crypto.randomUUID()}.${ext}`;
+        const empId = (vaga as any).empresa_id;
+        const path = `${empId}/${vaga.id}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, { contentType: arquivoCv.type || undefined, cacheControl: "3600" });
         if (upErr) throw upErr;
         cvPath = path;
