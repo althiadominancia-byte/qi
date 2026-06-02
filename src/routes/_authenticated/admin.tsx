@@ -468,7 +468,7 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
 
   return (
     <>
-      <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+      <div data-vaga-sel style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <span style={{ fontSize: 12.5, fontWeight: 600, color: CINZA }}>Vaga:</span>
         <select value={vagaSel || ""} onChange={(e) => setVagaSel(e.target.value)} style={{ ...inp, width: "auto", minWidth: 220, fontWeight: 700, color: ROXO_DARK }}>
           {vagas.map((v: Vaga) => <option key={v.id} value={v.id}>{v.titulo} ({v.status})</option>)}
@@ -481,7 +481,7 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
         <ResumoCard icon={Award} cor={VERDE} v={nAlto} l="Match alto (≥70%)" />
       </div>
 
-      <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 14, marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+      <div data-filtros style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 14, marginBottom: 14, display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
         <div style={{ position: "relative", flex: "1 1 200px" }}>
           <Search size={15} color="#9b93b0" style={{ position: "absolute", left: 11, top: 11 }} />
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar por nome..." style={{ ...inp, padding: "9px 12px 9px 32px" }} />
@@ -499,9 +499,9 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
           const p = c.perfil_key && (PERFIS as any)[c.perfil_key];
           const match = c.match ?? 0;
           return (
-            <button type="button" key={c.id} onClick={() => onAbrir(c)} style={{
+            <button type="button" key={c.id} onClick={() => onAbrir(c)} data-cand-row style={{
               display: "flex", alignItems: "center", gap: 14, textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-              background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 13, padding: "13px 16px",
+              background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 13, padding: "13px 16px", width: "100%",
             }}>
               <div style={{ width: 42, height: 42, borderRadius: 99, background: ROXO_TINT, color: ROXO, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, flexShrink: 0 }} className="h">
                 {c.nome.split(" ").map((n: string) => n[0]).slice(0, 2).join("")}
