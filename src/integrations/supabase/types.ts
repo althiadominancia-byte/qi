@@ -38,6 +38,7 @@ export type Database = {
           setor_atual: string | null
           situacionais: Json
           tempo_empresa: string | null
+          vaga_id: string | null
         }
         Insert: {
           celular: string
@@ -62,6 +63,7 @@ export type Database = {
           setor_atual?: string | null
           situacionais?: Json
           tempo_empresa?: string | null
+          vaga_id?: string | null
         }
         Update: {
           celular?: string
@@ -86,8 +88,17 @@ export type Database = {
           setor_atual?: string | null
           situacionais?: Json
           tempo_empresa?: string | null
+          vaga_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "candidatos_televendas_vaga_id_fkey"
+            columns: ["vaga_id"]
+            isOneToOne: false
+            referencedRelation: "vagas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       diversidade_candidatos: {
         Row: {
@@ -137,6 +148,75 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vagas: {
+        Row: {
+          competencias: Json
+          created_at: string
+          created_by: string | null
+          data_limite: string | null
+          descricao: string
+          escolaridade: string
+          experiencia: string
+          habilidades: Json
+          id: string
+          link_token: string
+          modelo: string
+          pesos: Json
+          requisitos: string
+          setor: string
+          status: string
+          tipo: string
+          titulo: string
+          updated_at: string
+          usar_situacional: boolean
+          vagas: number
+        }
+        Insert: {
+          competencias?: Json
+          created_at?: string
+          created_by?: string | null
+          data_limite?: string | null
+          descricao?: string
+          escolaridade?: string
+          experiencia?: string
+          habilidades?: Json
+          id?: string
+          link_token?: string
+          modelo?: string
+          pesos?: Json
+          requisitos?: string
+          setor?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          usar_situacional?: boolean
+          vagas?: number
+        }
+        Update: {
+          competencias?: Json
+          created_at?: string
+          created_by?: string | null
+          data_limite?: string | null
+          descricao?: string
+          escolaridade?: string
+          experiencia?: string
+          habilidades?: Json
+          id?: string
+          link_token?: string
+          modelo?: string
+          pesos?: Json
+          requisitos?: string
+          setor?: string
+          status?: string
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+          usar_situacional?: boolean
+          vagas?: number
         }
         Relationships: []
       }
