@@ -32,7 +32,7 @@ const tagBtn = (on: boolean, cor: string): React.CSSProperties => ({
   border: `1.5px solid ${on ? cor : BORDA}`, background: on ? cor : "#fff", color: on ? "#fff" : CINZA, fontFamily: "inherit",
 });
 
-function Card({ children }: any) { return <div style={{ background: "#fff", borderRadius: 18, padding: 24, border: `1px solid ${BORDA}`, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)", marginBottom: 14 }}>{children}</div>; }
+function Card({ children }: any) { return <div data-card style={{ background: "#fff", borderRadius: 18, padding: 24, border: `1px solid ${BORDA}`, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)", marginBottom: 14 }}>{children}</div>; }
 function Badge({ children }: any) { return <span style={{ fontSize: 11.5, fontWeight: 700, background: LARANJA_TINT, color: LARANJA, padding: "5px 11px", borderRadius: 99, letterSpacing: 0.5 }}>{children}</span>; }
 function Titulo({ icon: Icon, children, sub }: any) {
   return (
