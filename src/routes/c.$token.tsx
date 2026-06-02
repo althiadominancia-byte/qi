@@ -235,6 +235,8 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
   const set = (k: string, v: any) => setA((p) => ({ ...p, [k]: v }));
 
   const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvPrep, setCvPrep] = useState<CvPreparado | null>(null);
+  const [cvProcessando, setCvProcessando] = useState(false);
   const [cvAnalysis, setCvAnalysis] = useState<any>(null);
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState("");
