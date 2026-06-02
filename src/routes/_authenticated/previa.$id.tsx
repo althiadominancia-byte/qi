@@ -119,6 +119,8 @@ function PreviaPage() {
       const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token").maybeSingle();
       if (error) throw error;
       setAprovado(publicar); setDirty(false);
+      qc.invalidateQueries({ queryKey: ["vagas"] });
+      qc.invalidateQueries({ queryKey: ["vaga-previa", id] });
       if (publicar) {
         const token = (updated as any)?.link_token || (vaga as any)?.link_token;
         if (token) {
