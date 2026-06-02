@@ -694,7 +694,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei 13.709/2018).</span>
             </label>
             {submitError && <div style={{ fontSize: 12.5, color: "#B91C1C", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: 11, marginBottom: 10 }}>{submitError}</div>}
-            <Nav back={back} next={next} pode={!!a.lgpd && !submitting} textoNext={submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
+            <Nav back={back} next={next} pode={!!a.lgpd && !submitting && !cvLoading} textoNext={cvLoading ? "Analisando currículo..." : submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
           </Card>
         )}
 
