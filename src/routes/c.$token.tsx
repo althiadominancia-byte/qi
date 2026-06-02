@@ -347,6 +347,14 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
       let cvPath: string | null = null;
       let cvMime: string | null = null;
       const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      // Defesa: se há nome de currículo no estado mas o File real não está mais
+      // disponível (recarregou a aba), pedimos para reanexar antes de enviar.
+      if (!arquivoCv && a.cvNome) {
+        setSubmitError("Reanexe seu currículo: o arquivo foi perdido ao recarregar a página.");
+        setStep("curriculo");
+        setSubmitting(false);
+        return;
+      }
       if (arquivoCv) {
         const ext = arquivoCv.name.split(".").pop() ?? "bin";
         const empId = (vaga as any).empresa_id;
