@@ -60,7 +60,7 @@ Regras: foque no que importa para a vaga. No máximo 3 experiências mais releva
       userContent.push({ type: "text", text: INSTRUCAO + "\n\nDESCRIÇÃO FORNECIDA PELO CANDIDATO:\n" + (data.textoExtra || "Nenhuma informação adicional foi fornecida.") });
     }
     const analysis = await callGemini(userContent);
-    if (data.candidatoId) {
+    if (data.candidatoId && data.storagePath) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: candidato, error: candError } = await supabaseAdmin
         .from("candidatos_televendas")
