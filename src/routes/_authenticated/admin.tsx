@@ -334,13 +334,13 @@ function ConstrutorVaga({ vaga, onSave, onCancel }: { vaga: any; onSave: (v: any
       </CardBox>
 
       <CardBox destaque>
-        <div style={{ display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
+        <div data-ai-card style={{ display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
           <div style={{ width: 40, height: 40, borderRadius: 11, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Wand2 size={20} color={ROXO} /></div>
-          <div style={{ flex: 1, minWidth: 210 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div className="h" style={{ fontWeight: 800, fontSize: 15, color: ROXO_DARK }}>Gerar o perfil da vaga com IA</div>
             <div style={{ fontSize: 12.5, color: CINZA, marginTop: 2 }}>A partir dos dados acima, a IA sugere pesos, habilidades, competências, experiência e requisitos — você só ajusta.</div>
           </div>
-          <button onClick={gerarIA} disabled={gerando} style={{ background: gerando ? "#D8D2E6" : LARANJA, color: "#fff", border: "none", padding: "11px 18px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: gerando ? "default" : "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit", flexShrink: 0 }}>
+          <button onClick={gerarIA} disabled={gerando} style={{ background: gerando ? "#D8D2E6" : LARANJA, color: "#fff", border: "none", padding: "11px 18px", borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: gerando ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", flexShrink: 0, minHeight: 44 }}>
             {gerando ? <><Loader2 size={16} className="spin" /> Gerando...</> : <><Wand2 size={16} /> Gerar com IA</>}
           </button>
         </div>
