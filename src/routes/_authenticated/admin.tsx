@@ -385,22 +385,86 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
   );
 }
 
+const DOMINIO_PUBLICO = "https://recrutamento.distribuidoraestrela.com";
+const SHORT_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+function genShortCode(len = 6) {
+  let s = "";
+  const buf = new Uint32Array(len);
+  crypto.getRandomValues(buf);
+  for (let i = 0; i < len; i++) s += SHORT_ALPHABET[buf[i] % SHORT_ALPHABET.length];
+  return s;
+}
+function genLinkToken() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 function LinkPublico({ vaga }: { vaga: Vaga }) {
+  const qc = useQueryClient();
   const [copiado, setCopiado] = useState(false);
+  const [regenerando, setRegenerando] = useState(false);
+  const [erro, setErro] = useState("");
   const ativa = !efetivamenteEncerrada(vaga) && vaga.status === "Aberta";
-  const url = typeof window !== "undefined" ? `${window.location.origin}/c/${vaga.link_token}` : `/c/${vaga.link_token}`;
+  const sc = (vaga as any).short_code;
+  const url = sc ? `${DOMINIO_PUBLICO}/s/${sc}` : `${DOMINIO_PUBLICO}/c/${vaga.link_token}`;
+
+  async function regenerar() {
+    if (regenerando) return;
+    const ok = window.confirm(
+      "Gerar um link novo? O link atual deixará de funcionar imediatamente e quem já recebeu o link antigo não conseguirá mais se inscrever."
+    );
+    if (!ok) return;
+    setRegenerando(true); setErro("");
+    try {
+      // Tenta gerar short_code único (retry curto em caso raro de colisão)
+      let novoShort = "";
+      for (let i = 0; i < 5; i++) {
+        const cand = genShortCode();
+        const { data: exists } = await supabase.from("vagas").select("id").eq("short_code", cand).maybeSingle();
+        if (!exists) { novoShort = cand; break; }
+      }
+      if (!novoShort) throw new Error("Não foi possível gerar um código curto único.");
+      const novoToken = genLinkToken();
+      const { error } = await supabase.from("vagas")
+        .update({ short_code: novoShort, link_token: novoToken })
+        .eq("id", vaga.id);
+      if (error) throw error;
+      qc.invalidateQueries({ queryKey: ["vagas"] });
+    } catch (e: any) {
+      setErro(e.message || "Falha ao regenerar.");
+    } finally {
+      setRegenerando(false);
+    }
+  }
+
   return (
-    <div data-link-row style={{ marginTop: 12, background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8 }}>
-      <Link2 size={14} color={ativa ? ROXO : "#9b93b0"} />
-      <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{url}</code>
-      {ativa ? (
-        <button onClick={async () => { await navigator.clipboard.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }}
-          style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit", minHeight: 36 }}>
-          {copiado ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
-        </button>
-      ) : (
-        <span style={{ fontSize: 10.5, color: "#9b93b0", fontWeight: 700 }}>INATIVO</span>
-      )}
+    <div style={{ marginTop: 12 }}>
+      <div data-link-row style={{ background: ativa ? ROXO_TINT : "#F4F1FB55", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <Link2 size={14} color={ativa ? ROXO : "#9b93b0"} />
+        <code style={{ flex: 1, fontSize: 11.5, color: ativa ? ROXO_DARK : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{url}</code>
+        {ativa ? (
+          <>
+            <button
+              onClick={async () => { await navigator.clipboard.writeText(url); setCopiado(true); setTimeout(() => setCopiado(false), 1500); }}
+              style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit", minHeight: 36 }}
+            >
+              {copiado ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+            </button>
+            <button
+              onClick={regenerar}
+              disabled={regenerando}
+              title="Gerar um novo link (o atual deixa de funcionar)"
+              style={{ background: "#fff", color: ROXO, border: `1.5px solid ${ROXO}55`, padding: "7px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: regenerando ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontFamily: "inherit", minHeight: 36 }}
+            >
+              {regenerando ? <Loader2 size={12} className="spin" /> : <RefreshCw size={12} />} Regenerar
+            </button>
+          </>
+        ) : (
+          <span style={{ fontSize: 10.5, color: "#9b93b0", fontWeight: 700 }}>INATIVO</span>
+        )}
+      </div>
+      {erro && <div style={{ marginTop: 6, fontSize: 11.5, color: "#B91C1C" }}>{erro}</div>}
     </div>
   );
 }
