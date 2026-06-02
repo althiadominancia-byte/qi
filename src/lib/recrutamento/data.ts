@@ -99,7 +99,7 @@ export const SITUACIONAIS = [
       { key: "d", pts: 50, txt: "Insisto bastante para tentar fechar na hora, de qualquer jeito." },
     ],
   },
-] as const;
+];
 
 export const PERFIS = {
   comunicador: {
