@@ -47,7 +47,7 @@ function AdminPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("vagas").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Vaga[];
+      return (data ?? []) as unknown as Vaga[];
     },
   });
 
