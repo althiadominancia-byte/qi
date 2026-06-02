@@ -777,11 +777,36 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
   const disc = c.disc_pontuacao || {};
   const cv = c.cv_analise;
   const [cvUrl, setCvUrl] = useState<string | null>(null);
+  const [cvMime, setCvMime] = useState<string>("");
 
   useEffect(() => {
     if (!c.cv_storage_path) return;
-    supabase.storage.from("curriculos").createSignedUrl(c.cv_storage_path, 300).then(({ data }) => { if (data?.signedUrl) setCvUrl(data.signedUrl); });
+    let revoke: string | null = null;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.storage.from("curriculos").download(c.cv_storage_path!);
+      if (error || !data || cancelled) return;
+      const path = c.cv_storage_path!.toLowerCase();
+      const ext = path.split(".").pop() || "";
+      const mimeByExt: Record<string, string> = {
+        pdf: "application/pdf",
+        png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+        heic: "image/heic", heif: "image/heif", gif: "image/gif",
+        doc: "application/msword",
+        docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        odt: "application/vnd.oasis.opendocument.text",
+        txt: "text/plain",
+      };
+      const mime = data.type && data.type !== "application/octet-stream" ? data.type : (mimeByExt[ext] || "application/octet-stream");
+      const blob = new Blob([data], { type: mime });
+      const url = URL.createObjectURL(blob);
+      revoke = url;
+      setCvUrl(url);
+      setCvMime(mime);
+    })();
+    return () => { cancelled = true; if (revoke) URL.revokeObjectURL(revoke); };
   }, [c.cv_storage_path]);
+
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(58,37,102,.45)", display: "flex", justifyContent: "flex-end", zIndex: 50 }}>
@@ -834,15 +859,17 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
               <Cab icon={FileText} t="Currículo enviado" />
               <div style={{ fontSize: 13, color: CINZA, marginBottom: 10 }}>📎 {c.cv_nome_arquivo || "currículo.pdf"}</div>
               {cvUrl ? (() => {
-                const path = (c.cv_storage_path || "").toLowerCase();
-                const ehPdf = path.endsWith(".pdf");
-                const ehImg = /\.(png|jpe?g|webp|heic|heif)$/.test(path);
-                const ehDoc = /\.(docx?|odt)$/.test(path);
+                const ehPdf = cvMime === "application/pdf";
+                const ehImg = cvMime.startsWith("image/");
+                const ehTxt = cvMime.startsWith("text/");
+                const nomeArq = c.cv_nome_arquivo || ((c.cv_storage_path || "").split("/").pop() ?? "curriculo");
                 return (
                   <>
                     {ehPdf && (
                       <div style={{ border: `1px solid ${BORDA}`, borderRadius: 11, overflow: "hidden", marginBottom: 10, background: "#F0EDF7" }}>
-                        <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 460, border: "none", display: "block" }} />
+                        <object data={cvUrl} type="application/pdf" style={{ width: "100%", height: 460, display: "block" }}>
+                          <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 460, border: "none", display: "block" }} />
+                        </object>
                       </div>
                     )}
                     {ehImg && (
@@ -850,25 +877,31 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
                         <img src={cvUrl} alt="Currículo" style={{ maxWidth: "100%", maxHeight: 480, display: "block", margin: "0 auto" }} />
                       </div>
                     )}
-                    {ehDoc && (
+                    {ehTxt && (
+                      <div style={{ border: `1px solid ${BORDA}`, borderRadius: 11, overflow: "hidden", marginBottom: 10, background: "#fff" }}>
+                        <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 360, border: "none", display: "block" }} />
+                      </div>
+                    )}
+                    {!ehPdf && !ehImg && !ehTxt && (
                       <div style={{ background: ROXO_TINT, border: `1px solid ${ROXO}33`, borderRadius: 11, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 10 }}>
-                        Documento Word — não há preview embutido. Use os botões abaixo para abrir ou baixar.
+                        Não há preview embutido para este tipo de arquivo. Use os botões abaixo para abrir ou baixar.
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <a href={cvUrl} target="_blank" rel="noreferrer" style={{ background: ROXO, color: "#fff", padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                         Abrir em nova aba
                       </a>
-                      <a href={cvUrl} download={c.cv_nome_arquivo || "curriculo"} style={{ background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                      <a href={cvUrl} download={nomeArq} style={{ background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                         Baixar
                       </a>
                     </div>
                   </>
                 );
               })() : (
-                <div style={{ fontSize: 12, color: CINZA }}>Gerando link seguro...</div>
+                <div style={{ fontSize: 12, color: CINZA }}>Carregando arquivo...</div>
               )}
-              <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8 }}>Link válido por 5 minutos · arquivo armazenado de forma privada.</div>
+              <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8 }}>Arquivo armazenado de forma privada — baixado para visualização local.</div>
+
             </Bloco>
           )}
 
