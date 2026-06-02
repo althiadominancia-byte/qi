@@ -10,6 +10,8 @@ import {
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga } from "@/lib/recrutamento.functions";
+import { getMyScope } from "@/lib/scope.functions";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE, VERMELHO, AMARELO,
   PERFIS, DIM_INFO, ORDEM_PERFIS, labelMatch, corMatch, corNivel, txtNivel,
