@@ -859,15 +859,17 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
               <Cab icon={FileText} t="Currículo enviado" />
               <div style={{ fontSize: 13, color: CINZA, marginBottom: 10 }}>📎 {c.cv_nome_arquivo || "currículo.pdf"}</div>
               {cvUrl ? (() => {
-                const path = (c.cv_storage_path || "").toLowerCase();
-                const ehPdf = path.endsWith(".pdf");
-                const ehImg = /\.(png|jpe?g|webp|heic|heif)$/.test(path);
-                const ehDoc = /\.(docx?|odt)$/.test(path);
+                const ehPdf = cvMime === "application/pdf";
+                const ehImg = cvMime.startsWith("image/");
+                const ehTxt = cvMime.startsWith("text/");
+                const nomeArq = c.cv_nome_arquivo || ((c.cv_storage_path || "").split("/").pop() ?? "curriculo");
                 return (
                   <>
                     {ehPdf && (
                       <div style={{ border: `1px solid ${BORDA}`, borderRadius: 11, overflow: "hidden", marginBottom: 10, background: "#F0EDF7" }}>
-                        <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 460, border: "none", display: "block" }} />
+                        <object data={cvUrl} type="application/pdf" style={{ width: "100%", height: 460, display: "block" }}>
+                          <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 460, border: "none", display: "block" }} />
+                        </object>
                       </div>
                     )}
                     {ehImg && (
@@ -875,25 +877,31 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
                         <img src={cvUrl} alt="Currículo" style={{ maxWidth: "100%", maxHeight: 480, display: "block", margin: "0 auto" }} />
                       </div>
                     )}
-                    {ehDoc && (
+                    {ehTxt && (
+                      <div style={{ border: `1px solid ${BORDA}`, borderRadius: 11, overflow: "hidden", marginBottom: 10, background: "#fff" }}>
+                        <iframe src={cvUrl} title="Currículo" style={{ width: "100%", height: 360, border: "none", display: "block" }} />
+                      </div>
+                    )}
+                    {!ehPdf && !ehImg && !ehTxt && (
                       <div style={{ background: ROXO_TINT, border: `1px solid ${ROXO}33`, borderRadius: 11, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 10 }}>
-                        Documento Word — não há preview embutido. Use os botões abaixo para abrir ou baixar.
+                        Não há preview embutido para este tipo de arquivo. Use os botões abaixo para abrir ou baixar.
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       <a href={cvUrl} target="_blank" rel="noreferrer" style={{ background: ROXO, color: "#fff", padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                         Abrir em nova aba
                       </a>
-                      <a href={cvUrl} download={c.cv_nome_arquivo || "curriculo"} style={{ background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
+                      <a href={cvUrl} download={nomeArq} style={{ background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "8px 14px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, textDecoration: "none" }}>
                         Baixar
                       </a>
                     </div>
                   </>
                 );
               })() : (
-                <div style={{ fontSize: 12, color: CINZA }}>Gerando link seguro...</div>
+                <div style={{ fontSize: 12, color: CINZA }}>Carregando arquivo...</div>
               )}
-              <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8 }}>Link válido por 5 minutos · arquivo armazenado de forma privada.</div>
+              <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8 }}>Arquivo armazenado de forma privada — baixado para visualização local.</div>
+
             </Bloco>
           )}
 
