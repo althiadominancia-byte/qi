@@ -62,6 +62,18 @@ Regras: foque no que importa para a vaga. No máximo 3 experiências mais releva
     const analysis = await callGemini(userContent);
     if (data.candidatoId) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: candidato, error: candError } = await supabaseAdmin
+        .from("candidatos_televendas")
+        .select("id, vaga_id, cv_storage_path")
+        .eq("id", data.candidatoId)
+        .maybeSingle();
+      if (candError || !candidato) throw new Error("Inscrição não encontrada para salvar a análise.");
+      if (!candidato.vaga_id) throw new Error("Inscrição sem vaga vinculada.");
+      if ((candidato.cv_storage_path ?? null) !== (data.storagePath ?? null)) {
+        throw new Error("Currículo não confere com a inscrição enviada.");
+      }
+      const { data: vagaAberta, error: vagaError } = await supabaseAdmin.rpc("vaga_aceita_inscricao", { _vaga_id: candidato.vaga_id });
+      if (vagaError || !vagaAberta) throw new Error("Vaga não está aberta para análise automática.");
       const { error } = await supabaseAdmin
         .from("candidatos_televendas")
         .update({ cv_analise: analysis })
