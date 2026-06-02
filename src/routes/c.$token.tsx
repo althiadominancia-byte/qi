@@ -396,11 +396,33 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
     setCvLoading(true); setCvError("");
     try {
       let textoBruto: string | null = null;
-      if (cvFile && /\.docx?$/i.test(cvFile.name) && cvMime !== "application/pdf") {
+      const arquivoCv = cvPrep?.arquivo ?? cvFile;
+      if (arquivoCv && /\.docx?$/i.test(arquivoCv.name) && cvMime !== "application/pdf") {
         const mammoth = await import("mammoth");
-        const ab = await cvFile.arrayBuffer();
+        const ab = await arquivoCv.arrayBuffer();
         const r = await mammoth.extractRawText({ arrayBuffer: ab });
         textoBruto = r.value;
+      } else if (arquivoCv && (cvMime === "application/pdf" || /\.pdf$/i.test(arquivoCv.name))) {
+        // PDF: extraímos texto no navegador. O gateway compatível com OpenAI só aceita
+        // imagens via image_url; PDF como data URL não é lido pela Gemini por essa rota.
+        try {
+          const pdfjs: any = await import("pdfjs-dist");
+          const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+          pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+          const ab = await arquivoCv.arrayBuffer();
+          const doc = await pdfjs.getDocument({ data: ab }).promise;
+          const partes: string[] = [];
+          const maxPag = Math.min(doc.numPages, 8);
+          for (let i = 1; i <= maxPag; i++) {
+            const page = await doc.getPage(i);
+            const tc = await page.getTextContent();
+            partes.push(tc.items.map((it: any) => it.str).join(" "));
+          }
+          const texto = partes.join("\n").trim();
+          if (texto.length > 40) textoBruto = texto;
+        } catch (e) {
+          console.warn("PDF text extract falhou", e);
+        }
       }
       const parsed = await analisarCv({
         data: { candidatoId: candId, storagePath: cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
