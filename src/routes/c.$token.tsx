@@ -649,12 +649,18 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Titulo icon={CheckCircle2} sub="Confira antes de enviar.">Revisão</Titulo>
             <Linha k="Vaga" v={vaga.titulo} />
             <Linha k="Nome" v={a.nome} /><Linha k="E-mail" v={a.email} /><Linha k="Celular" v={a.celular} />
+            {vaga.interna !== false && (
+              <>
+                <Linha k="Setor / função atual" v={a.setor || "—"} />
+                <Linha k="Tempo de empresa" v={a.tempo || "—"} />
+              </>
+            )}
             <Linha k="Endereço" v={a.endereco || "—"} /><Linha k="Currículo" v={a.cvNome || "Não anexado"} />
             {usarSit && <Linha k="Situações respondidas" v={`${SITUACIONAIS.filter((_q, i) => a["sit_" + i]).length}/${SITUACIONAIS.length}`} />}
             <Linha k="Blocos DISC respondidos" v={`${discDone}/${DISC_BLOCKS.length}`} />
             <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "18px 0", fontSize: 12.5, color: CINZA, lineHeight: 1.5 }}>
               <input type="checkbox" checked={!!a.lgpd} onChange={(e) => set("lgpd", e.target.checked)} style={{ marginTop: 2 }} />
-              <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo interno, conforme a LGPD (Lei 13.709/2018).</span>
+              <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei 13.709/2018).</span>
             </label>
             {submitError && <div style={{ fontSize: 12.5, color: "#B91C1C", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: 11, marginBottom: 10 }}>{submitError}</div>}
             <Nav back={back} next={next} pode={!!a.lgpd && !submitting} textoNext={submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
