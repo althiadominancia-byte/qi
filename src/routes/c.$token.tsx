@@ -450,8 +450,17 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
           console.warn("PDF text extract falhou", e);
         }
       }
+      // Se for PDF e a extração de texto falhou, não enviamos o binário como image_url
+      // (esse gateway não consegue ler PDF nessa rota). Forçamos mimeType null para a
+      // análise rodar apenas com o texto extra do candidato — assim o recrutador
+      // ainda recebe um JSON consistente, mas marcado como aderência baixa.
+      const ehPdfSemTexto = !textoBruto && (cvMime === "application/pdf" || (arquivoCv && /\.pdf$/i.test(arquivoCv.name)));
+      const mimeFinal = textoBruto || ehPdfSemTexto ? null : cvMime;
+      const extraFinal = ehPdfSemTexto
+        ? textoExtra() + "\n\n[Aviso: o PDF anexado não tinha texto extraível (provavelmente foi escaneado). A análise abaixo baseia-se apenas nas informações que o próprio candidato digitou.]"
+        : textoExtra();
       const parsed = await analisarCv({
-        data: { candidatoId: candId, storagePath: cvPath, mimeType: textoBruto ? null : cvMime, textoExtra: textoExtra(), textoBruto, vagaContexto },
+        data: { candidatoId: candId, storagePath: cvPath, mimeType: mimeFinal, textoExtra: extraFinal, textoBruto, vagaContexto },
       });
       setCvAnalysis(parsed);
     } catch (e: any) {
