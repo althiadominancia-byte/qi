@@ -41,6 +41,8 @@ function PreviaPage() {
   const [gerandoSit, setGerandoSit] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "err" | "warn"; t: string } | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (!vagaQ.data) return;
