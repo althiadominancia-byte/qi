@@ -44,6 +44,10 @@ function AdminPage() {
   const [sel, setSel] = useState<Candidato | null>(null);
   const qc = useQueryClient();
 
+  const fetchScope = useServerFn(getMyScope);
+  const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
+  const scope = scopeQ.data;
+
   const vagasQ = useQuery({
     queryKey: ["vagas"],
     queryFn: async () => {
