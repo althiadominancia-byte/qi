@@ -251,7 +251,16 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
     if (s && s !== "resultado" && (s === "intro" || FLOW.includes(s))) return s;
     return "intro";
   });
-  const [a, setA] = useState<Record<string, any>>(() => saved.a ?? {});
+  // Ao retomar do localStorage, o File real do CV não é serializável e foi perdido.
+  // Limpamos o nome em cache para não dar a falsa impressão de currículo anexado.
+  const [a, setA] = useState<Record<string, any>>(() => {
+    const base = saved.a ?? {};
+    if (base && typeof base === "object" && base.cvNome) {
+      const { cvNome: _drop, ...rest } = base;
+      return rest;
+    }
+    return base;
+  });
   const set = (k: string, v: any) => setA((p) => ({ ...p, [k]: v }));
 
   const [cvFile, setCvFile] = useState<File | null>(null);
