@@ -309,7 +309,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         if (a["disc_" + bi + "_menos"] !== undefined) discResp["b" + bi + "_menos"] = a["disc_" + bi + "_menos"];
       });
       const sitResp: Record<string, string> = {};
-      SITUACIONAIS.forEach((q) => { if (a["sit_" + q.id]) sitResp[q.id] = a["sit_" + q.id]; });
+      SITUACIONAIS.forEach((_q, i) => { if (a["sit_" + i]) sitResp["q" + i] = a["sit_" + i]; });
 
       const { data: cand, error: insErr } = await supabase.from("candidatos_televendas").insert({
         vaga_id: vaga.id,
