@@ -316,6 +316,7 @@ export type Database = {
           formulario_aprovado: boolean
           habilidades: Json
           id: string
+          interna: boolean
           link_token: string
           modelo: string
           pesos: Json
@@ -344,6 +345,7 @@ export type Database = {
           formulario_aprovado?: boolean
           habilidades?: Json
           id?: string
+          interna?: boolean
           link_token?: string
           modelo?: string
           pesos?: Json
@@ -372,6 +374,7 @@ export type Database = {
           formulario_aprovado?: boolean
           habilidades?: Json
           id?: string
+          interna?: boolean
           link_token?: string
           modelo?: string
           pesos?: Json

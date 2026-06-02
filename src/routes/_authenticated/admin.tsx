@@ -159,6 +159,7 @@ function AdminPage() {
       pesos: v.pesos, habilidades: v.habilidades, competencias: v.competencias,
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
+      interna: v.interna ?? true,
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
@@ -353,6 +354,11 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, color: st.cor, background: st.cor + "18", padding: "3px 10px", borderRadius: 99 }}>
                       <Circle size={7} fill={st.cor} color={st.cor} /> {st.label}
                     </span>
+                    {v.interna === false && (
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#2563EB", background: "#EFF6FF", padding: "3px 9px", borderRadius: 99 }}>
+                        Externa
+                      </span>
+                    )}
                     {!(v as any).formulario_aprovado && (
                       <span title="Formulário ainda não aprovado" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: "#9a6b00", background: "#FEF3C7", padding: "3px 9px", borderRadius: 99 }}>
                         <AlertCircle size={11} /> Formulário não aprovado
@@ -523,6 +529,10 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
+        <label style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13, color: ROXO_DARK, marginTop: 6, cursor: "pointer" }}>
+          <input type="checkbox" checked={!!v.interna} onChange={(e) => set("interna", e.target.checked)} />
+          <strong>Vaga interna</strong> — apenas colaboradores da empresa podem se candidatar (exibe setor/função e tempo de empresa no formulário)
+        </label>
         <CampoLabel label="Unidade">
           <select style={inp} value={v.unidade_id || ""} onChange={(e) => set("unidade_id", e.target.value)}>
             <option value="" disabled>Selecione a unidade</option>

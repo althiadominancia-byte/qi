@@ -1,0 +1,1 @@
+ALTER TABLE public.vagas ADD COLUMN interna boolean NOT NULL DEFAULT true;

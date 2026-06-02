@@ -483,7 +483,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               Quer fazer parte da vaga de <span style={{ color: LARANJA }}>{vaga.titulo}</span>?
             </h1>
             <p style={{ color: CINZA, fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-              {vaga.descricao || "Este formulário abre o processo seletivo interno da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊"}
+              {vaga.descricao || `Este formulário abre o processo seletivo${vaga.interna !== false ? " interno" : ""} da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊`}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, margin: "20px 0" }}>
               {[
@@ -513,14 +513,16 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
               <Campo icon={Phone} label="Celular / WhatsApp" obrig><input style={inputStyle} value={a.celular || ""} onChange={(e) => set("celular", e.target.value)} placeholder="(96) 9 9999-9999" /></Campo>
             </div>
             <Campo icon={MapPin} label="Endereço (bairro e cidade)"><input style={inputStyle} value={a.endereco || ""} onChange={(e) => set("endereco", e.target.value)} placeholder="Bairro, Cidade - UF" /></Campo>
-            <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
-              <Campo label="Tempo de empresa">
-                <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
-                  <option value="">Selecione</option><option>Menos de 6 meses</option><option>6 meses a 1 ano</option><option>1 a 3 anos</option><option>Mais de 3 anos</option>
-                </select>
-              </Campo>
-            </div>
+            {vaga.interna !== false && (
+              <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
+                <Campo label="Tempo de empresa">
+                  <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
+                    <option value="">Selecione</option><option>Menos de 6 meses</option><option>6 meses a 1 ano</option><option>1 a 3 anos</option><option>Mais de 3 anos</option>
+                  </select>
+                </Campo>
+              </div>
+            )}
             <Nav back={back} next={next} pode={podeAvancar} />
           </Card>
         )}
@@ -647,12 +649,18 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Titulo icon={CheckCircle2} sub="Confira antes de enviar.">Revisão</Titulo>
             <Linha k="Vaga" v={vaga.titulo} />
             <Linha k="Nome" v={a.nome} /><Linha k="E-mail" v={a.email} /><Linha k="Celular" v={a.celular} />
+            {vaga.interna !== false && (
+              <>
+                <Linha k="Setor / função atual" v={a.setor || "—"} />
+                <Linha k="Tempo de empresa" v={a.tempo || "—"} />
+              </>
+            )}
             <Linha k="Endereço" v={a.endereco || "—"} /><Linha k="Currículo" v={a.cvNome || "Não anexado"} />
             {usarSit && <Linha k="Situações respondidas" v={`${SITUACIONAIS.filter((_q, i) => a["sit_" + i]).length}/${SITUACIONAIS.length}`} />}
             <Linha k="Blocos DISC respondidos" v={`${discDone}/${DISC_BLOCKS.length}`} />
             <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "18px 0", fontSize: 12.5, color: CINZA, lineHeight: 1.5 }}>
               <input type="checkbox" checked={!!a.lgpd} onChange={(e) => set("lgpd", e.target.checked)} style={{ marginTop: 2 }} />
-              <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo interno, conforme a LGPD (Lei 13.709/2018).</span>
+              <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei 13.709/2018).</span>
             </label>
             {submitError && <div style={{ fontSize: 12.5, color: "#B91C1C", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: 11, marginBottom: 10 }}>{submitError}</div>}
             <Nav back={back} next={next} pode={!!a.lgpd && !submitting} textoNext={submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
