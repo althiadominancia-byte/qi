@@ -223,8 +223,11 @@ const STEP_META: Record<string, { n: string; icon: any }> = {
 };
 
 function FormularioVaga({ vaga }: { vaga: Vaga }) {
-  const FLOW = useMemo(() => vaga.usar_situacional ? FLOW_BASE : FLOW_BASE.filter((s) => s !== "situacional"), [vaga.usar_situacional]);
-  const FORM_STEPS = useMemo(() => vaga.usar_situacional ? FORM_BASE : FORM_BASE.filter((s) => s !== "situacional"), [vaga.usar_situacional]);
+  const DISC_BLOCKS = useMemo(() => getDiscBlocks(vaga), [vaga]);
+  const SITUACIONAIS = useMemo(() => vaga.usar_situacional ? getSituacoes(vaga) : [], [vaga]);
+  const usarSit = vaga.usar_situacional && SITUACIONAIS.length > 0;
+  const FLOW = useMemo(() => usarSit ? FLOW_BASE : FLOW_BASE.filter((s) => s !== "situacional"), [usarSit]);
+  const FORM_STEPS = useMemo(() => usarSit ? FORM_BASE : FORM_BASE.filter((s) => s !== "situacional"), [usarSit]);
 
   const [step, setStep] = useState("intro");
   const [a, setA] = useState<Record<string, any>>({});
@@ -255,7 +258,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
 
   const podeAvancar = useMemo(() => {
     if (step === "dados") return a.nome && a.email && a.celular;
-    if (step === "situacional") return SITUACIONAIS.every((q) => a["sit_" + q.id]);
+    if (step === "situacional") return SITUACIONAIS.every((_q, i) => a["sit_" + i]);
     if (step === "disc") return discDone === DISC_BLOCKS.length;
     return true;
   }, [step, a, discDone]);
