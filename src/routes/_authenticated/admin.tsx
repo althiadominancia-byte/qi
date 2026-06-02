@@ -123,7 +123,7 @@ function AdminPage() {
       if (empresaAtivaId) q = (q as any).eq("empresa_id", empresaAtivaId);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as DivRow[];
+      return (data ?? []) as unknown as DivRow[];
     },
     enabled: aba === "diversidade" && (!isSuper || !!empresaAtivaId),
   });
