@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronLeft, Wand2, Loader2, Plus, X, CheckCircle2, AlertCircle, Save, Send, Brain, MessageCircle } from "lucide-react";
+import { ChevronLeft, Wand2, Loader2, Plus, X, CheckCircle2, AlertCircle, Save, Send, Brain, MessageCircle, Link2, Copy, Check, ExternalLink } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarFormularioVaga } from "@/lib/recrutamento.functions";
@@ -41,6 +41,8 @@ function PreviaPage() {
   const [gerandoSit, setGerandoSit] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "err" | "warn"; t: string } | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   useEffect(() => {
     if (!vagaQ.data) return;
@@ -112,12 +114,36 @@ function PreviaPage() {
     setSalvando(true);
     try {
       const payload: any = { disc_blocks: blocks, situacoes: sits, formulario_aprovado: publicar ? true : false };
-      const { error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id);
+      if (publicar) payload.status = "Aberta";
+      const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token").maybeSingle();
       if (error) throw error;
       setAprovado(publicar); setDirty(false);
-      setMsg({ tipo: "ok", t: publicar ? "Formulário aprovado! Agora você pode abrir a vaga." : "Rascunho salvo." });
+      if (publicar) {
+        const token = (updated as any)?.link_token || (vaga as any)?.link_token;
+        if (token) {
+          setPublishedUrl(`${window.location.origin}/c/${token}`);
+          setCopiado(false);
+        }
+      } else {
+        setMsg({ tipo: "ok", t: "Rascunho salvo." });
+      }
     } catch (e: any) { setMsg({ tipo: "err", t: e.message || "Falha ao salvar." }); }
     finally { setSalvando(false); }
+  }
+
+  async function copiarLink() {
+    if (!publishedUrl) return;
+    try {
+      await navigator.clipboard.writeText(publishedUrl);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // fallback
+      const el = document.createElement("textarea");
+      el.value = publishedUrl; document.body.appendChild(el); el.select();
+      try { document.execCommand("copy"); setCopiado(true); setTimeout(() => setCopiado(false), 2000); } catch {}
+      document.body.removeChild(el);
+    }
   }
 
   const discValido = validateDiscBlocks(blocks);
@@ -231,6 +257,68 @@ function PreviaPage() {
           </button>
         </div>
       </div>
+
+      {publishedUrl && (
+        <div
+          onClick={() => setPublishedUrl(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,10,40,0.55)", backdropFilter: "blur(3px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 100 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 16, maxWidth: 520, width: "100%", padding: 24, boxShadow: "0 20px 60px rgba(0,0,0,0.25)", position: "relative" }}
+          >
+            <button onClick={() => setPublishedUrl(null)} aria-label="Fechar" style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", cursor: "pointer", color: CINZA, padding: 6, borderRadius: 8 }}>
+              <X size={18} />
+            </button>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <CheckCircle2 size={20} color={VERDE} />
+              </div>
+              <div className="h" style={{ fontWeight: 800, fontSize: 18, color: ROXO_DARK }}>Vaga publicada!</div>
+            </div>
+            <p style={{ fontSize: 13.5, color: CINZA, lineHeight: 1.55, margin: "6px 0 14px" }}>
+              Compartilhe o link abaixo com os candidatos por WhatsApp, e-mail ou qualquer mensageiro.
+            </p>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "stretch", marginBottom: 12 }}>
+              <input
+                readOnly
+                value={publishedUrl}
+                onFocus={(e) => e.currentTarget.select()}
+                style={{ ...inp, fontSize: 13, color: ROXO_DARK, background: "#FAF9FE" }}
+              />
+              <button
+                onClick={copiarLink}
+                style={{ background: copiado ? VERDE : ROXO, color: "#fff", border: "none", padding: "0 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", flexShrink: 0 }}
+              >
+                {copiado ? <><Check size={15} /> Copiado</> : <><Copy size={15} /> Copiar</>}
+              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Vaga: ${vaga.titulo}\n${publishedUrl}`)}`}
+                target="_blank" rel="noopener noreferrer"
+                style={{ background: "#25D366", color: "#fff", textDecoration: "none", padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}
+              >
+                <MessageCircle size={15} /> WhatsApp
+              </a>
+              <a
+                href={publishedUrl} target="_blank" rel="noopener noreferrer"
+                style={{ background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, textDecoration: "none", padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" }}
+              >
+                <ExternalLink size={15} /> Abrir link
+              </a>
+              <button
+                onClick={() => { setPublishedUrl(null); navigate({ to: "/admin" }); }}
+                style={{ background: "#fff", color: CINZA, border: `1.5px solid ${BORDA}`, padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit", marginLeft: "auto" }}
+              >
+                Ir para o painel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
