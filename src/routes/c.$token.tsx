@@ -10,6 +10,7 @@ import {
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { analisarCv } from "@/lib/recrutamento.functions";
+import { prepararCv, fmtSize, CV_MAX_ORIGINAL_MB, type CvPreparado } from "@/lib/recrutamento/cv-upload";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, ROXO_TINT2, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE,
   DIM_INFO, getDiscBlocks, getSituacoes,
