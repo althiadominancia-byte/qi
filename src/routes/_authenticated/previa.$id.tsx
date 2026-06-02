@@ -114,12 +114,36 @@ function PreviaPage() {
     setSalvando(true);
     try {
       const payload: any = { disc_blocks: blocks, situacoes: sits, formulario_aprovado: publicar ? true : false };
-      const { error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id);
+      if (publicar) payload.status = "Aberta";
+      const { data: updated, error } = await supabase.from("vagas").update(payload).eq("id", vaga!.id).select("link_token").maybeSingle();
       if (error) throw error;
       setAprovado(publicar); setDirty(false);
-      setMsg({ tipo: "ok", t: publicar ? "Formulário aprovado! Agora você pode abrir a vaga." : "Rascunho salvo." });
+      if (publicar) {
+        const token = (updated as any)?.link_token || (vaga as any)?.link_token;
+        if (token) {
+          setPublishedUrl(`${window.location.origin}/c/${token}`);
+          setCopiado(false);
+        }
+      } else {
+        setMsg({ tipo: "ok", t: "Rascunho salvo." });
+      }
     } catch (e: any) { setMsg({ tipo: "err", t: e.message || "Falha ao salvar." }); }
     finally { setSalvando(false); }
+  }
+
+  async function copiarLink() {
+    if (!publishedUrl) return;
+    try {
+      await navigator.clipboard.writeText(publishedUrl);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // fallback
+      const el = document.createElement("textarea");
+      el.value = publishedUrl; document.body.appendChild(el); el.select();
+      try { document.execCommand("copy"); setCopiado(true); setTimeout(() => setCopiado(false), 2000); } catch {}
+      document.body.removeChild(el);
+    }
   }
 
   const discValido = validateDiscBlocks(blocks);
