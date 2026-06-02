@@ -292,7 +292,30 @@ export function computeResults(a: Record<string, any>, vaga?: { pesos: VagaPesos
   return { disc, discPct, key, perfil: PERFIS[key], primary, secondary, sitAvg, finalMatch, label, blocks, sitList };
 }
 
-export const matchDe = (vaga: { pesos: VagaPesos } | null | undefined, c: { perfil_key: string | null; postura_score: number | null }) => {
+export const cvScoreDe = (cv: any): number | null => {
+  if (!cv || typeof cv !== "object") return null;
+  const ader = String(cv.aderencia_televendas ?? "").toLowerCase();
+  let base = ader === "alta" ? 100 : ader === "media" || ader === "média" ? 65 : ader === "baixa" ? 30 : 50;
+  const lacunas: string[] = Array.isArray(cv.lacunas) ? cv.lacunas : [];
+  // Penaliza ausência/falta de experiência relevante (vaga exige vivência)
+  const regexExp = /(aus[êe]ncia|falta|sem|pouca|nenhuma|baixa)[^.]{0,40}(experi[êe]ncia|viv[êe]ncia)/i;
+  let penal = 0;
+  for (const l of lacunas) {
+    const txt = String(l ?? "");
+    if (regexExp.test(txt)) penal += 18;
+    else penal += 6;
+  }
+  penal = Math.min(penal, 45);
+  return Math.max(0, Math.min(100, base - penal));
+};
+
+export const matchDe = (
+  vaga: { pesos: VagaPesos } | null | undefined,
+  c: { perfil_key: string | null; postura_score: number | null; cv_analise?: any },
+) => {
   const base = (vaga?.pesos as any)?.[c.perfil_key ?? ""] ?? 50;
-  return Math.round(base * 0.6 + (c.postura_score ?? 0) * 0.4);
+  const postura = c.postura_score ?? 0;
+  const cv = cvScoreDe(c.cv_analise);
+  if (cv === null) return Math.round(base * 0.6 + postura * 0.4);
+  return Math.round(base * 0.45 + postura * 0.3 + cv * 0.25);
 };
