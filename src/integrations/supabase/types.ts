@@ -400,6 +400,7 @@ export type Database = {
     }
     Functions: {
       current_user_empresa: { Args: never; Returns: string }
+      cv_path_valid_for_open_vaga: { Args: { _name: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
