@@ -41,13 +41,19 @@ function SuperAdminPage() {
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
 
+  const podeGerenciar =
+    !!scope &&
+    (scope.role === "super_admin" || !!scope.perms?.gerenciar_usuarios);
+  const isSuper = scope?.role === "super_admin";
+
   useEffect(() => {
-    if (scopeQ.isSuccess && scope && scope.role !== "super_admin") {
+    if (scopeQ.isSuccess && scope && !podeGerenciar) {
       navigate({ to: "/admin", replace: true });
     }
-  }, [scopeQ.isSuccess, scope, navigate]);
+  }, [scopeQ.isSuccess, scope, podeGerenciar, navigate]);
 
-  const enabled = scope?.role === "super_admin";
+  const enabled = podeGerenciar;
+
 
   const empresasQ = useQuery({
     queryKey: ["super:empresas"],
