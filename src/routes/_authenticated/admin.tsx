@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 export type Candidato = {
   id: string; created_at: string; vaga_id: string | null;
   nome: string; email: string; celular: string; setor_atual: string | null;
+  tempo_empresa?: string | null; endereco?: string | null;
   perfil_key: string | null; perfil_nome: string | null;
   match_final: number | null; match_label: string | null; postura_score: number | null;
   disc_pontuacao: any; cv_analise: any; cv_storage_path: string | null; cv_nome_arquivo: string | null;
