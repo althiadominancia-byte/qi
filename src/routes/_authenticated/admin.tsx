@@ -49,7 +49,7 @@ function AdminPage() {
   const [aba, setAba] = useState<"vagas" | "candidatos" | "diversidade">("vagas");
   const [editando, setEditando] = useState<Vaga | null>(null);
   const [vagaSel, setVagaSel] = useState<string | null>(null);
-  const [sel, setSel] = useState<Candidato | null>(null);
+  
   const qc = useQueryClient();
 
   const fetchScope = useServerFn(getMyScope);
