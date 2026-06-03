@@ -38,6 +38,10 @@ export type Candidato = {
   match_final: number | null; match_label: string | null; postura_score: number | null;
   disc_pontuacao: any; cv_analise: any; cv_storage_path: string | null; cv_nome_arquivo: string | null;
   experiencia_texto: string | null;
+  etapa?: "inscrito" | "entrevista" | "contratado" | "nao_contratado" | null;
+  entrevista_data?: string | null;
+  entrevista_obs?: string | null;
+  nao_contratado_motivo?: "vaga_preenchida" | "encerramento_insucesso" | null;
 };
 type DivRow = { raca: string | null; genero: string | null; orientacao: string | null; pcd: string | null; politico: string | null };
 
