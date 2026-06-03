@@ -879,7 +879,7 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
 }
 
 /* ========== Detalhe candidato ========== */
-function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClose: () => void }) {
+export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClose: () => void }) {
   const p = c.perfil_key ? (PERFIS as any)[c.perfil_key] : null;
   const match = vaga ? matchDe(vaga, c) : (c.match_final ?? 0);
   const disc = c.disc_pontuacao || {};
