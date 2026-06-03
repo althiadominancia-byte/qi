@@ -7,6 +7,7 @@ const EncerrarInput = z.object({
   selecionou: z.boolean(),
   candidato_id: z.string().uuid().optional().nullable(),
   data_admissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  lider_id: z.string().uuid().optional().nullable(),
   obs: z.string().max(2000).optional().default(""),
 });
 
