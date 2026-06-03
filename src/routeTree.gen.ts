@@ -19,6 +19,7 @@ import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
+import { Route as ApiPublicHooksAvaliacoesRouteImport } from './routes/api/public/hooks/avaliacoes'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -69,6 +70,12 @@ const AuthenticatedPreviaIdRoute = AuthenticatedPreviaIdRouteImport.update({
   path: '/previa/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksAvaliacoesRoute =
+  ApiPublicHooksAvaliacoesRouteImport.update({
+    id: '/api/public/hooks/avaliacoes',
+    path: '/api/public/hooks/avaliacoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -91,6 +99,7 @@ export interface FileRoutesByTo {
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +113,7 @@ export interface FileRoutesById {
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/c/$token'
     | '/s/$code'
     | '/previa/$id'
+    | '/api/public/hooks/avaliacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/c/$token'
     | '/s/$code'
     | '/previa/$id'
+    | '/api/public/hooks/avaliacoes'
   id:
     | '__root__'
     | '/'
@@ -140,6 +152,7 @@ export interface FileRouteTypes {
     | '/c/$token'
     | '/s/$code'
     | '/_authenticated/previa/$id'
+    | '/api/public/hooks/avaliacoes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +161,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CTokenRoute: typeof CTokenRoute
   SCodeRoute: typeof SCodeRoute
+  ApiPublicHooksAvaliacoesRoute: typeof ApiPublicHooksAvaliacoesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -222,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPreviaIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/avaliacoes': {
+      id: '/api/public/hooks/avaliacoes'
+      path: '/api/public/hooks/avaliacoes'
+      fullPath: '/api/public/hooks/avaliacoes'
+      preLoaderRoute: typeof ApiPublicHooksAvaliacoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -250,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CTokenRoute: CTokenRoute,
   SCodeRoute: SCodeRoute,
+  ApiPublicHooksAvaliacoesRoute: ApiPublicHooksAvaliacoesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -11,6 +11,7 @@ import {
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
+import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
