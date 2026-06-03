@@ -41,13 +41,19 @@ function SuperAdminPage() {
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
 
+  const podeGerenciar =
+    !!scope &&
+    (scope.role === "super_admin" || !!scope.perms?.gerenciar_usuarios);
+  const isSuper = scope?.role === "super_admin";
+
   useEffect(() => {
-    if (scopeQ.isSuccess && scope && scope.role !== "super_admin") {
+    if (scopeQ.isSuccess && scope && !podeGerenciar) {
       navigate({ to: "/admin", replace: true });
     }
-  }, [scopeQ.isSuccess, scope, navigate]);
+  }, [scopeQ.isSuccess, scope, podeGerenciar, navigate]);
 
-  const enabled = scope?.role === "super_admin";
+  const enabled = podeGerenciar;
+
 
   const empresasQ = useQuery({
     queryKey: ["super:empresas"],
@@ -108,13 +114,14 @@ function SuperAdminPage() {
   if (scopeQ.isLoading) {
     return <div style={{ padding: 40, textAlign: "center", color: CINZA, fontFamily: "system-ui" }}>Carregando...</div>;
   }
-  if (scope && scope.role !== "super_admin") {
+  if (scope && !podeGerenciar) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: VERMELHO, fontFamily: "system-ui" }}>
-        Acesso restrito ao Super Admin.
+        Acesso restrito a administradores.
       </div>
     );
   }
+
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
@@ -136,13 +143,14 @@ function SuperAdminPage() {
         <div style={{ lineHeight: 1, minWidth: 0 }}>
           <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>PLATAFORMA · RECRUTAMENTO</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17, display: "flex", alignItems: "center", gap: 7 }}>
-            <Crown size={16} /> Super Admin
+            {isSuper ? <Crown size={16} /> : <UserCog size={16} />} {isSuper ? "Super Admin" : "Administração"}
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ color: "#fff", fontSize: 12, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
-            <Headphones size={14} /> Controle global
+            <Headphones size={14} /> {isSuper ? "Controle global" : scope?.empresa_nome || "Sua empresa"}
           </span>
+
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
             <LogOut size={13} /> Sair
           </button>
@@ -151,13 +159,17 @@ function SuperAdminPage() {
 
       <div data-pad style={{ maxWidth: 940, margin: "0 auto", padding: "0 18px" }}>
         <div style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
-          {([["usuarios", "Usuários", Users], ["empresas", "Empresas & unidades", Building2]] as const).map(([k, t, Ic]) => (
+          {(isSuper
+            ? ([["usuarios", "Usuários", Users], ["empresas", "Empresas & unidades", Building2]] as const)
+            : ([["usuarios", "Usuários", Users]] as const)
+          ).map(([k, t, Ic]) => (
             <button key={k} onClick={() => setAba(k as any)} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
               fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${aba === k ? ROXO : BORDA}`, background: aba === k ? ROXO : "#fff", color: aba === k ? "#fff" : CINZA,
             }}><Ic size={15} /> {t}</button>
           ))}
         </div>
+
 
         {aba === "usuarios" && (
           <UsuariosTab
@@ -166,9 +178,11 @@ function SuperAdminPage() {
             unidadesUsuario={unidadesUsuario}
             onNovo={() => setEditUser({
               id: "", nome: "", email: "", role: "recrutador",
-              empresa_id: empresas[0]?.id ?? null, todas_unidades: true,
+              empresa_id: isSuper ? (empresas[0]?.id ?? null) : (scope?.empresa_id ?? null),
+              todas_unidades: true,
               perms: { ...PRESET.recrutador }, ativo: true, unidades: [], _novo: true,
             })}
+
             onEditar={(u: Usuario) => setEditUser({ ...u, unidades: unidadesUsuario(u.id) })}
             onToggle={async (u: Usuario) => {
               try {
@@ -191,7 +205,8 @@ function SuperAdminPage() {
 
       {editUser && (
         <UsuarioModal
-          user={editUser} empresas={empresas} unidadesDe={unidadesDe}
+          user={editUser} empresas={empresas} unidadesDe={unidadesDe} viewerIsSuper={isSuper}
+
           onClose={() => setEditUser(null)}
           onSaved={() => {
             setEditUser(null);
@@ -249,7 +264,7 @@ function UsuariosTab({ usuarios, loading, nomeEmpresa, unidadesUsuario, onNovo, 
   );
 }
 
-function UsuarioModal({ user, empresas, unidadesDe, onClose, onSaved }: any) {
+function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSaved }: any) {
   const [u, setU] = useState<UsuarioEdit>(user);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof UsuarioEdit, v: any) => setU((p) => ({ ...p, [k]: v }));
@@ -303,7 +318,7 @@ function UsuarioModal({ user, empresas, unidadesDe, onClose, onSaved }: any) {
 
           <Campo label="Papel (função)">
             <div data-grid2 style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {ORDEM_ROLES.map((rk) => {
+              {ORDEM_ROLES.filter((rk) => viewerIsSuper || rk !== "super_admin").map((rk) => {
                 const r = ROLES[rk]; const Ic = ROLE_ICONS[rk]; const on = u.role === rk;
                 return (
                   <button key={rk} onClick={() => setRole(rk)} style={{
@@ -321,11 +336,12 @@ function UsuarioModal({ user, empresas, unidadesDe, onClose, onSaved }: any) {
           {!isSuper && (
             <>
               <Campo label="Empresa">
-                <select style={inp} value={u.empresa_id || ""} onChange={(e) => set("empresa_id", e.target.value)}>
+                <select style={inp} value={u.empresa_id || ""} onChange={(e) => set("empresa_id", e.target.value)} disabled={!viewerIsSuper}>
                   <option value="">Selecione...</option>
                   {empresas.map((e: Empresa) => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
               </Campo>
+
               <Campo label="Acesso às unidades">
                 <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, color: ROXO_DARK, marginBottom: 10, cursor: "pointer" }}>
                   <Switch on={u.todas_unidades} onClick={() => set("todas_unidades", !u.todas_unidades)} />
