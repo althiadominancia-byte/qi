@@ -159,13 +159,17 @@ function SuperAdminPage() {
 
       <div data-pad style={{ maxWidth: 940, margin: "0 auto", padding: "0 18px" }}>
         <div style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
-          {([["usuarios", "Usuários", Users], ["empresas", "Empresas & unidades", Building2]] as const).map(([k, t, Ic]) => (
+          {(isSuper
+            ? ([["usuarios", "Usuários", Users], ["empresas", "Empresas & unidades", Building2]] as const)
+            : ([["usuarios", "Usuários", Users]] as const)
+          ).map(([k, t, Ic]) => (
             <button key={k} onClick={() => setAba(k as any)} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
               fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${aba === k ? ROXO : BORDA}`, background: aba === k ? ROXO : "#fff", color: aba === k ? "#fff" : CINZA,
             }}><Ic size={15} /> {t}</button>
           ))}
         </div>
+
 
         {aba === "usuarios" && (
           <UsuariosTab
