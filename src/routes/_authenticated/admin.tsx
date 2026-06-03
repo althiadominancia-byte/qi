@@ -374,7 +374,7 @@ function AdminPage() {
 }
 
 /* ========== Aba Vagas — Lista ========== */
-function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar, onPrevia }: any) {
+function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar, onPrevia, isSuper, onExcluir }: any) {
   if (loading) return <div style={{ textAlign: "center", padding: 30, color: CINZA }}>Carregando...</div>;
   return (
     <>
