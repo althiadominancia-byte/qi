@@ -943,6 +943,9 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} color={ROXO} /> {c.celular}</span>
           </div>
 
+          <JornadaBloco c={c} vaga={vaga} />
+
+
           <Bloco>
             <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 180 }}>
