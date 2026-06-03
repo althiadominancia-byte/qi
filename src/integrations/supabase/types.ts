@@ -204,6 +204,38 @@ export type Database = {
         }
         Relationships: []
       }
+      permissoes_papel: {
+        Row: {
+          created_at: string
+          empresa_id: string
+          perms: Json
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          empresa_id: string
+          perms?: Json
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          empresa_id?: string
+          perms?: Json
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permissoes_papel_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       setores: {
         Row: {
           ativo: boolean
@@ -520,10 +552,12 @@ export type Database = {
       }
       is_recruiter: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      preset_perms: { Args: { _role: string }; Returns: Json }
       user_can_access_unidade: {
         Args: { _empresa: string; _unidade: string }
         Returns: boolean
       }
+      user_effective_perms: { Args: { _user_id: string }; Returns: Json }
       user_has_perm: { Args: { _perm: string }; Returns: boolean }
       vaga_aceita_inscricao: { Args: { _vaga_id: string }; Returns: boolean }
     }
