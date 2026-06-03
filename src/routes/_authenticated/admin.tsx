@@ -52,6 +52,7 @@ function AdminPage() {
   const qc = useQueryClient();
 
   const fetchScope = useServerFn(getMyScope);
+  const excluirVagaFn = useServerFn(excluirVaga);
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
