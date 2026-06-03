@@ -1164,9 +1164,8 @@ function MiniDet({ l, v }: { l: string; v: number }) {
   return (
     <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 10, padding: "11px 13px", background: "#FBFAFD" }}>
       <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{l}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginTop: 4, marginBottom: 7 }}>
-        <div className="h" style={{ fontSize: 22, fontWeight: 800, color: ROXO_DARK, lineHeight: 1, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{n}</div>
-        <div style={{ fontSize: 11, color: CINZA, fontWeight: 600 }}>%</div>
+      <div style={{ marginTop: 6, marginBottom: 8, fontFamily: "Outfit", fontSize: 26, fontWeight: 700, color: ROXO_DARK, lineHeight: 1, letterSpacing: -0.5, fontVariantNumeric: "tabular-nums" }}>
+        {n}<span style={{ fontSize: 14, fontWeight: 600, color: CINZA, marginLeft: 2, letterSpacing: 0 }}>%</span>
       </div>
       <div style={{ height: 4, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
         <div style={{ height: 4, width: `${n}%`, background: cor, borderRadius: 99 }} />
