@@ -190,6 +190,15 @@ function AdminPage() {
     if (error) { alert(error.message); return; }
     qc.invalidateQueries({ queryKey: ["vagas"] });
   }
+  async function handleExcluirVaga(id: string) {
+    if (!confirm("Tem certeza que deseja EXCLUIR permanentemente esta vaga?\n\nEsta ação não pode ser desfeita e todos os candidatos vinculados serão perdidos.")) return;
+    try {
+      await excluirVagaFn({ data: { vagaId: id } });
+      qc.invalidateQueries({ queryKey: ["vagas"] });
+    } catch (e: any) {
+      alert(e.message || "Erro ao excluir vaga.");
+    }
+  }
   async function sair() { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); }
 
   const contagem = (vid: string) => (candidatosQ.data ?? []).filter((c) => c.vaga_id === vid).length;
