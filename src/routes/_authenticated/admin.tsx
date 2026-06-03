@@ -948,28 +948,31 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
 
 
           <Bloco>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", paddingBottom: 16, borderBottom: `1px solid ${BORDA}` }}>
               <div style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: 12, color: CINZA, fontWeight: 600 }}>Perfil comportamental</div>
-                <div className="h" style={{ fontSize: 23, fontWeight: 800, color: p?.cor ?? ROXO, lineHeight: 1.1, margin: "3px 0" }}>{p?.nome ?? c.perfil_nome ?? "—"}</div>
-                {p && <span style={{ fontSize: 11.5, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "3px 9px", borderRadius: 99 }}>{p.tag}</span>}
+                <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Perfil comportamental</div>
+                <div className="h" style={{ fontSize: 24, fontWeight: 800, color: p?.cor ?? ROXO, lineHeight: 1.1, margin: "4px 0 6px" }}>{p?.nome ?? c.perfil_nome ?? "—"}</div>
+                {p && <span style={{ fontSize: 11, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "3px 9px", borderRadius: 6, letterSpacing: 0.3 }}>{p.tag}</span>}
               </div>
               <Ring m={match} />
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16, display: "grid", gap: 11 }}>
               {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => (
-                <div key={d} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-                  <div style={{ width: 110, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{DIM_INFO[d].nome} <InfoDot texto={DIM_INFO[d].plain} cor={DIM_INFO[d].cor} /></div>
-                  <div style={{ flex: 1, height: 13, background: "#F0EDF7", borderRadius: 9, overflow: "hidden" }}>
-                    <div style={{ height: 13, width: `${disc[d] ?? 0}%`, background: DIM_INFO[d].cor, borderRadius: 9 }} />
+                <div key={d} style={{ display: "grid", gridTemplateColumns: "26px 1fr 46px", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 6, background: `${DIM_INFO[d].cor}15`, color: DIM_INFO[d].cor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, fontFamily: "Outfit" }}>{d}</div>
+                  <div>
+                    <div style={{ fontSize: 11.5, color: ROXO_DARK, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>{DIM_INFO[d].nome} <InfoDot texto={DIM_INFO[d].plain} cor={DIM_INFO[d].cor} /></div>
+                    <div style={{ position: "relative", height: 6, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ position: "absolute", inset: 0, width: `${disc[d] ?? 0}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
+                    </div>
                   </div>
-                  <div style={{ width: 34, textAlign: "right", fontSize: 12, fontWeight: 700, color: DIM_INFO[d].cor }}>{disc[d] ?? 0}%</div>
+                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: ROXO_DARK, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10, color: CINZA, marginLeft: 1 }}>%</span></div>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              <MiniDet l="Postura no atendimento" v={`${c.postura_score ?? 0}%`} />
-              <MiniDet l="Aderência à vaga" v={`${match}%`} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
+              <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
+              <MiniDet l="Aderência à vaga" v={match} />
             </div>
           </Bloco>
 
@@ -1155,11 +1158,21 @@ function BoxList({ t, icon: Icon, cor, items }: any) {
     </div>
   );
 }
-function MiniDet({ l, v }: any) {
-  return <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 11, padding: "10px 13px" }}>
-    <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 600 }}>{l}</div>
-    <div className="h" style={{ fontSize: 20, fontWeight: 800, color: ROXO, lineHeight: 1.1, marginTop: 2 }}>{v}</div>
-  </div>;
+function MiniDet({ l, v }: { l: string; v: number }) {
+  const n = typeof v === "number" ? v : 0;
+  const cor = n >= 70 ? VERDE : n >= 50 ? LARANJA : "#C0392B";
+  return (
+    <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 10, padding: "11px 13px", background: "#FBFAFD" }}>
+      <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{l}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginTop: 4, marginBottom: 7 }}>
+        <div className="h" style={{ fontSize: 22, fontWeight: 800, color: ROXO_DARK, lineHeight: 1, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{n}</div>
+        <div style={{ fontSize: 11, color: CINZA, fontWeight: 600 }}>%</div>
+      </div>
+      <div style={{ height: 4, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: 4, width: `${n}%`, background: cor, borderRadius: 99 }} />
+      </div>
+    </div>
+  );
 }
 
 function DadosCadastraisBloco({ c }: { c: Candidato }) {
@@ -1246,16 +1259,20 @@ function DadosCadastraisBloco({ c }: { c: Candidato }) {
 }
 
 function Ring({ m }: { m: number }) {
-  const r = 32, c = 2 * Math.PI * r, cor = corMatch(m);
+  const size = 104, stroke = 9, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const cor = corMatch(m);
+  const cx = size / 2;
   return (
     <div style={{ textAlign: "center" }}>
-      <svg width="86" height="86" viewBox="0 0 86 86">
-        <circle cx="43" cy="43" r={r} fill="none" stroke="#EEEAF6" strokeWidth="8" />
-        <circle cx="43" cy="43" r={r} fill="none" stroke={cor} strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform="rotate(-90 43 43)" />
-        <text x="43" y="40" textAnchor="middle" fontSize="21" fontWeight="800" fill={cor} fontFamily="Outfit">{m}%</text>
-        <text x="43" y="54" textAnchor="middle" fontSize="8.5" fill="#888">match</text>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="#EEF1F6" strokeWidth={stroke} />
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke={cor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform={`rotate(-90 ${cx} ${cx})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
+        <text x={cx} y={cx - 2} textAnchor="middle" fontSize="24" fontWeight="800" fill={ROXO_DARK} fontFamily="Outfit" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="13" fill={CINZA} dx="1">%</tspan></text>
+        <text x={cx} y={cx + 14} textAnchor="middle" fontSize="8.5" fill={CINZA} letterSpacing="1.2" style={{ textTransform: "uppercase" }}>MATCH</text>
       </svg>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: cor, marginTop: -3 }}>{labelMatch(m)}</div>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: cor, marginTop: 4, background: `${cor}12`, padding: "2px 8px", borderRadius: 99 }}>
+        <span style={{ width: 6, height: 6, borderRadius: 99, background: cor }} />{labelMatch(m)}
+      </div>
     </div>
   );
 }
