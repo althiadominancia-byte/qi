@@ -173,6 +173,9 @@ export type Vaga = {
   unidade_id?: string;
   titulo: string;
   setor: string;
+  departamento_id?: string | null;
+  setor_id?: string | null;
+
   modelo: string;
   tipo: string;
   vagas: number;
