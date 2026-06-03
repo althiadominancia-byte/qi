@@ -280,6 +280,14 @@ function AdminPage() {
               <UserCog size={13} /> Equipe
             </button>
           )}
+          {(isSuper || !!scope?.perms?.gerenciar_vagas) && empresaAtivaId && (
+            <button onClick={() => navigate({ to: "/catalogo", search: { empresa: empresaAtivaId } })}
+              title="Departamentos e Setores"
+              style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
+              <Layers size={13} /> Catálogo
+            </button>
+          )}
+
           <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
 
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
