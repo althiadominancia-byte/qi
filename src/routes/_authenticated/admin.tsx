@@ -1243,6 +1243,8 @@ function DadosCadastraisBloco({ c }: { c: Candidato }) {
       {erro && <div style={{ marginTop: 10, fontSize: 12.5, color: VERMELHO, fontWeight: 600 }}>{erro}</div>}
     </Bloco>
   );
+}
+
 function Ring({ m }: { m: number }) {
   const r = 32, c = 2 * Math.PI * r, cor = corMatch(m);
   return (
