@@ -319,6 +319,7 @@ export type Database = {
           interna: boolean
           link_token: string
           modelo: string
+          motivo: string
           pesos: Json
           requisitos: string
           setor: string
@@ -348,6 +349,7 @@ export type Database = {
           interna?: boolean
           link_token?: string
           modelo?: string
+          motivo?: string
           pesos?: Json
           requisitos?: string
           setor?: string
@@ -377,6 +379,7 @@ export type Database = {
           interna?: boolean
           link_token?: string
           modelo?: string
+          motivo?: string
           pesos?: Json
           requisitos?: string
           setor?: string

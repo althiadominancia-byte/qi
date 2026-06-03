@@ -1,0 +1,1 @@
+ALTER TABLE public.vagas ADD COLUMN motivo text NOT NULL DEFAULT '';

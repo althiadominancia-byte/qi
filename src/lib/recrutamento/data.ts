@@ -191,6 +191,7 @@ export type Vaga = {
   situacoes: Situacao[];
   formulario_aprovado: boolean;
   interna: boolean;
+  motivo: string;
   created_at?: string;
 };
 
@@ -212,6 +213,7 @@ export const novaVagaVazia = (): Omit<Vaga, "id" | "link_token"> & { link_token?
   usar_situacional: true,
   disc_blocks: [], situacoes: [], formulario_aprovado: false,
   interna: true,
+  motivo: "",
 });
 
 /* ========== VALIDAÇÃO ========== */
