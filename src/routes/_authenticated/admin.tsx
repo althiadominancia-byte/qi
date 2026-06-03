@@ -1254,6 +1254,18 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
               <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Data de admissão</div>
               <input type="date" value={dataAdm} onChange={(e) => setDataAdm(e.target.value)} style={inp} />
             </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Líder imediato <span style={{ fontWeight: 500, color: "#9b93b0" }}>(líderes do setor da vaga)</span></div>
+              <select value={liderId} onChange={(e) => setLiderId(e.target.value)} style={inp}>
+                <option value="">{(lideresQ.data ?? []).length ? "Selecione…" : "Nenhum líder cadastrado para o setor — definir depois"}</option>
+                {(["gestor","coordenador","supervisor"] as const).map((nv) => {
+                  const grupo = (lideresQ.data ?? []).filter((l: any) => l.nivel === nv);
+                  if (!grupo.length) return null;
+                  const label = nv === "gestor" ? "Gestor" : nv === "coordenador" ? "Coordenador" : "Supervisor";
+                  return <optgroup key={nv} label={label}>{grupo.map((l: any) => <option key={l.id} value={l.id}>{l.nome}</option>)}</optgroup>;
+                })}
+              </select>
+            </div>
             {dataAdm && (
               <div style={{ background: ROXO_TINT, borderRadius: 10, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
