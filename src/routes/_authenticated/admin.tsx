@@ -185,12 +185,8 @@ function AdminPage() {
     qc.invalidateQueries({ queryKey: ["vagas"] });
   }
 
-  async function encerrarVaga(id: string) {
-    if (!confirm("Encerrar esta vaga? O link público fica inativo.")) return;
-    const { error } = await supabase.from("vagas").update({ status: "Fechada" }).eq("id", id);
-    if (error) { alert(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["vagas"] });
-  }
+  const [encerrarVagaId, setEncerrarVagaId] = useState<string | null>(null);
+  function encerrarVaga(id: string) { setEncerrarVagaId(id); }
   async function handleExcluirVaga(id: string) {
     if (!confirm("Tem certeza que deseja EXCLUIR permanentemente esta vaga?\n\nEsta ação não pode ser desfeita e todos os candidatos vinculados serão perdidos.")) return;
     try {
