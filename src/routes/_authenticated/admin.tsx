@@ -1210,7 +1210,7 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
     if (selecionou && (!candidatoId || !dataAdm)) { setErro("Selecione candidato e data de admissão."); return; }
     setSalvando(true); setErro("");
     try {
-      await encerrar({ data: { vaga_id: vagaId, selecionou, candidato_id: candidatoId || null, data_admissao: dataAdm || null, obs } });
+      await encerrar({ data: { vaga_id: vagaId, selecionou, candidato_id: candidatoId || null, data_admissao: dataAdm || null, lider_id: liderId || null, obs } });
       onDone();
     } catch (e: any) { setErro(e.message || "Falha ao encerrar."); }
     finally { setSalvando(false); }
