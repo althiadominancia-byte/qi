@@ -1158,11 +1158,21 @@ function BoxList({ t, icon: Icon, cor, items }: any) {
     </div>
   );
 }
-function MiniDet({ l, v }: any) {
-  return <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 11, padding: "10px 13px" }}>
-    <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 600 }}>{l}</div>
-    <div className="h" style={{ fontSize: 20, fontWeight: 800, color: ROXO, lineHeight: 1.1, marginTop: 2 }}>{v}</div>
-  </div>;
+function MiniDet({ l, v }: { l: string; v: number }) {
+  const n = typeof v === "number" ? v : 0;
+  const cor = n >= 70 ? VERDE : n >= 50 ? LARANJA : "#C0392B";
+  return (
+    <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 10, padding: "11px 13px", background: "#FBFAFD" }}>
+      <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{l}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginTop: 4, marginBottom: 7 }}>
+        <div className="h" style={{ fontSize: 22, fontWeight: 800, color: ROXO_DARK, lineHeight: 1, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{n}</div>
+        <div style={{ fontSize: 11, color: CINZA, fontWeight: 600 }}>%</div>
+      </div>
+      <div style={{ height: 4, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
+        <div style={{ height: 4, width: `${n}%`, background: cor, borderRadius: 99 }} />
+      </div>
+    </div>
+  );
 }
 
 function DadosCadastraisBloco({ c }: { c: Candidato }) {
