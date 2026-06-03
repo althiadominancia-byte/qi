@@ -966,7 +966,7 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
                       <div style={{ display: "block", height: 8, width: `${Math.max(2, disc[d] ?? 0)}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
                     </div>
                   </div>
-                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: ROXO_DARK, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10, color: CINZA, marginLeft: 1 }}>%</span></div>
+                  <div style={{ textAlign: "right", fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: ROXO_DARK, letterSpacing: -0.2, fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10.5, fontWeight: 600, color: CINZA, marginLeft: 1 }}>%</span></div>
                 </div>
               ))}
             </div>
@@ -1164,9 +1164,8 @@ function MiniDet({ l, v }: { l: string; v: number }) {
   return (
     <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 10, padding: "11px 13px", background: "#FBFAFD" }}>
       <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{l}</div>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 3, marginTop: 4, marginBottom: 7 }}>
-        <div className="h" style={{ fontSize: 22, fontWeight: 800, color: ROXO_DARK, lineHeight: 1, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{n}</div>
-        <div style={{ fontSize: 11, color: CINZA, fontWeight: 600 }}>%</div>
+      <div style={{ marginTop: 6, marginBottom: 8, fontFamily: "Outfit", fontSize: 26, fontWeight: 700, color: ROXO_DARK, lineHeight: 1, letterSpacing: -0.5, fontVariantNumeric: "tabular-nums" }}>
+        {n}<span style={{ fontSize: 14, fontWeight: 600, color: CINZA, marginLeft: 2, letterSpacing: 0 }}>%</span>
       </div>
       <div style={{ height: 4, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
         <div style={{ height: 4, width: `${n}%`, background: cor, borderRadius: 99 }} />
@@ -1267,8 +1266,8 @@ function Ring({ m }: { m: number }) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
         <circle cx={cx} cy={cx} r={r} fill="none" stroke="#EEF1F6" strokeWidth={stroke} />
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={cor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform={`rotate(-90 ${cx} ${cx})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
-        <text x={cx} y={cx - 2} textAnchor="middle" fontSize="24" fontWeight="800" fill={ROXO_DARK} fontFamily="Outfit" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="13" fill={CINZA} dx="1">%</tspan></text>
-        <text x={cx} y={cx + 14} textAnchor="middle" fontSize="8.5" fill={CINZA} letterSpacing="1.2" style={{ textTransform: "uppercase" }}>MATCH</text>
+        <text x={cx} y={cx + 4} textAnchor="middle" fontSize="26" fontWeight="700" fill={ROXO_DARK} fontFamily="Outfit" letterSpacing="-0.5" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="14" fontWeight="600" fill={CINZA} dx="1" dy="-1">%</tspan></text>
+        <text x={cx} y={cx + 19} textAnchor="middle" fontSize="8" fontWeight="700" fill={CINZA} letterSpacing="1.6" style={{ textTransform: "uppercase" }}>MATCH</text>
       </svg>
       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: cor, marginTop: 4, background: `${cor}12`, padding: "2px 8px", borderRadius: 99 }}>
         <span style={{ width: 6, height: 6, borderRadius: 99, background: cor }} />{labelMatch(m)}
