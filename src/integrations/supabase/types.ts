@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes_experiencia: {
+        Row: {
+          contratacao_id: string
+          created_at: string
+          data_prevista: string
+          empresa_id: string
+          enviada_em: string | null
+          id: string
+          marco: number
+          status: string
+          token: string
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          contratacao_id: string
+          created_at?: string
+          data_prevista: string
+          empresa_id: string
+          enviada_em?: string | null
+          id?: string
+          marco: number
+          status?: string
+          token?: string
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          contratacao_id?: string
+          created_at?: string
+          data_prevista?: string
+          empresa_id?: string
+          enviada_em?: string | null
+          id?: string
+          marco?: number
+          status?: string
+          token?: string
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_experiencia_contratacao_id_fkey"
+            columns: ["contratacao_id"]
+            isOneToOne: false
+            referencedRelation: "contratacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidatos_televendas: {
         Row: {
           celular: string
@@ -99,6 +149,66 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "candidatos_televendas_vaga_id_fkey"
+            columns: ["vaga_id"]
+            isOneToOne: false
+            referencedRelation: "vagas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratacoes: {
+        Row: {
+          candidato_id: string | null
+          created_at: string
+          data_admissao: string
+          email: string
+          empresa_id: string
+          id: string
+          nome: string
+          status: string
+          telefone: string
+          unidade_id: string
+          updated_at: string
+          vaga_id: string
+        }
+        Insert: {
+          candidato_id?: string | null
+          created_at?: string
+          data_admissao: string
+          email: string
+          empresa_id: string
+          id?: string
+          nome: string
+          status?: string
+          telefone?: string
+          unidade_id: string
+          updated_at?: string
+          vaga_id: string
+        }
+        Update: {
+          candidato_id?: string | null
+          created_at?: string
+          data_admissao?: string
+          email?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          status?: string
+          telefone?: string
+          unidade_id?: string
+          updated_at?: string
+          vaga_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratacoes_candidato_id_fkey"
+            columns: ["candidato_id"]
+            isOneToOne: false
+            referencedRelation: "candidatos_televendas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratacoes_vaga_id_fkey"
             columns: ["vaga_id"]
             isOneToOne: false
             referencedRelation: "vagas"
@@ -424,6 +534,7 @@ export type Database = {
           descricao: string
           disc_blocks: Json
           empresa_id: string
+          encerrada_em: string | null
           escolaridade: string
           experiencia: string
           formulario_aprovado: boolean
@@ -433,6 +544,7 @@ export type Database = {
           link_token: string
           modelo: string
           motivo: string
+          obs_encerramento: string
           pesos: Json
           requisitos: string
           setor: string
@@ -456,6 +568,7 @@ export type Database = {
           descricao?: string
           disc_blocks?: Json
           empresa_id: string
+          encerrada_em?: string | null
           escolaridade?: string
           experiencia?: string
           formulario_aprovado?: boolean
@@ -465,6 +578,7 @@ export type Database = {
           link_token?: string
           modelo?: string
           motivo?: string
+          obs_encerramento?: string
           pesos?: Json
           requisitos?: string
           setor?: string
@@ -488,6 +602,7 @@ export type Database = {
           descricao?: string
           disc_blocks?: Json
           empresa_id?: string
+          encerrada_em?: string | null
           escolaridade?: string
           experiencia?: string
           formulario_aprovado?: boolean
@@ -497,6 +612,7 @@ export type Database = {
           link_token?: string
           modelo?: string
           motivo?: string
+          obs_encerramento?: string
           pesos?: Json
           requisitos?: string
           setor?: string
