@@ -359,13 +359,14 @@ function AdminPage() {
 
         {aba === "candidatos" && (
           <CandidatosLista vagas={vagas} vagaSel={vagaSel} setVagaSel={setVagaSel} vagaAtual={vagaAtual}
-            candidatos={candidatosQ.data ?? []} loading={candidatosQ.isLoading} onAbrir={setSel} />
+            candidatos={candidatosQ.data ?? []} loading={candidatosQ.isLoading}
+            onAbrir={(c: Candidato) => navigate({ to: "/candidato/$id", params: { id: c.id } })} />
         )}
 
         {aba === "diversidade" && <Diversidade rows={diversidadeQ.data ?? []} loading={diversidadeQ.isLoading} />}
       </div>
 
-      {sel && <Detalhe c={sel} vaga={vagas.find((v) => v.id === sel.vaga_id) || null} onClose={() => setSel(null)} />}
+
       {encerrarVagaId && (
         <EncerrarVagaModal
           vagaId={encerrarVagaId}
