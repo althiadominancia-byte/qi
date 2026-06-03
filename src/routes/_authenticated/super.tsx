@@ -143,13 +143,14 @@ function SuperAdminPage() {
         <div style={{ lineHeight: 1, minWidth: 0 }}>
           <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>PLATAFORMA · RECRUTAMENTO</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17, display: "flex", alignItems: "center", gap: 7 }}>
-            <Crown size={16} /> Super Admin
+            {isSuper ? <Crown size={16} /> : <UserCog size={16} />} {isSuper ? "Super Admin" : "Administração"}
           </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
           <span style={{ color: "#fff", fontSize: 12, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
-            <Headphones size={14} /> Controle global
+            <Headphones size={14} /> {isSuper ? "Controle global" : scope?.empresa_nome || "Sua empresa"}
           </span>
+
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
             <LogOut size={13} /> Sair
           </button>
