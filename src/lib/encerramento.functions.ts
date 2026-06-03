@@ -136,14 +136,19 @@ export const getContratacaoByVaga = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: contr } = await supabaseAdmin.from("contratacoes")
-      .select("id, nome, email, telefone, data_admissao, status, candidato_id")
+      .select("id, nome, email, telefone, data_admissao, status, candidato_id, lider_id")
       .eq("vaga_id", data.vaga_id).maybeSingle();
     if (!contr) return null;
     const { data: avs } = await supabaseAdmin.from("avaliacoes_experiencia")
       .select("id, marco, data_prevista, status, enviada_em, token")
       .eq("contratacao_id", contr.id)
       .order("marco");
-    return { ...contr, avaliacoes: avs ?? [] };
+    let lider: any = null;
+    if (contr.lider_id) {
+      const { data: l } = await supabaseAdmin.from("lideres").select("id, nome, nivel").eq("id", contr.lider_id).maybeSingle();
+      lider = l ?? null;
+    }
+    return { ...contr, avaliacoes: avs ?? [], lider };
   });
 
 const AvIdInput = z.object({ avaliacao_id: z.string().uuid() });
