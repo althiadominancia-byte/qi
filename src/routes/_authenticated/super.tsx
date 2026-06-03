@@ -114,13 +114,14 @@ function SuperAdminPage() {
   if (scopeQ.isLoading) {
     return <div style={{ padding: 40, textAlign: "center", color: CINZA, fontFamily: "system-ui" }}>Carregando...</div>;
   }
-  if (scope && scope.role !== "super_admin") {
+  if (scope && !podeGerenciar) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: VERMELHO, fontFamily: "system-ui" }}>
-        Acesso restrito ao Super Admin.
+        Acesso restrito a administradores.
       </div>
     );
   }
+
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
