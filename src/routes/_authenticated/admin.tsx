@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Candidato = {
+export type Candidato = {
   id: string; created_at: string; vaga_id: string | null;
   nome: string; email: string; celular: string; setor_atual: string | null;
   perfil_key: string | null; perfil_nome: string | null;
@@ -49,7 +49,7 @@ function AdminPage() {
   const [aba, setAba] = useState<"vagas" | "candidatos" | "diversidade">("vagas");
   const [editando, setEditando] = useState<Vaga | null>(null);
   const [vagaSel, setVagaSel] = useState<string | null>(null);
-  const [sel, setSel] = useState<Candidato | null>(null);
+  
   const qc = useQueryClient();
 
   const fetchScope = useServerFn(getMyScope);
@@ -359,13 +359,14 @@ function AdminPage() {
 
         {aba === "candidatos" && (
           <CandidatosLista vagas={vagas} vagaSel={vagaSel} setVagaSel={setVagaSel} vagaAtual={vagaAtual}
-            candidatos={candidatosQ.data ?? []} loading={candidatosQ.isLoading} onAbrir={setSel} />
+            candidatos={candidatosQ.data ?? []} loading={candidatosQ.isLoading}
+            onAbrir={(c: Candidato) => navigate({ to: "/candidato/$id", params: { id: c.id } })} />
         )}
 
         {aba === "diversidade" && <Diversidade rows={diversidadeQ.data ?? []} loading={diversidadeQ.isLoading} />}
       </div>
 
-      {sel && <Detalhe c={sel} vaga={vagas.find((v) => v.id === sel.vaga_id) || null} onClose={() => setSel(null)} />}
+
       {encerrarVagaId && (
         <EncerrarVagaModal
           vagaId={encerrarVagaId}
@@ -878,7 +879,7 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
 }
 
 /* ========== Detalhe candidato ========== */
-function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClose: () => void }) {
+export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClose: () => void }) {
   const p = c.perfil_key ? (PERFIS as any)[c.perfil_key] : null;
   const match = vaga ? matchDe(vaga, c) : (c.match_final ?? 0);
   const disc = c.disc_pontuacao || {};
@@ -916,9 +917,10 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
 
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(58,37,102,.45)", display: "flex", justifyContent: "flex-end", zIndex: 50 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ width: "min(560px,100%)", background: "#FBFAFE", height: "100%", overflowY: "auto", boxShadow: "-10px 0 40px rgba(0,0,0,.2)" }}>
+    <div style={{ minHeight: "100vh", background: "#FBFAFE" }}>
+      <div style={{ maxWidth: 920, margin: "0 auto" }}>
         <div style={{ background: ROXO, padding: "18px 22px", display: "flex", alignItems: "center", gap: 13, position: "sticky", top: 0, zIndex: 2 }}>
+          <button onClick={onClose} title="Voltar" style={{ background: "rgba(255,255,255,.18)", border: "none", borderRadius: 9, width: 34, height: 34, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronLeft size={18} /></button>
           <div style={{ width: 46, height: 46, borderRadius: 99, background: "#fff", color: ROXO, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16 }} className="h">
             {c.nome.split(" ").map((n) => n[0]).slice(0, 2).join("")}
           </div>
@@ -926,8 +928,8 @@ function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClos
             <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19 }}>{c.nome}</div>
             <div style={{ color: "#fff", opacity: 0.85, fontSize: 12.5 }}>{c.setor_atual || "—"}{vaga ? ` · ${vaga.titulo}` : ""}</div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,.18)", border: "none", borderRadius: 9, width: 34, height: 34, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={18} /></button>
         </div>
+
 
         <div style={{ padding: 20 }}>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: CINZA, marginBottom: 18 }}>
