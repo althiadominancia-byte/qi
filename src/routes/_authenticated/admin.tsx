@@ -160,6 +160,7 @@ function AdminPage() {
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
       interna: v.interna ?? true,
+      motivo: (v as any).motivo ?? "",
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
