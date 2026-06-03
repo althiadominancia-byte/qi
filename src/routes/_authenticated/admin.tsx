@@ -424,6 +424,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                 <button onClick={() => onPrevia(v)} style={btnSec}><FileText size={14} /> Prévia do formulário</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
+                {isSuper && <button onClick={() => onExcluir(v.id)} style={btnDel}><Trash2 size={14} /> Excluir</button>}
               </div>
             </div>
           );
