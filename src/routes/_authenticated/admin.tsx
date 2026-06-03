@@ -6,11 +6,11 @@ import {
   Briefcase, Star, AlertCircle, Lightbulb, BarChart3, ShieldCheck, Calendar, Headphones,
   Filter, FileText, LogOut, Plus, Save, Pencil, Ban, CalendarClock, Wand2, Loader2,
   Circle, Info, Link2, Copy, Check, Target, Layers, GraduationCap, Settings2, Calculator,
-  Crown, Building2, ChevronDown, RefreshCw, UserCog,
+  Crown, Building2, ChevronDown, RefreshCw, UserCog, Trash2,
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
-import { gerarPerfilVaga } from "@/lib/recrutamento.functions";
+import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -52,6 +52,7 @@ function AdminPage() {
   const qc = useQueryClient();
 
   const fetchScope = useServerFn(getMyScope);
+  const excluirVagaFn = useServerFn(excluirVaga);
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
@@ -188,6 +189,15 @@ function AdminPage() {
     const { error } = await supabase.from("vagas").update({ status: "Fechada" }).eq("id", id);
     if (error) { alert(error.message); return; }
     qc.invalidateQueries({ queryKey: ["vagas"] });
+  }
+  async function handleExcluirVaga(id: string) {
+    if (!confirm("Tem certeza que deseja EXCLUIR permanentemente esta vaga?\n\nEsta ação não pode ser desfeita e todos os candidatos vinculados serão perdidos.")) return;
+    try {
+      await excluirVagaFn({ data: { vagaId: id } });
+      qc.invalidateQueries({ queryKey: ["vagas"] });
+    } catch (e: any) {
+      alert(e.message || "Erro ao excluir vaga.");
+    }
   }
   async function sair() { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); }
 
@@ -341,12 +351,13 @@ function AdminPage() {
         {aba === "vagas" && (editando
           ? <ConstrutorVaga vaga={editando} empresaId={empresaAtivaId} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
 
-          : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
+          : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem} isSuper={isSuper}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined, unidade_id: unidadePadraoId ?? undefined } as any)}
               onEditar={(v: Vaga) => setEditando(v)}
               onVerCand={(v: Vaga) => { setVagaSel(v.id); setAba("candidatos"); }}
-              onEncerrar={encerrarVaga} />
+              onEncerrar={encerrarVaga}
+              onExcluir={handleExcluirVaga} />
         )}
 
         {aba === "candidatos" && (
@@ -363,7 +374,7 @@ function AdminPage() {
 }
 
 /* ========== Aba Vagas — Lista ========== */
-function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar, onPrevia }: any) {
+function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onEncerrar, onPrevia, isSuper, onExcluir }: any) {
   if (loading) return <div style={{ textAlign: "center", padding: 30, color: CINZA }}>Carregando...</div>;
   return (
     <>
@@ -413,6 +424,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                 <button onClick={() => onPrevia(v)} style={btnSec}><FileText size={14} /> Prévia do formulário</button>
                 <button onClick={() => onVerCand(v)} style={btnPri}><Users size={14} /> Ver candidatos <ChevronRight size={15} /></button>
                 {!efetivamenteEncerrada(v) && <button onClick={() => onEncerrar(v.id)} style={btnEnc}><Ban size={14} /> Encerrar vaga</button>}
+                {isSuper && <button onClick={() => onExcluir(v.id)} style={btnDel}><Trash2 size={14} /> Excluir</button>}
               </div>
             </div>
           );
@@ -1086,6 +1098,7 @@ function Diversidade({ rows, loading }: { rows: DivRow[]; loading: boolean }) {
 const btnSec: React.CSSProperties = { background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnPri: React.CSSProperties = { background: ROXO, color: "#fff", border: "none", padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnEnc: React.CSSProperties = { background: "#fff", color: VERMELHO, border: `1.5px solid ${VERMELHO}55`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
+const btnDel: React.CSSProperties = { background: "#fff", color: VERMELHO, border: `1.5px solid ${VERMELHO}55`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnAdd: React.CSSProperties = { background: ROXO, color: "#fff", border: "none", padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" };
 const selNivel = (n: string): React.CSSProperties => ({ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${BORDA}`, fontSize: 12, fontWeight: 700, color: n === "essencial" ? VERMELHO : n === "importante" ? LARANJA : "#7C7791", background: "#fff", cursor: "pointer", fontFamily: "inherit" });
 
