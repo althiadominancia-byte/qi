@@ -253,3 +253,19 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
 
     return out;
   });
+
+const ExcluirInput = z.object({ vagaId: z.string().uuid() });
+
+export const excluirVaga = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ExcluirInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: me } = await supabaseAdmin.from("usuarios").select("role, ativo").eq("id", userId).maybeSingle();
+    if (!me?.ativo) throw new Error("Usuário não autorizado.");
+    if (me.role !== "super_admin") throw new Error("Apenas Super Admin pode excluir vagas.");
+    const { error } = await supabaseAdmin.from("vagas").delete().eq("id", data.vagaId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
