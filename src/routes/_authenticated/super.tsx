@@ -318,7 +318,7 @@ function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSa
 
           <Campo label="Papel (função)">
             <div data-grid2 style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              {ORDEM_ROLES.map((rk) => {
+              {ORDEM_ROLES.filter((rk) => viewerIsSuper || rk !== "super_admin").map((rk) => {
                 const r = ROLES[rk]; const Ic = ROLE_ICONS[rk]; const on = u.role === rk;
                 return (
                   <button key={rk} onClick={() => setRole(rk)} style={{
@@ -336,11 +336,12 @@ function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSa
           {!isSuper && (
             <>
               <Campo label="Empresa">
-                <select style={inp} value={u.empresa_id || ""} onChange={(e) => set("empresa_id", e.target.value)}>
+                <select style={inp} value={u.empresa_id || ""} onChange={(e) => set("empresa_id", e.target.value)} disabled={!viewerIsSuper}>
                   <option value="">Selecione...</option>
                   {empresas.map((e: Empresa) => <option key={e.id} value={e.id}>{e.nome}</option>)}
                 </select>
               </Campo>
+
               <Campo label="Acesso às unidades">
                 <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, color: ROXO_DARK, marginBottom: 10, cursor: "pointer" }}>
                   <Switch on={u.todas_unidades} onClick={() => set("todas_unidades", !u.todas_unidades)} />
