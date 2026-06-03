@@ -191,6 +191,7 @@ export type Vaga = {
   situacoes: Situacao[];
   formulario_aprovado: boolean;
   interna: boolean;
+  motivo: string;
   created_at?: string;
 };
 
