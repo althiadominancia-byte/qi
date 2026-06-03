@@ -11,7 +11,7 @@ import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
-import { PERM_KEYS, PERM_LABELS, ROLES, ORDEM_ROLES, PRESET, type RoleKey, type PermKey } from "@/lib/recrutamento/perms";
+import { ROLES, ORDEM_ROLES, PRESET, type RoleKey } from "@/lib/recrutamento/perms";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO,
 } from "@/lib/recrutamento/data";

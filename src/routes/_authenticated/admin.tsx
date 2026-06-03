@@ -280,7 +280,14 @@ function AdminPage() {
               <UserCog size={13} /> Equipe
             </button>
           )}
-          {(isSuper || !!scope?.perms?.gerenciar_vagas) && empresaAtivaId && (
+          {(isSuper || !!scope?.perms?.gerenciar_usuarios) && (
+            <button onClick={() => navigate({ to: "/permissoes" })}
+              title="Permissões"
+              style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
+              <ShieldCheck size={13} /> Permissões
+            </button>
+          )}
+          {(isSuper || !!scope?.perms?.gerenciar_catalogo) && empresaAtivaId && (
             <button onClick={() => navigate({ to: "/catalogo", search: { empresa: empresaAtivaId } })}
               title="Departamentos e Setores"
               style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
