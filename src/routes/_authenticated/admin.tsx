@@ -1161,6 +1161,88 @@ function MiniDet({ l, v }: any) {
     <div className="h" style={{ fontSize: 20, fontWeight: 800, color: ROXO, lineHeight: 1.1, marginTop: 2 }}>{v}</div>
   </div>;
 }
+
+function DadosCadastraisBloco({ c }: { c: Candidato }) {
+  const qc = useQueryClient();
+  const salvarFn = useServerFn(atualizarCadastroCandidato);
+  const [edit, setEdit] = useState(false);
+  const [form, setForm] = useState({
+    nome: c.nome ?? "",
+    email: c.email ?? "",
+    celular: c.celular ?? "",
+    endereco: c.endereco ?? "",
+    setor_atual: c.setor_atual ?? "",
+    tempo_empresa: c.tempo_empresa ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    setForm({
+      nome: c.nome ?? "", email: c.email ?? "", celular: c.celular ?? "",
+      endereco: c.endereco ?? "", setor_atual: c.setor_atual ?? "", tempo_empresa: c.tempo_empresa ?? "",
+    });
+  }, [c.id]);
+
+  const salvar = async () => {
+    setErro(null); setSaving(true);
+    try {
+      await salvarFn({ data: { id: c.id, ...form } });
+      await qc.invalidateQueries({ queryKey: ["candidato", c.id] });
+      await qc.invalidateQueries({ queryKey: ["candidatos"] });
+      setEdit(false);
+    } catch (e: any) {
+      setErro(e?.message ?? "Falha ao salvar.");
+    } finally { setSaving(false); }
+  };
+
+  const cancelar = () => {
+    setForm({
+      nome: c.nome ?? "", email: c.email ?? "", celular: c.celular ?? "",
+      endereco: c.endereco ?? "", setor_atual: c.setor_atual ?? "", tempo_empresa: c.tempo_empresa ?? "",
+    });
+    setErro(null); setEdit(false);
+  };
+
+  const Campo = ({ label, value, onChange, type = "text" }: { label: string; value: string; onChange: (v: string) => void; type?: string }) => (
+    <div>
+      <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 4 }}>{label}</div>
+      {edit ? (
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} style={inp} />
+      ) : (
+        <div style={{ fontSize: 14, fontWeight: 600, color: ROXO_DARK, wordBreak: "break-word" }}>{value || "—"}</div>
+      )}
+    </div>
+  );
+
+  return (
+    <Bloco>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <Cab icon={UserCog} t="Dados cadastrais" />
+        {!edit ? (
+          <button onClick={() => setEdit(true)} style={{ display: "flex", alignItems: "center", gap: 6, background: ROXO_TINT, color: ROXO, border: "none", padding: "6px 12px", borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>
+            <Pencil size={13} /> Editar
+          </button>
+        ) : (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={cancelar} disabled={saving} style={{ background: "#fff", color: CINZA, border: `1px solid ${BORDA}`, padding: "6px 12px", borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Cancelar</button>
+            <button onClick={salvar} disabled={saving} style={{ display: "flex", alignItems: "center", gap: 6, background: ROXO, color: "#fff", border: "none", padding: "6px 12px", borderRadius: 8, fontWeight: 700, fontSize: 12.5, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Salvar
+            </button>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+        <Campo label="Nome completo" value={form.nome} onChange={(v) => setForm((f) => ({ ...f, nome: v }))} />
+        <Campo label="E-mail" value={form.email} onChange={(v) => setForm((f) => ({ ...f, email: v }))} type="email" />
+        <Campo label="Celular" value={form.celular} onChange={(v) => setForm((f) => ({ ...f, celular: v }))} />
+        <Campo label="Endereço" value={form.endereco} onChange={(v) => setForm((f) => ({ ...f, endereco: v }))} />
+        <Campo label="Setor / função atual" value={form.setor_atual} onChange={(v) => setForm((f) => ({ ...f, setor_atual: v }))} />
+        <Campo label="Tempo de empresa" value={form.tempo_empresa} onChange={(v) => setForm((f) => ({ ...f, tempo_empresa: v }))} />
+      </div>
+      {erro && <div style={{ marginTop: 10, fontSize: 12.5, color: VERMELHO, fontWeight: 600 }}>{erro}</div>}
+    </Bloco>
+  );
 function Ring({ m }: { m: number }) {
   const r = 32, c = 2 * Math.PI * r, cor = corMatch(m);
   return (
