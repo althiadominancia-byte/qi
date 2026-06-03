@@ -106,6 +106,41 @@ export type Database = {
           },
         ]
       }
+      departamentos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          empresa_id: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diversidade_candidatos: {
         Row: {
           created_at: string
@@ -168,6 +203,51 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      setores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          departamento_id: string
+          empresa_id: string
+          id: string
+          nome: string
+          ordem: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          departamento_id: string
+          empresa_id: string
+          id?: string
+          nome: string
+          ordem?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          departamento_id?: string
+          empresa_id?: string
+          id?: string
+          nome?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setores_dep_emp_fk"
+            columns: ["empresa_id", "departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "setores_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unidades: {
         Row: {
@@ -308,6 +388,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           data_limite: string | null
+          departamento_id: string | null
           descricao: string
           disc_blocks: Json
           empresa_id: string
@@ -323,6 +404,7 @@ export type Database = {
           pesos: Json
           requisitos: string
           setor: string
+          setor_id: string | null
           short_code: string
           situacoes: Json
           status: string
@@ -338,6 +420,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_limite?: string | null
+          departamento_id?: string | null
           descricao?: string
           disc_blocks?: Json
           empresa_id: string
@@ -353,6 +436,7 @@ export type Database = {
           pesos?: Json
           requisitos?: string
           setor?: string
+          setor_id?: string | null
           short_code?: string
           situacoes?: Json
           status?: string
@@ -368,6 +452,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data_limite?: string | null
+          departamento_id?: string | null
           descricao?: string
           disc_blocks?: Json
           empresa_id?: string
@@ -383,6 +468,7 @@ export type Database = {
           pesos?: Json
           requisitos?: string
           setor?: string
+          setor_id?: string | null
           short_code?: string
           situacoes?: Json
           status?: string
@@ -394,6 +480,20 @@ export type Database = {
           vagas?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "vagas_dep_emp_fk"
+            columns: ["empresa_id", "departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "vagas_set_emp_fk"
+            columns: ["empresa_id", "setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["empresa_id", "id"]
+          },
           {
             foreignKeyName: "vagas_unidade_fk"
             columns: ["empresa_id", "unidade_id"]

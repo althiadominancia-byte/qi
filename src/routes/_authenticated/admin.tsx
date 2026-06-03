@@ -153,14 +153,20 @@ function AdminPage() {
 
 
   async function salvarVaga(v: Vaga | (Omit<Vaga, "id" | "link_token"> & { id?: string; link_token?: string })) {
+    if (!(v as any).departamento_id || !(v as any).setor_id) {
+      alert("Selecione Departamento e Setor.");
+      return;
+    }
     const payload: any = {
-      titulo: v.titulo, setor: v.setor, modelo: v.modelo, tipo: v.tipo, vagas: v.vagas,
+      titulo: v.titulo, modelo: v.modelo, tipo: v.tipo, vagas: v.vagas,
       status: v.status, descricao: v.descricao, data_limite: v.data_limite || null,
       pesos: v.pesos, habilidades: v.habilidades, competencias: v.competencias,
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
       interna: v.interna ?? true,
       motivo: (v as any).motivo ?? "",
+      departamento_id: (v as any).departamento_id,
+      setor_id: (v as any).setor_id,
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
@@ -176,6 +182,7 @@ function AdminPage() {
     setEditando(null);
     qc.invalidateQueries({ queryKey: ["vagas"] });
   }
+
   async function encerrarVaga(id: string) {
     if (!confirm("Encerrar esta vaga? O link público fica inativo.")) return;
     const { error } = await supabase.from("vagas").update({ status: "Fechada" }).eq("id", id);
@@ -273,6 +280,14 @@ function AdminPage() {
               <UserCog size={13} /> Equipe
             </button>
           )}
+          {(isSuper || !!scope?.perms?.gerenciar_vagas) && empresaAtivaId && (
+            <button onClick={() => navigate({ to: "/catalogo", search: { empresa: empresaAtivaId } })}
+              title="Departamentos e Setores"
+              style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
+              <Layers size={13} /> Catálogo
+            </button>
+          )}
+
           <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
 
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
@@ -317,7 +332,8 @@ function AdminPage() {
         )}
 
         {aba === "vagas" && (editando
-          ? <ConstrutorVaga vaga={editando} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+          ? <ConstrutorVaga vaga={editando} empresaId={empresaAtivaId} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined, unidade_id: unidadePadraoId ?? undefined } as any)}
@@ -485,7 +501,7 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
 }
 
 /* ========== Aba Vagas — Construtor ========== */
-function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
+function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga: any; empresaId: string | null; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
   const [v, setV] = useState<any>(vaga);
   const set = (k: string, val: any) => setV((p: any) => ({ ...p, [k]: val }));
   const [novaHab, setNovaHab] = useState("");
@@ -495,6 +511,30 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
   const [simPostura, setSimPostura] = useState(85);
   const [gerando, setGerando] = useState(false);
   const [erroIA, setErroIA] = useState("");
+
+  const depsQ = useQuery({
+    queryKey: ["catalogo:deps", empresaId],
+    queryFn: async () => {
+      let q = supabase.from("departamentos").select("id,nome,ativo,ordem").order("ordem").order("nome");
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!empresaId,
+  });
+  const setoresQ = useQuery({
+    queryKey: ["catalogo:setores", empresaId, v.departamento_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("setores")
+        .select("id,nome,ativo,ordem,departamento_id")
+        .eq("departamento_id", v.departamento_id)
+        .order("ordem").order("nome");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!v.departamento_id,
+  });
 
   useEffect(() => {
     if (!v.unidade_id && unidades[0]?.id) set("unidade_id", unidades[0].id);
@@ -506,6 +546,7 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
 
   const setPeso = (k: PerfilKey, val: number) => setV((p: any) => ({ ...p, pesos: { ...p.pesos, [k]: val } }));
   const setNivelHabValor = (i: number, nivel: NivelHab) => setV((p: any) => { const h = [...p.habilidades]; h[i] = { ...h[i], nivel }; return { ...p, habilidades: h }; });
+
   const addHab = () => { if (novaHab.trim()) { setV((p: any) => ({ ...p, habilidades: [...p.habilidades, { nome: novaHab.trim(), nivel: nivelNovaHab }] })); setNovaHab(""); } };
   const rmHab = (i: number) => setV((p: any) => ({ ...p, habilidades: p.habilidades.filter((_: any, j: number) => j !== i) }));
   const addComp = () => { if (novaComp.trim()) { setV((p: any) => ({ ...p, competencias: [...p.competencias, novaComp.trim()] })); setNovaComp(""); } };
@@ -533,11 +574,33 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
 
       <CardBox><Cab icon={Briefcase} t="Dados da vaga" />
         <CampoLabel label="Título da vaga"><input style={inp} value={v.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Ex.: Televendas (Interna)" /></CampoLabel>
-        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-          <CampoLabel label="Setor / área"><input style={inp} value={v.setor} onChange={(e) => set("setor", e.target.value)} /></CampoLabel>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <CampoLabel label="Departamento">
+            <select style={inp} value={v.departamento_id || ""} onChange={(e) => setV((p: any) => ({ ...p, departamento_id: e.target.value || null, setor_id: null, setor: "" }))}>
+              <option value="">Selecione…</option>
+              {(depsQ.data ?? []).filter((d: any) => d.ativo || d.id === v.departamento_id).map((d: any) => (
+                <option key={d.id} value={d.id}>{d.nome}{!d.ativo ? " (inativo)" : ""}</option>
+              ))}
+            </select>
+          </CampoLabel>
+          <CampoLabel label="Setor">
+            <select style={inp} value={v.setor_id || ""} disabled={!v.departamento_id} onChange={(e) => {
+              const id = e.target.value || null;
+              const found = (setoresQ.data ?? []).find((s: any) => s.id === id);
+              setV((p: any) => ({ ...p, setor_id: id, setor: found?.nome ?? "" }));
+            }}>
+              <option value="">{v.departamento_id ? "Selecione…" : "Escolha o departamento"}</option>
+              {(setoresQ.data ?? []).filter((s: any) => s.ativo || s.id === v.setor_id).map((s: any) => (
+                <option key={s.id} value={s.id}>{s.nome}{!s.ativo ? " (inativo)" : ""}</option>
+              ))}
+            </select>
+          </CampoLabel>
+        </div>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
+
         <CampoLabel label="Motivo da vaga">
           <select style={inp} value={v.motivo || ""} onChange={(e) => set("motivo", e.target.value)}>
             <option value="">Selecione o motivo</option>

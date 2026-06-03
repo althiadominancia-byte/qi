@@ -173,6 +173,9 @@ export type Vaga = {
   unidade_id?: string;
   titulo: string;
   setor: string;
+  departamento_id?: string | null;
+  setor_id?: string | null;
+
   modelo: string;
   tipo: string;
   vagas: number;
@@ -206,7 +209,8 @@ export function statusVaga(v: { status: string; data_limite: string | null }): {
 }
 
 export const novaVagaVazia = (): Omit<Vaga, "id" | "link_token"> & { link_token?: string } => ({
-  titulo: "", setor: "", modelo: "Presencial", tipo: "Efetivo", vagas: 1, status: "Rascunho",
+  titulo: "", setor: "", departamento_id: null, setor_id: null, modelo: "Presencial", tipo: "Efetivo", vagas: 1, status: "Rascunho",
+
   descricao: "", data_limite: null,
   pesos: { comunicador: 50, fechador: 50, diplomatico: 50, executor: 50, analitico: 50 },
   habilidades: [], competencias: [], experiencia: "", escolaridade: "", requisitos: "",
