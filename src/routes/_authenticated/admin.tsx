@@ -36,6 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 export type Candidato = {
   id: string; created_at: string; vaga_id: string | null;
   nome: string; email: string; celular: string; setor_atual: string | null;
+  tempo_empresa?: string | null; endereco?: string | null;
   perfil_key: string | null; perfil_nome: string | null;
   match_final: number | null; match_label: string | null; postura_score: number | null;
   disc_pontuacao: any; cv_analise: any; cv_storage_path: string | null; cv_nome_arquivo: string | null;
@@ -941,7 +942,24 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, color: CINZA, marginBottom: 18 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Mail size={14} color={ROXO} /> {c.email}</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} color={ROXO} /> {c.celular}</span>
+            {c.endereco && <span style={{ display: "flex", alignItems: "center", gap: 6 }}>📍 {c.endereco}</span>}
           </div>
+
+          {(c.setor_atual || c.tempo_empresa) && (
+            <Bloco>
+              <Cab icon={Building2} t="Movimentação interna" />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 4 }}>Setor / função atual</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: ROXO_DARK }}>{c.setor_atual || "—"}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 4 }}>Tempo de empresa</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: ROXO_DARK }}>{c.tempo_empresa || "—"}</div>
+                </div>
+              </div>
+            </Bloco>
+          )}
 
           <JornadaBloco c={c} vaga={vaga} />
 
