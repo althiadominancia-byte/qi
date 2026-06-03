@@ -966,7 +966,7 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
                       <div style={{ display: "block", height: 8, width: `${Math.max(2, disc[d] ?? 0)}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
                     </div>
                   </div>
-                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: ROXO_DARK, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10, color: CINZA, marginLeft: 1 }}>%</span></div>
+                  <div style={{ textAlign: "right", fontFamily: "Outfit", fontSize: 14, fontWeight: 700, color: ROXO_DARK, letterSpacing: -0.2, fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10.5, fontWeight: 600, color: CINZA, marginLeft: 1 }}>%</span></div>
                 </div>
               ))}
             </div>
