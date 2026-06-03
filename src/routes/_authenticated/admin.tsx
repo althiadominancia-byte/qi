@@ -1178,10 +1178,12 @@ function Ring({ m }: { m: number }) {
 /* ========== Encerramento de vaga ========== */
 function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClose: () => void; onDone: () => void }) {
   const listCands = useServerFn(listCandidatosDaVaga);
+  const listLideres = useServerFn(listLideresDaVaga);
   const encerrar = useServerFn(encerrarVagaFn);
   const [selecionou, setSelecionou] = useState<null | boolean>(null);
   const [candidatoId, setCandidatoId] = useState<string>("");
   const [dataAdm, setDataAdm] = useState<string>("");
+  const [liderId, setLiderId] = useState<string>("");
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -1189,6 +1191,11 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
   const candsQ = useQuery({
     queryKey: ["candidatos-vaga", vagaId],
     queryFn: () => listCands({ data: { vaga_id: vagaId } }) as Promise<any[]>,
+    enabled: selecionou === true,
+  });
+  const lideresQ = useQuery({
+    queryKey: ["lideres-vaga", vagaId],
+    queryFn: () => listLideres({ data: { vaga_id: vagaId } }) as Promise<any[]>,
     enabled: selecionou === true,
   });
 
