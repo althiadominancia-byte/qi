@@ -1266,8 +1266,8 @@ function Ring({ m }: { m: number }) {
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
         <circle cx={cx} cy={cx} r={r} fill="none" stroke="#EEF1F6" strokeWidth={stroke} />
         <circle cx={cx} cy={cx} r={r} fill="none" stroke={cor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform={`rotate(-90 ${cx} ${cx})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
-        <text x={cx} y={cx - 2} textAnchor="middle" fontSize="24" fontWeight="800" fill={ROXO_DARK} fontFamily="Outfit" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="13" fill={CINZA} dx="1">%</tspan></text>
-        <text x={cx} y={cx + 14} textAnchor="middle" fontSize="8.5" fill={CINZA} letterSpacing="1.2" style={{ textTransform: "uppercase" }}>MATCH</text>
+        <text x={cx} y={cx + 4} textAnchor="middle" fontSize="26" fontWeight="700" fill={ROXO_DARK} fontFamily="Outfit" letterSpacing="-0.5" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="14" fontWeight="600" fill={CINZA} dx="1" dy="-1">%</tspan></text>
+        <text x={cx} y={cx + 19} textAnchor="middle" fontSize="8" fontWeight="700" fill={CINZA} letterSpacing="1.6" style={{ textTransform: "uppercase" }}>MATCH</text>
       </svg>
       <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: cor, marginTop: 4, background: `${cor}12`, padding: "2px 8px", borderRadius: 99 }}>
         <span style={{ width: 6, height: 6, borderRadius: 99, background: cor }} />{labelMatch(m)}
