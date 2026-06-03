@@ -493,7 +493,7 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
 }
 
 /* ========== Aba Vagas — Construtor ========== */
-function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
+function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga: any; empresaId: string | null; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
   const [v, setV] = useState<any>(vaga);
   const set = (k: string, val: any) => setV((p: any) => ({ ...p, [k]: val }));
   const [novaHab, setNovaHab] = useState("");
@@ -503,6 +503,30 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
   const [simPostura, setSimPostura] = useState(85);
   const [gerando, setGerando] = useState(false);
   const [erroIA, setErroIA] = useState("");
+
+  const depsQ = useQuery({
+    queryKey: ["catalogo:deps", empresaId],
+    queryFn: async () => {
+      let q = supabase.from("departamentos").select("id,nome,ativo,ordem").order("ordem").order("nome");
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!empresaId,
+  });
+  const setoresQ = useQuery({
+    queryKey: ["catalogo:setores", empresaId, v.departamento_id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("setores")
+        .select("id,nome,ativo,ordem,departamento_id")
+        .eq("departamento_id", v.departamento_id)
+        .order("ordem").order("nome");
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!v.departamento_id,
+  });
 
   useEffect(() => {
     if (!v.unidade_id && unidades[0]?.id) set("unidade_id", unidades[0].id);
@@ -514,6 +538,7 @@ function ConstrutorVaga({ vaga, unidades, onSave, onCancel }: { vaga: any; unida
 
   const setPeso = (k: PerfilKey, val: number) => setV((p: any) => ({ ...p, pesos: { ...p.pesos, [k]: val } }));
   const setNivelHabValor = (i: number, nivel: NivelHab) => setV((p: any) => { const h = [...p.habilidades]; h[i] = { ...h[i], nivel }; return { ...p, habilidades: h }; });
+
   const addHab = () => { if (novaHab.trim()) { setV((p: any) => ({ ...p, habilidades: [...p.habilidades, { nome: novaHab.trim(), nivel: nivelNovaHab }] })); setNovaHab(""); } };
   const rmHab = (i: number) => setV((p: any) => ({ ...p, habilidades: p.habilidades.filter((_: any, j: number) => j !== i) }));
   const addComp = () => { if (novaComp.trim()) { setV((p: any) => ({ ...p, competencias: [...p.competencias, novaComp.trim()] })); setNovaComp(""); } };
