@@ -962,8 +962,8 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
                   <div style={{ width: 26, height: 26, borderRadius: 6, background: `${DIM_INFO[d].cor}15`, color: DIM_INFO[d].cor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, fontFamily: "Outfit" }}>{d}</div>
                   <div>
                     <div style={{ fontSize: 11.5, color: ROXO_DARK, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>{DIM_INFO[d].nome} <InfoDot texto={DIM_INFO[d].plain} cor={DIM_INFO[d].cor} /></div>
-                    <div style={{ position: "relative", height: 6, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
-                      <div style={{ position: "absolute", inset: 0, width: `${disc[d] ?? 0}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
+                    <div style={{ display: "block", height: 8, background: "#EEF1F6", borderRadius: 99, overflow: "hidden", boxSizing: "border-box" }}>
+                      <div style={{ display: "block", height: 8, width: `${Math.max(2, disc[d] ?? 0)}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
                     </div>
                   </div>
                   <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: ROXO_DARK, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10, color: CINZA, marginLeft: 1 }}>%</span></div>
