@@ -66,6 +66,7 @@ export const encerrarVaga = createServerFn({ method: "POST" })
           telefone: cand.celular ?? "",
           data_admissao: data.data_admissao,
           status: "ativa",
+          lider_id: data.lider_id ?? null,
         } as any)
         .select("id, empresa_id, unidade_id, data_admissao").maybeSingle();
       if (insErr || !contr) {
@@ -89,6 +90,16 @@ export const encerrarVaga = createServerFn({ method: "POST" })
         throw new Error("Falha ao agendar avaliações: " + avErr.message);
       }
 
+      // 4) Atualiza jornada dos candidatos
+      const now = new Date().toISOString();
+      await supabaseAdmin.from("candidatos_televendas")
+        .update({ etapa: "contratado", nao_contratado_motivo: null, etapa_atualizada_em: now })
+        .eq("id", cand.id);
+      await supabaseAdmin.from("candidatos_televendas")
+        .update({ etapa: "nao_contratado", nao_contratado_motivo: "vaga_preenchida", etapa_atualizada_em: now })
+        .eq("vaga_id", data.vaga_id)
+        .neq("id", cand.id);
+
       return { ok: true, contratacao_id: contr.id };
     }
 
@@ -97,6 +108,9 @@ export const encerrarVaga = createServerFn({ method: "POST" })
       .update({ status: "Fechada", encerrada_em: new Date().toISOString(), obs_encerramento: data.obs ?? "" })
       .eq("id", data.vaga_id);
     if (upErr) throw new Error("Falha ao encerrar vaga: " + upErr.message);
+    await supabaseAdmin.from("candidatos_televendas")
+      .update({ etapa: "nao_contratado", nao_contratado_motivo: "encerramento_insucesso", etapa_atualizada_em: new Date().toISOString() })
+      .eq("vaga_id", data.vaga_id);
     return { ok: true };
   });
 
