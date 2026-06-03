@@ -76,12 +76,17 @@ export type Database = {
           email: string
           empresa_id: string | null
           endereco: string | null
+          entrevista_data: string | null
+          entrevista_obs: string | null
+          etapa: string
+          etapa_atualizada_em: string
           experiencia_texto: string | null
           id: string
           lgpd_aceite: boolean
           match_final: number | null
           match_label: string | null
           motivacao_texto: string | null
+          nao_contratado_motivo: string | null
           nome: string
           perfil_key: string | null
           perfil_nome: string | null
@@ -103,12 +108,17 @@ export type Database = {
           email: string
           empresa_id?: string | null
           endereco?: string | null
+          entrevista_data?: string | null
+          entrevista_obs?: string | null
+          etapa?: string
+          etapa_atualizada_em?: string
           experiencia_texto?: string | null
           id?: string
           lgpd_aceite?: boolean
           match_final?: number | null
           match_label?: string | null
           motivacao_texto?: string | null
+          nao_contratado_motivo?: string | null
           nome: string
           perfil_key?: string | null
           perfil_nome?: string | null
@@ -130,12 +140,17 @@ export type Database = {
           email?: string
           empresa_id?: string | null
           endereco?: string | null
+          entrevista_data?: string | null
+          entrevista_obs?: string | null
+          etapa?: string
+          etapa_atualizada_em?: string
           experiencia_texto?: string | null
           id?: string
           lgpd_aceite?: boolean
           match_final?: number | null
           match_label?: string | null
           motivacao_texto?: string | null
+          nao_contratado_motivo?: string | null
           nome?: string
           perfil_key?: string | null
           perfil_nome?: string | null
@@ -164,6 +179,7 @@ export type Database = {
           email: string
           empresa_id: string
           id: string
+          lider_id: string | null
           nome: string
           status: string
           telefone: string
@@ -178,6 +194,7 @@ export type Database = {
           email: string
           empresa_id: string
           id?: string
+          lider_id?: string | null
           nome: string
           status?: string
           telefone?: string
@@ -192,6 +209,7 @@ export type Database = {
           email?: string
           empresa_id?: string
           id?: string
+          lider_id?: string | null
           nome?: string
           status?: string
           telefone?: string
@@ -205,6 +223,13 @@ export type Database = {
             columns: ["candidato_id"]
             isOneToOne: false
             referencedRelation: "candidatos_televendas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratacoes_lider_id_fkey"
+            columns: ["lider_id"]
+            isOneToOne: false
+            referencedRelation: "lideres"
             referencedColumns: ["id"]
           },
           {
@@ -313,6 +338,99 @@ export type Database = {
           nome?: string
         }
         Relationships: []
+      }
+      lider_areas: {
+        Row: {
+          created_at: string
+          departamento_id: string
+          empresa_id: string
+          id: string
+          lider_id: string
+          setor_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          departamento_id: string
+          empresa_id: string
+          id?: string
+          lider_id: string
+          setor_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          departamento_id?: string
+          empresa_id?: string
+          id?: string
+          lider_id?: string
+          setor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lider_areas_dep_emp_fk"
+            columns: ["empresa_id", "departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "lider_areas_lider_emp_fk"
+            columns: ["empresa_id", "lider_id"]
+            isOneToOne: false
+            referencedRelation: "lideres"
+            referencedColumns: ["empresa_id", "id"]
+          },
+          {
+            foreignKeyName: "lider_areas_setor_emp_fk"
+            columns: ["empresa_id", "setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["empresa_id", "id"]
+          },
+        ]
+      }
+      lideres: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string | null
+          empresa_id: string
+          id: string
+          nivel: string
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          empresa_id: string
+          id?: string
+          nivel: string
+          nome: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          empresa_id?: string
+          id?: string
+          nivel?: string
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lideres_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permissoes_papel: {
         Row: {

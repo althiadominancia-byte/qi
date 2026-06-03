@@ -12,6 +12,8 @@ import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
+import { selecionarParaEntrevista, removerEntrevista } from "@/lib/jornada.functions";
+import { listLideresDaVaga } from "@/lib/lideres.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -38,6 +40,10 @@ export type Candidato = {
   match_final: number | null; match_label: string | null; postura_score: number | null;
   disc_pontuacao: any; cv_analise: any; cv_storage_path: string | null; cv_nome_arquivo: string | null;
   experiencia_texto: string | null;
+  etapa?: "inscrito" | "entrevista" | "contratado" | "nao_contratado" | null;
+  entrevista_data?: string | null;
+  entrevista_obs?: string | null;
+  nao_contratado_motivo?: "vaga_preenchida" | "encerramento_insucesso" | null;
 };
 type DivRow = { raca: string | null; genero: string | null; orientacao: string | null; pcd: string | null; politico: string | null };
 
@@ -937,6 +943,9 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}><Phone size={14} color={ROXO} /> {c.celular}</span>
           </div>
 
+          <JornadaBloco c={c} vaga={vaga} />
+
+
           <Bloco>
             <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 180 }}>
@@ -1169,10 +1178,12 @@ function Ring({ m }: { m: number }) {
 /* ========== Encerramento de vaga ========== */
 function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClose: () => void; onDone: () => void }) {
   const listCands = useServerFn(listCandidatosDaVaga);
+  const listLideres = useServerFn(listLideresDaVaga);
   const encerrar = useServerFn(encerrarVagaFn);
   const [selecionou, setSelecionou] = useState<null | boolean>(null);
   const [candidatoId, setCandidatoId] = useState<string>("");
   const [dataAdm, setDataAdm] = useState<string>("");
+  const [liderId, setLiderId] = useState<string>("");
   const [obs, setObs] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -1180,6 +1191,11 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
   const candsQ = useQuery({
     queryKey: ["candidatos-vaga", vagaId],
     queryFn: () => listCands({ data: { vaga_id: vagaId } }) as Promise<any[]>,
+    enabled: selecionou === true,
+  });
+  const lideresQ = useQuery({
+    queryKey: ["lideres-vaga", vagaId],
+    queryFn: () => listLideres({ data: { vaga_id: vagaId } }) as Promise<any[]>,
     enabled: selecionou === true,
   });
 
@@ -1194,7 +1210,7 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
     if (selecionou && (!candidatoId || !dataAdm)) { setErro("Selecione candidato e data de admissão."); return; }
     setSalvando(true); setErro("");
     try {
-      await encerrar({ data: { vaga_id: vagaId, selecionou, candidato_id: candidatoId || null, data_admissao: dataAdm || null, obs } });
+      await encerrar({ data: { vaga_id: vagaId, selecionou, candidato_id: candidatoId || null, data_admissao: dataAdm || null, lider_id: liderId || null, obs } });
       onDone();
     } catch (e: any) { setErro(e.message || "Falha ao encerrar."); }
     finally { setSalvando(false); }
@@ -1237,6 +1253,18 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Data de admissão</div>
               <input type="date" value={dataAdm} onChange={(e) => setDataAdm(e.target.value)} style={inp} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Líder imediato <span style={{ fontWeight: 500, color: "#9b93b0" }}>(líderes do setor da vaga)</span></div>
+              <select value={liderId} onChange={(e) => setLiderId(e.target.value)} style={inp}>
+                <option value="">{(lideresQ.data ?? []).length ? "Selecione…" : "Nenhum líder cadastrado para o setor — definir depois"}</option>
+                {(["gestor","coordenador","supervisor"] as const).map((nv) => {
+                  const grupo = (lideresQ.data ?? []).filter((l: any) => l.nivel === nv);
+                  if (!grupo.length) return null;
+                  const label = nv === "gestor" ? "Gestor" : nv === "coordenador" ? "Coordenador" : "Supervisor";
+                  return <optgroup key={nv} label={label}>{grupo.map((l: any) => <option key={l.id} value={l.id}>{l.nome}</option>)}</optgroup>;
+                })}
+              </select>
             </div>
             {dataAdm && (
               <div style={{ background: ROXO_TINT, borderRadius: 10, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 12 }}>
@@ -1311,6 +1339,139 @@ function ContratacaoCard({ vagaId }: { vagaId: string }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ========== Jornada do candidato ========== */
+function JornadaBloco({ c, vaga }: { c: Candidato; vaga: Vaga | null }) {
+  const qc = useQueryClient();
+  const selecionar = useServerFn(selecionarParaEntrevista);
+  const remover = useServerFn(removerEntrevista);
+  const fetchContr = useServerFn(getContratacaoByVaga);
+  const etapa = (c.etapa ?? "inscrito") as "inscrito" | "entrevista" | "contratado" | "nao_contratado";
+  const vagaFechada = !!vaga && (vaga.status === "Fechada" || !!(vaga as any).encerrada_em);
+  const final = etapa === "contratado" || etapa === "nao_contratado";
+
+  const [editando, setEditando] = useState(etapa === "inscrito");
+  const [data, setData] = useState<string>(c.entrevista_data ? new Date(c.entrevista_data).toISOString().slice(0, 16) : "");
+  const [erro, setErro] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const contrQ = useQuery({
+    queryKey: ["contratacao", c.vaga_id],
+    queryFn: () => fetchContr({ data: { vaga_id: c.vaga_id! } }) as Promise<any>,
+    enabled: !!c.vaga_id && etapa === "contratado",
+  });
+
+  async function salvar() {
+    if (!data) { setErro("Escolha a data."); return; }
+    setSalvando(true); setErro("");
+    try {
+      await selecionar({ data: { candidato_id: c.id, data: new Date(data).toISOString() } });
+      qc.invalidateQueries({ queryKey: ["candidato", c.id] });
+      qc.invalidateQueries({ queryKey: ["candidatos"] });
+      setEditando(false);
+    } catch (e: any) { setErro(e.message || "Falha."); }
+    finally { setSalvando(false); }
+  }
+  async function tirar() {
+    if (!confirm("Remover da etapa de entrevista?")) return;
+    try {
+      await remover({ data: { candidato_id: c.id } });
+      qc.invalidateQueries({ queryKey: ["candidato", c.id] });
+      qc.invalidateQueries({ queryKey: ["candidatos"] });
+      setEditando(true); setData("");
+    } catch (e: any) { alert(e.message || "Falha."); }
+  }
+
+  const fmtDT = (iso: string | null | undefined) => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
+  const contr = contrQ.data;
+
+  return (
+    <Bloco>
+      <Cab icon={Calendar} t="Jornada do candidato" />
+      <Etapa done titulo="Inscrição" cor={VERDE} ultimo={false}>
+        <div style={{ fontSize: 12.5, color: CINZA }}>Inscrito em {new Date(c.created_at).toLocaleString("pt-BR")}</div>
+      </Etapa>
+
+      <Etapa done={etapa === "entrevista" || final} ativo={etapa === "inscrito"} ultimo={false} titulo="Entrevista" cor={etapa === "entrevista" || final ? VERDE : LARANJA}>
+        {etapa === "inscrito" && !vagaFechada && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} style={{ ...inp, flex: "1 1 220px" }} />
+            <button onClick={salvar} disabled={!data || salvando} style={{ ...btnPri, opacity: data && !salvando ? 1 : 0.5 }}>Selecionar para entrevista</button>
+          </div>
+        )}
+        {etapa === "inscrito" && vagaFechada && <div style={{ fontSize: 12.5, color: CINZA }}>Vaga encerrada — não é possível agendar entrevista.</div>}
+        {etapa === "entrevista" && !editando && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, color: ROXO_DARK }}>Marcada para <strong>{fmtDT(c.entrevista_data)}</strong></span>
+            {!vagaFechada && <button onClick={() => setEditando(true)} style={{ background: "none", border: "none", color: ROXO, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>remarcar</button>}
+            {!vagaFechada && <button onClick={tirar} style={{ background: "none", border: "none", color: VERMELHO, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>remover</button>}
+          </div>
+        )}
+        {etapa === "entrevista" && editando && !vagaFechada && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <input type="datetime-local" value={data} onChange={(e) => setData(e.target.value)} style={{ ...inp, flex: "1 1 220px" }} />
+            <button onClick={salvar} disabled={!data || salvando} style={{ ...btnPri, opacity: data && !salvando ? 1 : 0.5 }}>Confirmar</button>
+            <button onClick={() => setEditando(false)} style={btnSec}>Cancelar</button>
+          </div>
+        )}
+        {final && c.entrevista_data && <div style={{ fontSize: 12.5, color: CINZA }}>Entrevista: {fmtDT(c.entrevista_data)}</div>}
+        {erro && <div style={{ fontSize: 12, color: VERMELHO, marginTop: 6 }}>{erro}</div>}
+      </Etapa>
+
+      <Etapa done={final} ativo={etapa === "entrevista"} ultimo titulo="Resultado" cor={etapa === "contratado" ? VERDE : etapa === "nao_contratado" ? "#9b93b0" : LARANJA}>
+        {!final && <div style={{ fontSize: 12.5, color: CINZA }}>Definido quando a vaga for encerrada.</div>}
+        {etapa === "contratado" && (
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 700, fontSize: 13.5, color: VERDE, marginBottom: 8 }}>
+              <Award size={16} /> Contratado{contr?.data_admissao ? ` · admissão ${fmtData(contr.data_admissao)}` : ""}
+            </div>
+            <div style={{ fontSize: 12.5, color: ROXO_DARK, marginBottom: 10 }}>
+              Líder imediato: <strong>{contr?.lider ? `${contr.lider.nome} (${contr.lider.nivel === "gestor" ? "Gestor" : contr.lider.nivel === "coordenador" ? "Coordenador" : "Supervisor"})` : "definir depois"}</strong>
+            </div>
+            {contr?.avaliacoes?.length > 0 && (
+              <div style={{ background: LARANJA_TINT, borderRadius: 12, padding: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: ROXO_DARK, display: "flex", alignItems: "center", gap: 6, marginBottom: 9 }}>
+                  <CalendarClock size={14} color={LARANJA} /> Fases de experiência
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {contr.avaliacoes.map((a: any) => (
+                    <div key={a.id} style={{ textAlign: "center", background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 10, padding: "8px 13px" }}>
+                      <div className="h" style={{ fontWeight: 800, fontSize: 14, color: ROXO }}>{a.marco} dias</div>
+                      <div style={{ fontSize: 11, color: CINZA, fontWeight: 600 }}>{fmtData(a.data_prevista)}</div>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: a.status === "respondida" ? VERDE : a.status === "enviada" ? ROXO : LARANJA, marginTop: 2, textTransform: "uppercase" }}>{a.status}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {etapa === "nao_contratado" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 700, fontSize: 13.5, color: "#9b93b0" }}>
+            <Ban size={16} /> Não contratado — {c.nao_contratado_motivo === "vaga_preenchida" ? "vaga preenchida por outro candidato" : "vaga encerrada sem contratação"}
+          </div>
+        )}
+      </Etapa>
+    </Bloco>
+  );
+}
+
+function Etapa({ done, ativo, ultimo, titulo, cor, children }: { done?: boolean; ativo?: boolean; ultimo?: boolean; titulo: string; cor: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", gap: 13 }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ width: 28, height: 28, borderRadius: 99, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", background: done ? cor : ativo ? cor + "22" : "#EFECF7", color: done ? "#fff" : ativo ? cor : "#9b93b0", border: `2px solid ${done || ativo ? cor : "#E0DBEE"}` }}>
+          {done ? <Check size={14} /> : <span style={{ fontSize: 10, fontWeight: 800 }}>•</span>}
+        </div>
+        {!ultimo && <div style={{ width: 2, flex: 1, minHeight: 20, background: done ? cor + "66" : "#E0DBEE", margin: "4px 0" }} />}
+      </div>
+      <div style={{ flex: 1, paddingBottom: ultimo ? 0 : 16 }}>
+        <div className="h" style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 6, color: ROXO_DARK }}>{titulo}</div>
+        {children}
       </div>
     </div>
   );

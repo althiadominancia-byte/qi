@@ -7,6 +7,7 @@ const EncerrarInput = z.object({
   selecionou: z.boolean(),
   candidato_id: z.string().uuid().optional().nullable(),
   data_admissao: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  lider_id: z.string().uuid().optional().nullable(),
   obs: z.string().max(2000).optional().default(""),
 });
 
@@ -65,6 +66,7 @@ export const encerrarVaga = createServerFn({ method: "POST" })
           telefone: cand.celular ?? "",
           data_admissao: data.data_admissao,
           status: "ativa",
+          lider_id: data.lider_id ?? null,
         } as any)
         .select("id, empresa_id, unidade_id, data_admissao").maybeSingle();
       if (insErr || !contr) {
@@ -88,6 +90,16 @@ export const encerrarVaga = createServerFn({ method: "POST" })
         throw new Error("Falha ao agendar avaliações: " + avErr.message);
       }
 
+      // 4) Atualiza jornada dos candidatos
+      const now = new Date().toISOString();
+      await supabaseAdmin.from("candidatos_televendas")
+        .update({ etapa: "contratado", nao_contratado_motivo: null, etapa_atualizada_em: now })
+        .eq("id", cand.id);
+      await supabaseAdmin.from("candidatos_televendas")
+        .update({ etapa: "nao_contratado", nao_contratado_motivo: "vaga_preenchida", etapa_atualizada_em: now })
+        .eq("vaga_id", data.vaga_id)
+        .neq("id", cand.id);
+
       return { ok: true, contratacao_id: contr.id };
     }
 
@@ -96,6 +108,9 @@ export const encerrarVaga = createServerFn({ method: "POST" })
       .update({ status: "Fechada", encerrada_em: new Date().toISOString(), obs_encerramento: data.obs ?? "" })
       .eq("id", data.vaga_id);
     if (upErr) throw new Error("Falha ao encerrar vaga: " + upErr.message);
+    await supabaseAdmin.from("candidatos_televendas")
+      .update({ etapa: "nao_contratado", nao_contratado_motivo: "encerramento_insucesso", etapa_atualizada_em: new Date().toISOString() })
+      .eq("vaga_id", data.vaga_id);
     return { ok: true };
   });
 
@@ -121,14 +136,19 @@ export const getContratacaoByVaga = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: contr } = await supabaseAdmin.from("contratacoes")
-      .select("id, nome, email, telefone, data_admissao, status, candidato_id")
+      .select("id, nome, email, telefone, data_admissao, status, candidato_id, lider_id")
       .eq("vaga_id", data.vaga_id).maybeSingle();
     if (!contr) return null;
     const { data: avs } = await supabaseAdmin.from("avaliacoes_experiencia")
       .select("id, marco, data_prevista, status, enviada_em, token")
       .eq("contratacao_id", contr.id)
       .order("marco");
-    return { ...contr, avaliacoes: avs ?? [] };
+    let lider: any = null;
+    if (contr.lider_id) {
+      const { data: l } = await supabaseAdmin.from("lideres").select("id, nome, nivel").eq("id", contr.lider_id).maybeSingle();
+      lider = l ?? null;
+    }
+    return { ...contr, avaliacoes: avs ?? [], lider };
   });
 
 const AvIdInput = z.object({ avaliacao_id: z.string().uuid() });
