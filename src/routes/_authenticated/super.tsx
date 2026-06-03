@@ -205,7 +205,8 @@ function SuperAdminPage() {
 
       {editUser && (
         <UsuarioModal
-          user={editUser} empresas={empresas} unidadesDe={unidadesDe}
+          user={editUser} empresas={empresas} unidadesDe={unidadesDe} viewerIsSuper={isSuper}
+
           onClose={() => setEditUser(null)}
           onSaved={() => {
             setEditUser(null);
