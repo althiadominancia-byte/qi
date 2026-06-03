@@ -153,14 +153,20 @@ function AdminPage() {
 
 
   async function salvarVaga(v: Vaga | (Omit<Vaga, "id" | "link_token"> & { id?: string; link_token?: string })) {
+    if (!(v as any).departamento_id || !(v as any).setor_id) {
+      alert("Selecione Departamento e Setor.");
+      return;
+    }
     const payload: any = {
-      titulo: v.titulo, setor: v.setor, modelo: v.modelo, tipo: v.tipo, vagas: v.vagas,
+      titulo: v.titulo, modelo: v.modelo, tipo: v.tipo, vagas: v.vagas,
       status: v.status, descricao: v.descricao, data_limite: v.data_limite || null,
       pesos: v.pesos, habilidades: v.habilidades, competencias: v.competencias,
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
       interna: v.interna ?? true,
       motivo: (v as any).motivo ?? "",
+      departamento_id: (v as any).departamento_id,
+      setor_id: (v as any).setor_id,
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
     if ((v as any).id) {
@@ -176,6 +182,7 @@ function AdminPage() {
     setEditando(null);
     qc.invalidateQueries({ queryKey: ["vagas"] });
   }
+
   async function encerrarVaga(id: string) {
     if (!confirm("Encerrar esta vaga? O link público fica inativo.")) return;
     const { error } = await supabase.from("vagas").update({ status: "Fechada" }).eq("id", id);
