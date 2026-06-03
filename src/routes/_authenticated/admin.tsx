@@ -566,11 +566,33 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga:
 
       <CardBox><Cab icon={Briefcase} t="Dados da vaga" />
         <CampoLabel label="Título da vaga"><input style={inp} value={v.titulo} onChange={(e) => set("titulo", e.target.value)} placeholder="Ex.: Televendas (Interna)" /></CampoLabel>
-        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-          <CampoLabel label="Setor / área"><input style={inp} value={v.setor} onChange={(e) => set("setor", e.target.value)} /></CampoLabel>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <CampoLabel label="Departamento">
+            <select style={inp} value={v.departamento_id || ""} onChange={(e) => setV((p: any) => ({ ...p, departamento_id: e.target.value || null, setor_id: null, setor: "" }))}>
+              <option value="">Selecione…</option>
+              {(depsQ.data ?? []).filter((d: any) => d.ativo || d.id === v.departamento_id).map((d: any) => (
+                <option key={d.id} value={d.id}>{d.nome}{!d.ativo ? " (inativo)" : ""}</option>
+              ))}
+            </select>
+          </CampoLabel>
+          <CampoLabel label="Setor">
+            <select style={inp} value={v.setor_id || ""} disabled={!v.departamento_id} onChange={(e) => {
+              const id = e.target.value || null;
+              const found = (setoresQ.data ?? []).find((s: any) => s.id === id);
+              setV((p: any) => ({ ...p, setor_id: id, setor: found?.nome ?? "" }));
+            }}>
+              <option value="">{v.departamento_id ? "Selecione…" : "Escolha o departamento"}</option>
+              {(setoresQ.data ?? []).filter((s: any) => s.ativo || s.id === v.setor_id).map((s: any) => (
+                <option key={s.id} value={s.id}>{s.nome}{!s.ativo ? " (inativo)" : ""}</option>
+              ))}
+            </select>
+          </CampoLabel>
+        </div>
+        <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <CampoLabel label="Modelo"><select style={inp} value={v.modelo} onChange={(e) => set("modelo", e.target.value)}><option>Presencial</option><option>Híbrido</option><option>Remoto</option></select></CampoLabel>
           <CampoLabel label="Tipo"><select style={inp} value={v.tipo} onChange={(e) => set("tipo", e.target.value)}><option>Efetivo</option><option>Temporário</option><option>Estágio</option><option>Aprendiz</option></select></CampoLabel>
         </div>
+
         <CampoLabel label="Motivo da vaga">
           <select style={inp} value={v.motivo || ""} onChange={(e) => set("motivo", e.target.value)}>
             <option value="">Selecione o motivo</option>
