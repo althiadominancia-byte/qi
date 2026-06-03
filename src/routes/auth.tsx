@@ -11,7 +11,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,19 +30,26 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true); setMsg(null);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email, password,
-          options: { emailRedirectTo: `${window.location.origin}/admin` },
-        });
-        if (error) throw error;
-        setMsg({ type: "ok", text: "Cadastro criado! Verifique seu e-mail para confirmar e peça acesso de recrutador a um admin." });
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err: any) {
       setMsg({ type: "err", text: err.message || "Erro ao autenticar." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function esqueciSenha() {
+    if (!email) { setMsg({ type: "err", text: "Informe seu e-mail acima para receber o link." }); return; }
+    setLoading(true); setMsg(null);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
+      setMsg({ type: "ok", text: "Enviamos um link para redefinir sua senha. Verifique seu e-mail." });
+    } catch (err: any) {
+      setMsg({ type: "err", text: err.message || "Erro ao enviar link." });
     } finally {
       setLoading(false);
     }
@@ -79,10 +85,10 @@ function AuthPage() {
           width: "100%", maxWidth: 420, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)",
         }}>
           <h1 className="h" style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>
-            {mode === "login" ? "Entrar no painel" : "Criar acesso"}
+            Entrar no painel
           </h1>
           <p style={{ color: CINZA, fontSize: 13, margin: "0 0 20px" }}>
-            Área restrita ao RH da Distribuidora Estrela.
+            Área restrita ao RH da Distribuidora Estrela. O acesso é concedido por convite do administrador.
           </p>
 
           <label style={{ display: "block", marginBottom: 14 }}>
@@ -107,14 +113,15 @@ function AuthPage() {
             width: "100%", background: LARANJA, color: "#fff", border: "none",
             padding: "12px 18px", borderRadius: 12, fontSize: 14.5, fontWeight: 700,
             cursor: loading ? "wait" : "pointer", fontFamily: "inherit",
-          }}>{loading ? "Aguarde..." : mode === "login" ? "Entrar" : "Criar conta"}</button>
+          }}>{loading ? "Aguarde..." : "Entrar"}</button>
 
-          <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setMsg(null); }} style={{
+          <button type="button" onClick={esqueciSenha} disabled={loading} style={{
             marginTop: 14, width: "100%", background: "none", border: "none",
             color: ROXO, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
           }}>
-            {mode === "login" ? "Não tem conta? Criar acesso" : "Já tem conta? Entrar"}
+            Esqueci minha senha
           </button>
+
         </form>
       </div>
     </div>
