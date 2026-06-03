@@ -324,7 +324,8 @@ function AdminPage() {
         )}
 
         {aba === "vagas" && (editando
-          ? <ConstrutorVaga vaga={editando} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+          ? <ConstrutorVaga vaga={editando} empresaId={empresaAtivaId} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
               onNova={() => setEditando({ ...(novaVagaVazia() as any), id: undefined, unidade_id: unidadePadraoId ?? undefined } as any)}
