@@ -11,6 +11,7 @@ import {
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
+import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -184,12 +185,8 @@ function AdminPage() {
     qc.invalidateQueries({ queryKey: ["vagas"] });
   }
 
-  async function encerrarVaga(id: string) {
-    if (!confirm("Encerrar esta vaga? O link público fica inativo.")) return;
-    const { error } = await supabase.from("vagas").update({ status: "Fechada" }).eq("id", id);
-    if (error) { alert(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["vagas"] });
-  }
+  const [encerrarVagaId, setEncerrarVagaId] = useState<string | null>(null);
+  function encerrarVaga(id: string) { setEncerrarVagaId(id); }
   async function handleExcluirVaga(id: string) {
     if (!confirm("Tem certeza que deseja EXCLUIR permanentemente esta vaga?\n\nEsta ação não pode ser desfeita e todos os candidatos vinculados serão perdidos.")) return;
     try {
@@ -369,6 +366,13 @@ function AdminPage() {
       </div>
 
       {sel && <Detalhe c={sel} vaga={vagas.find((v) => v.id === sel.vaga_id) || null} onClose={() => setSel(null)} />}
+      {encerrarVagaId && (
+        <EncerrarVagaModal
+          vagaId={encerrarVagaId}
+          onClose={() => setEncerrarVagaId(null)}
+          onDone={() => { setEncerrarVagaId(null); qc.invalidateQueries({ queryKey: ["vagas"] }); qc.invalidateQueries({ queryKey: ["contratacao"] }); }}
+        />
+      )}
     </div>
   );
 }
@@ -419,6 +423,7 @@ function VagasLista({ vagas, loading, contagem, onNova, onEditar, onVerCand, onE
                 </div>
               </div>
               <LinkPublico vaga={v} />
+              {efetivamenteEncerrada(v) && <ContratacaoCard vagaId={v.id} />}
               <div data-vaga-actions style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
                 <button onClick={() => onEditar(v)} style={btnSec}><Pencil size={14} /> Editar perfil</button>
                 <button onClick={() => onPrevia(v)} style={btnSec}><FileText size={14} /> Prévia do formulário</button>
@@ -1155,6 +1160,156 @@ function Ring({ m }: { m: number }) {
         <text x="43" y="54" textAnchor="middle" fontSize="8.5" fill="#888">match</text>
       </svg>
       <div style={{ fontSize: 11.5, fontWeight: 700, color: cor, marginTop: -3 }}>{labelMatch(m)}</div>
+    </div>
+  );
+}
+
+/* ========== Encerramento de vaga ========== */
+function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClose: () => void; onDone: () => void }) {
+  const listCands = useServerFn(listCandidatosDaVaga);
+  const encerrar = useServerFn(encerrarVagaFn);
+  const [selecionou, setSelecionou] = useState<null | boolean>(null);
+  const [candidatoId, setCandidatoId] = useState<string>("");
+  const [dataAdm, setDataAdm] = useState<string>("");
+  const [obs, setObs] = useState("");
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState("");
+
+  const candsQ = useQuery({
+    queryKey: ["candidatos-vaga", vagaId],
+    queryFn: () => listCands({ data: { vaga_id: vagaId } }) as Promise<any[]>,
+    enabled: selecionou === true,
+  });
+
+  function addDays(iso: string, d: number) {
+    const x = new Date(iso + "T00:00:00Z");
+    x.setUTCDate(x.getUTCDate() + d);
+    return x.toISOString().slice(0, 10);
+  }
+
+  async function confirmar() {
+    if (selecionou === null) { setErro("Escolha Sim ou Não."); return; }
+    if (selecionou && (!candidatoId || !dataAdm)) { setErro("Selecione candidato e data de admissão."); return; }
+    setSalvando(true); setErro("");
+    try {
+      await encerrar({ data: { vaga_id: vagaId, selecionou, candidato_id: candidatoId || null, data_admissao: dataAdm || null, obs } });
+      onDone();
+    } catch (e: any) { setErro(e.message || "Falha ao encerrar."); }
+    finally { setSalvando(false); }
+  }
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(20,10,40,.45)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, maxWidth: 520, width: "100%", maxHeight: "90vh", overflow: "auto", padding: 22 }}>
+        <div className="h" style={{ fontSize: 18, fontWeight: 800, color: ROXO_DARK, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+          <Ban size={18} color={VERMELHO} /> Encerrar vaga
+        </div>
+        <div style={{ fontSize: 13, color: CINZA, marginBottom: 16 }}>O link público fica inativo após encerrar.</div>
+
+        <div style={{ fontSize: 13.5, fontWeight: 700, color: ROXO_DARK, marginBottom: 8 }}>Algum candidato foi selecionado?</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          {[[true, "Sim"], [false, "Não"]].map(([val, lbl]: any) => {
+            const on = selecionou === val;
+            return (
+              <button key={String(val)} onClick={() => setSelecionou(val)} style={{
+                flex: 1, padding: "11px 14px", borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+                border: `1.5px solid ${on ? ROXO : BORDA}`, background: on ? ROXO + "12" : "#fff", color: on ? ROXO : CINZA,
+              }}>{lbl}</button>
+            );
+          })}
+        </div>
+
+        {selecionou === true && (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Candidato selecionado</div>
+              <select value={candidatoId} onChange={(e) => setCandidatoId(e.target.value)} style={inp}>
+                <option value="">Selecione…</option>
+                {(candsQ.data ?? []).map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.nome} {typeof c.match_final === "number" ? `· ${c.match_final}% match` : ""}</option>
+                ))}
+              </select>
+              {candsQ.isLoading && <div style={{ fontSize: 11.5, color: CINZA, marginTop: 4 }}>Carregando candidatos…</div>}
+              {!candsQ.isLoading && (candsQ.data ?? []).length === 0 && <div style={{ fontSize: 11.5, color: CINZA, marginTop: 4 }}>Nenhum candidato inscrito nesta vaga.</div>}
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Data de admissão</div>
+              <input type="date" value={dataAdm} onChange={(e) => setDataAdm(e.target.value)} style={inp} />
+            </div>
+            {dataAdm && (
+              <div style={{ background: ROXO_TINT, borderRadius: 10, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 12 }}>
+                <div style={{ fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
+                  <CalendarClock size={13} color={ROXO} /> Avaliações de experiência agendadas:
+                </div>
+                {[30, 60, 90].map((m) => (
+                  <div key={m} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}>
+                    <span>{m} dias</span><strong>{fmtData(addDays(dataAdm, m))}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Observação (opcional)</div>
+          <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} style={{ ...inp, resize: "vertical" }} />
+        </div>
+
+        {erro && <div style={{ fontSize: 12.5, color: VERMELHO, marginBottom: 10 }}>{erro}</div>}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={btnSec}>Cancelar</button>
+          <button onClick={confirmar} disabled={salvando || selecionou === null} style={{ ...btnPri, opacity: salvando || selecionou === null ? 0.6 : 1 }}>
+            {salvando ? <Loader2 size={14} className="spin" /> : <Check size={14} />} Confirmar encerramento
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContratacaoCard({ vagaId }: { vagaId: string }) {
+  const fetchContr = useServerFn(getContratacaoByVaga);
+  const reenviar = useServerFn(reenviarAvaliacao);
+  const marcarResp = useServerFn(marcarAvaliacaoRespondida);
+  const qc = useQueryClient();
+  const q = useQuery({
+    queryKey: ["contratacao", vagaId],
+    queryFn: () => fetchContr({ data: { vaga_id: vagaId } }) as Promise<any>,
+  });
+  if (q.isLoading) return null;
+  const c = q.data;
+  if (!c) {
+    return (
+      <div style={{ marginTop: 10, background: "#FAFAFA", border: `1px dashed ${BORDA}`, borderRadius: 10, padding: "10px 12px", fontSize: 12, color: CINZA }}>
+        Encerrada — nenhum candidato selecionado.
+      </div>
+    );
+  }
+  const statusCor = (s: string) => s === "respondida" ? VERDE : s === "enviada" ? ROXO : s === "cancelada" ? CINZA : LARANJA;
+  return (
+    <div style={{ marginTop: 10, background: VERDE + "08", border: `1px solid ${VERDE}55`, borderRadius: 10, padding: "12px 14px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: ROXO_DARK, fontWeight: 700, marginBottom: 8 }}>
+        <Check size={14} color={VERDE} /> Contratado: {c.nome} · admissão {fmtData(c.data_admissao)}
+      </div>
+      <div style={{ display: "grid", gap: 6 }}>
+        {(c.avaliacoes ?? []).map((a: any) => (
+          <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: CINZA, flexWrap: "wrap" }}>
+            <strong style={{ color: ROXO_DARK, minWidth: 56 }}>{a.marco} dias</strong>
+            <span>{fmtData(a.data_prevista)}</span>
+            <span style={{ fontWeight: 700, color: statusCor(a.status), background: statusCor(a.status) + "18", padding: "2px 8px", borderRadius: 99, fontSize: 10.5, textTransform: "uppercase" }}>{a.status}</span>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+              {a.status !== "respondida" && (
+                <button onClick={async () => { await reenviar({ data: { avaliacao_id: a.id } }); qc.invalidateQueries({ queryKey: ["contratacao", vagaId] }); }} style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "4px 9px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Reenviar</button>
+              )}
+              {a.status !== "respondida" && (
+                <button onClick={async () => { await marcarResp({ data: { avaliacao_id: a.id } }); qc.invalidateQueries({ queryKey: ["contratacao", vagaId] }); }} style={{ background: "#fff", color: VERDE, border: `1px solid ${VERDE}55`, padding: "4px 9px", borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Marcar respondida</button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
