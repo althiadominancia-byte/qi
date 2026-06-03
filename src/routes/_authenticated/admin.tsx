@@ -567,10 +567,12 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga:
       const pesosNum = Object.fromEntries(Object.entries(g.pesos || {}).map(([k, val]) => [k, Math.max(0, Math.min(100, Number(val) || 0))]));
       setV((p: any) => ({
         ...p, pesos: { ...p.pesos, ...pesosNum },
+        descricao: (typeof g.descricao === "string" && g.descricao.trim()) ? g.descricao.trim() : p.descricao,
         habilidades: Array.isArray(g.habilidades) && g.habilidades.length ? g.habilidades : p.habilidades,
         competencias: Array.isArray(g.competencias) && g.competencias.length ? g.competencias : p.competencias,
         experiencia: g.experiencia || p.experiencia, escolaridade: g.escolaridade || p.escolaridade, requisitos: g.requisitos || p.requisitos,
       }));
+
     } catch (e: any) { setErroIA(e.message || "Falha ao gerar."); }
     finally { setGerando(false); }
   }

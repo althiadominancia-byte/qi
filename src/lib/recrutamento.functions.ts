@@ -94,8 +94,14 @@ const GerarVagaInput = z.object({
 export const gerarPerfilVaga = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => GerarVagaInput.parse(d))
   .handler(async ({ data }) => {
-    const prompt = `Você é especialista em RH. Com base nos dados de uma vaga, gere um PERFIL recomendado para preenchê-la, deixando quase pronto para ajustes. Responda SOMENTE com JSON válido, sem markdown, neste formato:
-{"pesos":{"comunicador":0,"fechador":0,"diplomatico":0,"executor":0,"analitico":0},"habilidades":[{"nome":"","nivel":"essencial|importante|desejavel"}],"competencias":["",""],"experiencia":"texto curto","escolaridade":"texto curto","requisitos":"texto curto"}
+    const prompt = `Você é especialista em RH. Com base nos dados de uma vaga, gere um PERFIL recomendado para preenchê-la e também uma DESCRIÇÃO reescrita, mais clara, organizada e fácil de entender, para ficar no topo do formulário. Responda SOMENTE com JSON válido, sem markdown, neste formato:
+{"descricao":"texto reescrito da vaga","pesos":{"comunicador":0,"fechador":0,"diplomatico":0,"executor":0,"analitico":0},"habilidades":[{"nome":"","nivel":"essencial|importante|desejavel"}],"competencias":["",""],"experiencia":"texto curto","escolaridade":"texto curto","requisitos":"texto curto"}
+
+Sobre o campo "descricao":
+- Reescreva a descrição original deixando-a mais clara, profissional e organizada, sem inventar informações que não estejam nos dados fornecidos.
+- Use parágrafos curtos e, quando fizer sentido, listas com "- " (hífen) para responsabilidades, requisitos e benefícios.
+- Estruture preferencialmente em blocos: breve resumo da vaga, principais responsabilidades, requisitos/qualificações, e detalhes (carga horária, jornada, local, veículo, CNH etc.) quando informados.
+- Mantenha o tom objetivo, em português do Brasil, sem chavões corporativos vazios. Não invente salário, benefícios nem nome de empresa.
 
 Os pesos (0–100) indicam o quanto cada perfil comportamental é ideal para ESTA vaga:
 - comunicador (perfil I): comunicação, persuasão, sociável, energia.
@@ -110,6 +116,7 @@ Título: ${data.titulo}
 Setor/área: ${data.setor || "-"}
 Modelo: ${data.modelo} | Tipo: ${data.tipo}
 Descrição: ${data.descricao || "(não informada)"}`;
+
 
     return callGemini([{ type: "text", text: prompt }]);
   });
