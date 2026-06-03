@@ -366,6 +366,13 @@ function AdminPage() {
       </div>
 
       {sel && <Detalhe c={sel} vaga={vagas.find((v) => v.id === sel.vaga_id) || null} onClose={() => setSel(null)} />}
+      {encerrarVagaId && (
+        <EncerrarVagaModal
+          vagaId={encerrarVagaId}
+          onClose={() => setEncerrarVagaId(null)}
+          onDone={() => { setEncerrarVagaId(null); qc.invalidateQueries({ queryKey: ["vagas"] }); qc.invalidateQueries({ queryKey: ["contratacao"] }); }}
+        />
+      )}
     </div>
   );
 }
