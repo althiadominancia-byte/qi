@@ -178,9 +178,11 @@ function SuperAdminPage() {
             unidadesUsuario={unidadesUsuario}
             onNovo={() => setEditUser({
               id: "", nome: "", email: "", role: "recrutador",
-              empresa_id: empresas[0]?.id ?? null, todas_unidades: true,
+              empresa_id: isSuper ? (empresas[0]?.id ?? null) : (scope?.empresa_id ?? null),
+              todas_unidades: true,
               perms: { ...PRESET.recrutador }, ativo: true, unidades: [], _novo: true,
             })}
+
             onEditar={(u: Usuario) => setEditUser({ ...u, unidades: unidadesUsuario(u.id) })}
             onToggle={async (u: Usuario) => {
               try {
