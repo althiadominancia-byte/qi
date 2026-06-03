@@ -264,7 +264,7 @@ function UsuariosTab({ usuarios, loading, nomeEmpresa, unidadesUsuario, onNovo, 
   );
 }
 
-function UsuarioModal({ user, empresas, unidadesDe, onClose, onSaved }: any) {
+function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSaved }: any) {
   const [u, setU] = useState<UsuarioEdit>(user);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof UsuarioEdit, v: any) => setU((p) => ({ ...p, [k]: v }));
