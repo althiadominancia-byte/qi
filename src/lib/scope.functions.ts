@@ -10,8 +10,8 @@ export type UserScope = {
   empresa_nome: string | null;
   empresa_ativa: boolean;
   todas_unidades: boolean;
-  unidades_permitidas: string[]; // ids
-  perms: Record<string, boolean>;
+  unidades_permitidas: string[];
+  perms: Record<string, boolean>; // permissões EFETIVAS (padrão do papel + overrides)
   ativo: boolean;
 };
 
@@ -21,7 +21,7 @@ export const getMyScope = createServerFn({ method: "GET" })
     const { supabase, userId } = context as any;
     const { data: u, error } = await supabase
       .from("usuarios")
-      .select("id, nome, email, role, empresa_id, todas_unidades, perms, ativo")
+      .select("id, nome, email, role, empresa_id, todas_unidades, ativo")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -40,12 +40,13 @@ export const getMyScope = createServerFn({ method: "GET" })
       empresa_ativa = e?.ativo ?? false;
     }
     const { data: uu } = await supabase.from("usuario_unidades").select("unidade_id").eq("usuario_id", userId);
+    const { data: eff } = await supabase.rpc("user_effective_perms", { _user_id: userId });
     return {
       id: u.id, nome: u.nome, email: u.email, role: u.role,
       empresa_id: u.empresa_id, empresa_nome, empresa_ativa,
       todas_unidades: u.todas_unidades,
       unidades_permitidas: (uu ?? []).map((x: any) => x.unidade_id),
-      perms: (u.perms ?? {}) as Record<string, boolean>,
+      perms: (eff ?? {}) as Record<string, boolean>,
       ativo: u.ativo,
     } as UserScope;
   });

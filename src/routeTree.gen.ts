@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
+import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
@@ -48,6 +49,11 @@ const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
   path: '/super',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPermissoesRoute = AuthenticatedPermissoesRouteImport.update({
+  id: '/permissoes',
+  path: '/permissoes',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCatalogoRoute = AuthenticatedCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/catalogo': typeof AuthenticatedCatalogoRoute
+  '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/catalogo'
+    | '/permissoes'
     | '/super'
     | '/c/$token'
     | '/s/$code'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/catalogo'
+    | '/permissoes'
     | '/super'
     | '/c/$token'
     | '/s/$code'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/_authenticated/catalogo'
+    | '/_authenticated/permissoes'
     | '/_authenticated/super'
     | '/c/$token'
     | '/s/$code'
@@ -182,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/permissoes': {
+      id: '/_authenticated/permissoes'
+      path: '/permissoes'
+      fullPath: '/permissoes'
+      preLoaderRoute: typeof AuthenticatedPermissoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/catalogo': {
       id: '/_authenticated/catalogo'
       path: '/catalogo'
@@ -209,6 +228,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCatalogoRoute: typeof AuthenticatedCatalogoRoute
+  AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
   AuthenticatedPreviaIdRoute: typeof AuthenticatedPreviaIdRoute
 }
@@ -216,6 +236,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCatalogoRoute: AuthenticatedCatalogoRoute,
+  AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,
   AuthenticatedSuperRoute: AuthenticatedSuperRoute,
   AuthenticatedPreviaIdRoute: AuthenticatedPreviaIdRoute,
 }

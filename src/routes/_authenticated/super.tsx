@@ -11,7 +11,7 @@ import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
-import { PERM_KEYS, PERM_LABELS, ROLES, ORDEM_ROLES, PRESET, type RoleKey, type PermKey } from "@/lib/recrutamento/perms";
+import { ROLES, ORDEM_ROLES, PRESET, type RoleKey } from "@/lib/recrutamento/perms";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO,
 } from "@/lib/recrutamento/data";
@@ -146,15 +146,21 @@ function SuperAdminPage() {
             {isSuper ? <Crown size={16} /> : <UserCog size={16} />} {isSuper ? "Super Admin" : "Administração"}
           </div>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <span style={{ color: "#fff", fontSize: 12, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
             <Headphones size={14} /> {isSuper ? "Controle global" : scope?.empresa_nome || "Sua empresa"}
           </span>
+
+          <button onClick={() => navigate({ to: "/permissoes" })}
+            style={{ background: "rgba(255,255,255,.18)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <ShieldCheck size={13} /> Permissões
+          </button>
 
           <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
             <LogOut size={13} /> Sair
           </button>
         </div>
+
       </div>
 
       <div data-pad style={{ maxWidth: 940, margin: "0 auto", padding: "0 18px" }}>
@@ -267,14 +273,13 @@ function UsuariosTab({ usuarios, loading, nomeEmpresa, unidadesUsuario, onNovo, 
 function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSaved }: any) {
   const [u, setU] = useState<UsuarioEdit>(user);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
   const set = (k: keyof UsuarioEdit, v: any) => setU((p) => ({ ...p, [k]: v }));
-  const setRole = (role: RoleKey) => setU((p) => ({ ...p, role, perms: { ...PRESET[role] } }));
-  const togglePerm = (key: PermKey) => setU((p) => ({ ...p, perms: { ...p.perms, [key]: !p.perms[key] } }));
+  const setRole = (role: RoleKey) => setU((p) => ({ ...p, role, perms: {} }));
   const toggleUnidade = (id: string) => setU((p) => ({ ...p, unidades: p.unidades.includes(id) ? p.unidades.filter((x) => x !== id) : [...p.unidades, id] }));
 
   const isSuper = u.role === "super_admin";
   const unidades = unidadesDe(u.empresa_id);
-  const ajustado = JSON.stringify(u.perms) !== JSON.stringify(PRESET[u.role]);
   const podeSalvar = u.nome.trim() && u.email.trim() && (isSuper || u.empresa_id);
 
   const fnCreate = useServerFn(createUserInvite);
@@ -288,7 +293,11 @@ function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSa
         nome: u.nome.trim(), email: u.email.trim().toLowerCase(),
         role: u.role, empresa_id: isSuper ? null : u.empresa_id,
         todas_unidades: u.todas_unidades, unidades: isSuper ? [] : u.unidades,
-        perms: u.perms, ativo: u.ativo,
+        // perms guarda APENAS overrides (esparso). Para novo usuário começa vazio;
+        // para edição preservamos os overrides já existentes — a edição das permissões
+        // acontece na página "/permissoes".
+        perms: user._novo ? {} : (u.perms ?? {}),
+        ativo: u.ativo,
       };
       if (user._novo) {
         await fnCreate({ data: payload });
@@ -300,6 +309,7 @@ function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSa
       alert(e?.message || "Erro ao salvar usuário");
     } finally { setSaving(false); }
   }
+
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(58,37,102,.45)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: 18, zIndex: 50, overflowY: "auto" }}>
@@ -370,20 +380,25 @@ function UsuarioModal({ user, empresas, unidadesDe, viewerIsSuper, onClose, onSa
             </div>
           )}
 
-          <Campo label={`Permissões${ajustado ? " (ajustado)" : " (padrão do papel)"}`}>
-            <div style={{ border: `1px solid ${BORDA}`, borderRadius: 12, overflow: "hidden" }}>
-              {PERM_KEYS.map((k, i) => (
-                <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 13px", borderBottom: i < PERM_KEYS.length - 1 ? `1px solid ${BORDA}` : "none", background: u.perms[k] ? "#fff" : "#FBFAFE" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: ROXO_DARK }}>{PERM_LABELS[k].nome}</div>
-                    {PERM_LABELS[k].desc && <div style={{ fontSize: 11, color: "#9b93b0" }}>{PERM_LABELS[k].desc}</div>}
+          <Campo label="Permissões">
+            <div style={{ border: `1px solid ${BORDA}`, borderRadius: 12, padding: 14, background: ROXO_TINT, display: "flex", gap: 11, alignItems: "flex-start" }}>
+              <ShieldCheck size={18} color={ROXO} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div style={{ flex: 1, fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.5 }}>
+                {isSuper
+                  ? <>Super Admin tem todas as permissões em todas as empresas (fixo).</>
+                  : <>As permissões deste usuário seguem o <strong>padrão do papel</strong> da empresa, com a opção de <strong>ajustes individuais</strong>. A edição acontece na página central de Permissões.</>}
+                {!isSuper && (
+                  <div style={{ marginTop: 8 }}>
+                    <button type="button" onClick={() => { onClose(); navigate({ to: "/permissoes" }); }}
+                      style={{ background: ROXO, color: "#fff", border: "none", padding: "7px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <ShieldCheck size={13} /> Ajustar permissões
+                    </button>
                   </div>
-                  <Switch on={!!u.perms[k]} onClick={() => togglePerm(k)} disabled={isSuper} />
-                </div>
-              ))}
+                )}
+              </div>
             </div>
-            {isSuper && <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 7 }}>Super Admin tem todas as permissões fixas.</div>}
           </Campo>
+
 
           <label style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, color: ROXO_DARK, marginTop: 4, cursor: "pointer" }}>
             <Switch on={u.ativo} onClick={() => set("ativo", !u.ativo)} /> Usuário ativo

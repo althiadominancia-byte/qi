@@ -1,6 +1,7 @@
 export const PERM_KEYS = [
   "gerenciar_usuarios", "gerenciar_vagas", "encerrar_vagas",
   "ver_candidatos", "ver_curriculo", "ver_diversidade", "exportar",
+  "gerenciar_catalogo",
 ] as const;
 
 export type PermKey = typeof PERM_KEYS[number];
@@ -14,6 +15,7 @@ export const PERM_LABELS: Record<PermKey, { nome: string; desc: string }> = {
   ver_curriculo: { nome: "Ver análise de currículo", desc: "" },
   ver_diversidade: { nome: "Ver diversidade (agregado)", desc: "" },
   exportar: { nome: "Exportar dados", desc: "" },
+  gerenciar_catalogo: { nome: "Gerenciar departamentos / setores", desc: "Catálogo da empresa" },
 };
 
 export const ROLES: Record<RoleKey, { nome: string; cor: string; desc: string }> = {
@@ -23,15 +25,31 @@ export const ROLES: Record<RoleKey, { nome: string; cor: string; desc: string }>
   visualizador: { nome: "Visualizador", cor: "#3B6FB0", desc: "Apenas leitura de candidatos e análises." },
 };
 export const ORDEM_ROLES: RoleKey[] = ["super_admin", "admin_empresa", "recrutador", "visualizador"];
+export const ROLES_EDITAVEIS: Exclude<RoleKey, "super_admin">[] = ["admin_empresa", "recrutador", "visualizador"];
 
 export const PRESET: Record<RoleKey, Record<PermKey, boolean>> = {
-  super_admin:  { gerenciar_usuarios: true,  gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: true  },
-  admin_empresa:{ gerenciar_usuarios: true,  gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: true  },
-  recrutador:   { gerenciar_usuarios: false, gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: false },
-  visualizador: { gerenciar_usuarios: false, gerenciar_vagas: false, encerrar_vagas: false, ver_candidatos: true, ver_curriculo: true, ver_diversidade: false, exportar: false },
+  super_admin:  { gerenciar_usuarios: true,  gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: true,  gerenciar_catalogo: true  },
+  admin_empresa:{ gerenciar_usuarios: true,  gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: true,  gerenciar_catalogo: true  },
+  recrutador:   { gerenciar_usuarios: false, gerenciar_vagas: true,  encerrar_vagas: true,  ver_candidatos: true, ver_curriculo: true, ver_diversidade: true,  exportar: false, gerenciar_catalogo: false },
+  visualizador: { gerenciar_usuarios: false, gerenciar_vagas: false, encerrar_vagas: false, ver_candidatos: true, ver_curriculo: true, ver_diversidade: false, exportar: false, gerenciar_catalogo: false },
 };
 
 export function hasPerm(perms: Record<string, boolean> | null | undefined, key: PermKey, role?: RoleKey) {
   if (role === "super_admin") return true;
   return !!(perms && perms[key]);
+}
+
+/** Resolve permissão efetiva: super_admin → tudo; override do usuário vence; senão padrão do papel da empresa. */
+export function resolveEfetivas(
+  role: RoleKey,
+  override: Record<string, boolean> | null | undefined,
+  padraoEmpresa: Record<string, boolean> | null | undefined,
+): Record<PermKey, boolean> {
+  if (role === "super_admin") return { ...PRESET.super_admin };
+  const base = padraoEmpresa && Object.keys(padraoEmpresa).length ? padraoEmpresa : PRESET[role];
+  const out = {} as Record<PermKey, boolean>;
+  for (const k of PERM_KEYS) {
+    out[k] = override && k in override ? !!override[k] : !!base[k];
+  }
+  return out;
 }
