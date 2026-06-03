@@ -1259,16 +1259,20 @@ function DadosCadastraisBloco({ c }: { c: Candidato }) {
 }
 
 function Ring({ m }: { m: number }) {
-  const r = 32, c = 2 * Math.PI * r, cor = corMatch(m);
+  const size = 104, stroke = 9, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const cor = corMatch(m);
+  const cx = size / 2;
   return (
     <div style={{ textAlign: "center" }}>
-      <svg width="86" height="86" viewBox="0 0 86 86">
-        <circle cx="43" cy="43" r={r} fill="none" stroke="#EEEAF6" strokeWidth="8" />
-        <circle cx="43" cy="43" r={r} fill="none" stroke={cor} strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform="rotate(-90 43 43)" />
-        <text x="43" y="40" textAnchor="middle" fontSize="21" fontWeight="800" fill={cor} fontFamily="Outfit">{m}%</text>
-        <text x="43" y="54" textAnchor="middle" fontSize="8.5" fill="#888">match</text>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke="#EEF1F6" strokeWidth={stroke} />
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke={cor} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * m) / 100} transform={`rotate(-90 ${cx} ${cx})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
+        <text x={cx} y={cx - 2} textAnchor="middle" fontSize="24" fontWeight="800" fill={ROXO_DARK} fontFamily="Outfit" style={{ fontVariantNumeric: "tabular-nums" }}>{m}<tspan fontSize="13" fill={CINZA} dx="1">%</tspan></text>
+        <text x={cx} y={cx + 14} textAnchor="middle" fontSize="8.5" fill={CINZA} letterSpacing="1.2" style={{ textTransform: "uppercase" }}>MATCH</text>
       </svg>
-      <div style={{ fontSize: 11.5, fontWeight: 700, color: cor, marginTop: -3 }}>{labelMatch(m)}</div>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: cor, marginTop: 4, background: `${cor}12`, padding: "2px 8px", borderRadius: 99 }}>
+        <span style={{ width: 6, height: 6, borderRadius: 99, background: cor }} />{labelMatch(m)}
+      </div>
     </div>
   );
 }
