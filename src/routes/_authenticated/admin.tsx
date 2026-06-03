@@ -948,28 +948,31 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
 
 
           <Bloco>
-            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", paddingBottom: 16, borderBottom: `1px solid ${BORDA}` }}>
               <div style={{ flex: 1, minWidth: 180 }}>
-                <div style={{ fontSize: 12, color: CINZA, fontWeight: 600 }}>Perfil comportamental</div>
-                <div className="h" style={{ fontSize: 23, fontWeight: 800, color: p?.cor ?? ROXO, lineHeight: 1.1, margin: "3px 0" }}>{p?.nome ?? c.perfil_nome ?? "—"}</div>
-                {p && <span style={{ fontSize: 11.5, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "3px 9px", borderRadius: 99 }}>{p.tag}</span>}
+                <div style={{ fontSize: 10.5, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Perfil comportamental</div>
+                <div className="h" style={{ fontSize: 24, fontWeight: 800, color: p?.cor ?? ROXO, lineHeight: 1.1, margin: "4px 0 6px" }}>{p?.nome ?? c.perfil_nome ?? "—"}</div>
+                {p && <span style={{ fontSize: 11, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "3px 9px", borderRadius: 6, letterSpacing: 0.3 }}>{p.tag}</span>}
               </div>
               <Ring m={match} />
             </div>
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 16, display: "grid", gap: 11 }}>
               {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => (
-                <div key={d} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-                  <div style={{ width: 110, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{DIM_INFO[d].nome} <InfoDot texto={DIM_INFO[d].plain} cor={DIM_INFO[d].cor} /></div>
-                  <div style={{ flex: 1, height: 13, background: "#F0EDF7", borderRadius: 9, overflow: "hidden" }}>
-                    <div style={{ height: 13, width: `${disc[d] ?? 0}%`, background: DIM_INFO[d].cor, borderRadius: 9 }} />
+                <div key={d} style={{ display: "grid", gridTemplateColumns: "26px 1fr 46px", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 6, background: `${DIM_INFO[d].cor}15`, color: DIM_INFO[d].cor, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, fontFamily: "Outfit" }}>{d}</div>
+                  <div>
+                    <div style={{ fontSize: 11.5, color: ROXO_DARK, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, marginBottom: 5 }}>{DIM_INFO[d].nome} <InfoDot texto={DIM_INFO[d].plain} cor={DIM_INFO[d].cor} /></div>
+                    <div style={{ position: "relative", height: 6, background: "#EEF1F6", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ position: "absolute", inset: 0, width: `${disc[d] ?? 0}%`, background: DIM_INFO[d].cor, borderRadius: 99, transition: "width .5s ease" }} />
+                    </div>
                   </div>
-                  <div style={{ width: 34, textAlign: "right", fontSize: 12, fontWeight: 700, color: DIM_INFO[d].cor }}>{disc[d] ?? 0}%</div>
+                  <div style={{ textAlign: "right", fontSize: 13, fontWeight: 700, color: ROXO_DARK, fontFamily: "Outfit", fontVariantNumeric: "tabular-nums" }}>{disc[d] ?? 0}<span style={{ fontSize: 10, color: CINZA, marginLeft: 1 }}>%</span></div>
                 </div>
               ))}
             </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-              <MiniDet l="Postura no atendimento" v={`${c.postura_score ?? 0}%`} />
-              <MiniDet l="Aderência à vaga" v={`${match}%`} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 }}>
+              <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
+              <MiniDet l="Aderência à vaga" v={match} />
             </div>
           </Bloco>
 
