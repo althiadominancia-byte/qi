@@ -6,7 +6,7 @@ import {
   Briefcase, Star, AlertCircle, Lightbulb, BarChart3, ShieldCheck, Calendar, Headphones,
   Filter, FileText, LogOut, Plus, Save, Pencil, Ban, CalendarClock, Wand2, Loader2,
   Circle, Info, Link2, Copy, Check, Target, Layers, GraduationCap, Settings2, Calculator,
-  Crown, Building2, ChevronDown, RefreshCw, UserCog,
+  Crown, Building2, ChevronDown, RefreshCw, UserCog, Trash2,
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
@@ -1098,6 +1098,7 @@ function Diversidade({ rows, loading }: { rows: DivRow[]; loading: boolean }) {
 const btnSec: React.CSSProperties = { background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnPri: React.CSSProperties = { background: ROXO, color: "#fff", border: "none", padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnEnc: React.CSSProperties = { background: "#fff", color: VERMELHO, border: `1.5px solid ${VERMELHO}55`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
+const btnDel: React.CSSProperties = { background: "#fff", color: VERMELHO, border: `1.5px solid ${VERMELHO}55`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnAdd: React.CSSProperties = { background: ROXO, color: "#fff", border: "none", padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" };
 const selNivel = (n: string): React.CSSProperties => ({ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${BORDA}`, fontSize: 12, fontWeight: 700, color: n === "essencial" ? VERMELHO : n === "importante" ? LARANJA : "#7C7791", background: "#fff", cursor: "pointer", fontFamily: "inherit" });
 
