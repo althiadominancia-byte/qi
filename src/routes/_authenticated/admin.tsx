@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
-import { gerarPerfilVaga } from "@/lib/recrutamento.functions";
+import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
