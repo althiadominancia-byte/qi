@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-type Candidato = {
+export type Candidato = {
   id: string; created_at: string; vaga_id: string | null;
   nome: string; email: string; celular: string; setor_atual: string | null;
   perfil_key: string | null; perfil_nome: string | null;
