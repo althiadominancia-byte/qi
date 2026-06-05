@@ -14,7 +14,7 @@ import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
 import { selecionarParaEntrevista, removerEntrevista } from "@/lib/jornada.functions";
 import { listLideresDaVaga } from "@/lib/lideres.functions";
-import { atualizarCadastroCandidato } from "@/lib/candidato.functions";
+import { atualizarCadastroCandidato, excluirCandidato } from "@/lib/candidato.functions";
 import { getMyScope } from "@/lib/scope.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
