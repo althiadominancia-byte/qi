@@ -1175,6 +1175,59 @@ function MiniDet({ l, v }: { l: string; v: number }) {
   );
 }
 
+function ExcluirCandidatoBtn({ c, onDone }: { c: Candidato; onDone: () => void }) {
+  const fetchScope = useServerFn(getMyScope);
+  const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
+  const isSuper = scopeQ.data?.role === "super_admin";
+  const excluirFn = useServerFn(excluirCandidato);
+  const qc = useQueryClient();
+  const [confirm, setConfirm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  if (!isSuper) return null;
+
+  const excluir = async () => {
+    setErro(null); setLoading(true);
+    try {
+      await excluirFn({ data: { id: c.id } });
+      await qc.invalidateQueries({ queryKey: ["candidatos"] });
+      setConfirm(false);
+      onDone();
+    } catch (e: any) {
+      setErro(e?.message ?? "Falha ao excluir.");
+    } finally { setLoading(false); }
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => setConfirm(true)}
+        title="Excluir candidato"
+        style={{ display: "flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.25)", padding: "7px 12px", borderRadius: 9, fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}
+      >
+        <Trash2 size={14} /> Excluir
+      </button>
+      {confirm && (
+        <div onClick={() => !loading && setConfirm(false)} style={{ position: "fixed", inset: 0, background: "rgba(20,10,40,.5)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 14, padding: 22, maxWidth: 440, width: "100%" }}>
+            <div className="h" style={{ fontSize: 18, fontWeight: 800, color: ROXO_DARK, marginBottom: 8 }}>Excluir candidato?</div>
+            <div style={{ fontSize: 13.5, color: CINZA, lineHeight: 1.5, marginBottom: 14 }}>
+              Esta ação remove permanentemente <b style={{ color: ROXO_DARK }}>{c.nome}</b> e seus dados relacionados. Não é possível desfazer.
+            </div>
+            {erro && <div style={{ marginBottom: 10, fontSize: 12.5, color: VERMELHO, fontWeight: 600 }}>{erro}</div>}
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button onClick={() => setConfirm(false)} disabled={loading} style={{ background: "#fff", color: CINZA, border: `1px solid ${BORDA}`, padding: "8px 14px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>Cancelar</button>
+              <button onClick={excluir} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 6, background: VERMELHO, color: "#fff", border: "none", padding: "8px 14px", borderRadius: 9, fontWeight: 700, fontSize: 13, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Excluir definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function DadosCadastraisBloco({ c }: { c: Candidato }) {
   const qc = useQueryClient();
   const salvarFn = useServerFn(atualizarCadastroCandidato);
