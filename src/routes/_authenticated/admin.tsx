@@ -27,6 +27,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart as RBarChart, Bar as RBar, XAxis, YAxis, Cell, LabelList,
 } from "recharts";
+import { AnimatedStatsCard } from "@/components/ui/animated-stats-card";
 
 type AdminSearch = { empresa?: string };
 
