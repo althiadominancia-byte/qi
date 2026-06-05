@@ -23,6 +23,10 @@ import {
   matchDe, statusVaga, efetivamenteEncerrada, fmtData, rotuloPeso, novaVagaVazia,
   type Vaga, type PerfilKey, type NivelHab,
 } from "@/lib/recrutamento/data";
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer, BarChart as RBarChart, Bar as RBar, XAxis, YAxis, Cell, LabelList,
+} from "recharts";
 
 type AdminSearch = { empresa?: string };
 
