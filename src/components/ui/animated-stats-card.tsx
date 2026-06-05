@@ -91,8 +91,8 @@ export const AnimatedStatsCard = React.forwardRef<HTMLDivElement, AnimatedStatsC
         </div>
 
         {/* body */}
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2, minWidth: 78 }}>
             <motion.span
               style={{
                 fontSize: 38,
@@ -125,7 +125,6 @@ export const AnimatedStatsCard = React.forwardRef<HTMLDivElement, AnimatedStatsC
               height: 8,
               background: "#F1ECFB",
               borderRadius: 99,
-              marginBottom: 6,
               position: "relative",
               overflow: "hidden",
               border: "1px solid #E9E4F5",
@@ -143,7 +142,7 @@ export const AnimatedStatsCard = React.forwardRef<HTMLDivElement, AnimatedStatsC
             />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, minWidth: 42 }}>
             <span
               style={{
                 fontSize: 18,
@@ -163,6 +162,7 @@ export const AnimatedStatsCard = React.forwardRef<HTMLDivElement, AnimatedStatsC
                 textTransform: "uppercase",
                 letterSpacing: 0.4,
                 fontFamily: "Inter, sans-serif",
+                lineHeight: 1,
               }}
             >
               {secondaryLabel}
