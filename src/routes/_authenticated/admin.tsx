@@ -886,6 +886,51 @@ function CandidatosLista({ vagas, vagaSel, setVagaSel, vagaAtual, candidatos, lo
   );
 }
 
+
+function imprimirAnaliseCv(c: Candidato, vaga: Vaga | null, cv: any) {
+  const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[m]);
+  const nivelTxt = (n: string) => ({ alta: "Alta", media: "Média", baixa: "Baixa" } as any)[String(n || "").toLowerCase()] || (n || "—");
+  const nivelCor = (n: string) => ({ alta: "#16a34a", media: "#eab308", baixa: "#dc2626" } as any)[String(n || "").toLowerCase()] || "#6b7280";
+  const exp = (cv.experiencias || []).map((e: any) => `
+    <div class="exp"><div><div class="b">${esc(e.cargo)} · ${esc(e.empresa)}</div><div class="m">${esc(e.periodo || "")}</div></div>
+    <span class="tag" style="background:${nivelCor(e.relevancia)}">${esc(nivelTxt(e.relevancia))}</span></div>`).join("");
+  const lista = (arr: string[] | undefined, cor: string) => (arr || []).map((x) => `<li><span style="color:${cor}">●</span> ${esc(x)}</li>`).join("");
+  const perg = (cv.perguntas_entrevista || []).map((q: string, i: number) => `<div class="q"><b>${i + 1}.</b> ${esc(q)}</div>`).join("");
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Análise — ${esc(c.nome)}</title>
+<style>
+  *{box-sizing:border-box} body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1f1947;margin:0;padding:32px;background:#fff;font-size:13px;line-height:1.5}
+  h1{font-size:22px;margin:0 0 4px;color:#4b2fb3} h2{font-size:14px;margin:18px 0 8px;color:#4b2fb3;border-bottom:1px solid #e5e1f1;padding-bottom:4px}
+  .meta{color:#6b6485;font-size:12px;margin-bottom:18px}
+  .row{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:12.5px}
+  .tag{color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px}
+  .exp{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;border:1px solid #e5e1f1;border-radius:10px;margin-bottom:6px}
+  .b{font-weight:600} .m{font-size:11px;color:#9b93b0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .box{border:1px solid #e5e1f1;border-radius:10px;padding:10px} .box h3{font-size:12.5px;margin:0 0 6px;color:#4b2fb3}
+  ul{margin:0;padding-left:18px} li{margin-bottom:3px}
+  .q{font-size:12.5px;color:#6b6485;margin-bottom:5px}
+  .resumo{background:#f6f3fc;border-radius:10px;padding:12px}
+  .foot{margin-top:24px;font-size:10.5px;color:#9b93b0;text-align:center}
+  @media print{ body{padding:16px} .noprint{display:none} }
+</style></head><body>
+  <h1>Análise de currículo — ${esc(c.nome)}</h1>
+  <div class="meta">${esc(c.email || "")}${c.celular ? " · " + esc(c.celular) : ""}${vaga ? " · Vaga: " + esc(vaga.titulo) : ""}</div>
+  <div class="row"><b>Aderência:</b> <span class="tag" style="background:${nivelCor(cv.aderencia_televendas)}">${esc(nivelTxt(cv.aderencia_televendas))}</span>${cv.anos_relevantes ? `<span class="m">· ${esc(cv.anos_relevantes)}</span>` : ""}</div>
+  <h2>Resumo</h2><div class="resumo">${esc(cv.resumo || "")}</div>
+  ${exp ? `<h2>Experiências relevantes</h2>${exp}` : ""}
+  <div class="grid">
+    <div class="box"><h3>Pontos fortes</h3><ul>${lista(cv.pontos_fortes, "#16a34a") || "<li>—</li>"}</ul></div>
+    <div class="box"><h3>Lacunas</h3><ul>${lista(cv.lacunas, "#ea580c") || "<li>—</li>"}</ul></div>
+  </div>
+  ${perg ? `<h2>Sugestões para entrevista</h2>${perg}` : ""}
+  <div class="foot">Gerado em ${new Date().toLocaleString("pt-BR")} · Estrela</div>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),250)}</script>
+</body></html>`;
+  const w = window.open("", "_blank", "width=900,height=1000");
+  if (!w) { alert("Permita pop-ups para imprimir a análise."); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
 /* ========== Detalhe candidato ========== */
 export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null; onClose: () => void }) {
   const p = c.perfil_key ? (PERFIS as any)[c.perfil_key] : null;
