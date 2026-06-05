@@ -1030,7 +1030,16 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
 
           {cv && (
             <Bloco>
-              <Cab icon={FileText} t="Análise de currículo (IA)" />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                <Cab icon={FileText} t="Análise de currículo (IA)" />
+                <button
+                  onClick={() => imprimirAnaliseCv(c, vaga, cv)}
+                  style={{ background: ROXO, color: "#fff", border: "none", padding: "7px 13px", borderRadius: 9, fontSize: 12.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  title="Imprimir / salvar em PDF"
+                >
+                  <Printer size={14} /> Imprimir análise
+                </button>
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 0 10px" }}>
                 <span style={{ fontSize: 12.5, color: CINZA, fontWeight: 600 }}>Aderência do histórico:</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: corNivel(cv.aderencia_televendas), padding: "2px 9px", borderRadius: 99 }}>{txtNivel(cv.aderencia_televendas)}</span>
