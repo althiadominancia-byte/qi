@@ -1253,9 +1253,7 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
           <JornadaBloco c={c} vaga={vaga} />
 
 
-          <Bloco>
-            <PerfilComportamentalCard c={c} p={p} match={match} disc={disc} vaga={vaga} />
-          </Bloco>
+          <PerfilComportamentalCard c={c} p={p} match={match} disc={disc} vaga={vaga} />
 
           {c.cv_storage_path && (
             <Bloco>
