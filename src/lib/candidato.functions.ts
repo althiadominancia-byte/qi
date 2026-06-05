@@ -39,3 +39,21 @@ export const atualizarCadastroCandidato = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const DelInput = z.object({ id: z.string().uuid() });
+export const excluirCandidato = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DelInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: me } = await supabaseAdmin
+      .from("usuarios").select("role, ativo").eq("id", userId).maybeSingle();
+    if (!me?.ativo || me.role !== "super_admin") {
+      throw new Error("Apenas super admin pode excluir candidatos.");
+    }
+    const { error } = await supabaseAdmin
+      .from("candidatos_televendas").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
