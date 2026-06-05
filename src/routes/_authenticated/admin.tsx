@@ -1098,49 +1098,7 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
 
 
           <Bloco>
-            {/* Header: profile name + match ring */}
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap", paddingBottom: 20, borderBottom: `1px solid ${BORDA}` }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 10, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.6 }}>Perfil comportamental</div>
-                <div className="h" style={{ fontSize: 30, fontWeight: 700, color: p?.cor ?? ROXO, lineHeight: 1.05, margin: "6px 0 10px", letterSpacing: -0.6, fontFamily: "Outfit" }}>{p?.nome ?? c.perfil_nome ?? "—"}</div>
-                {p && <span style={{ fontSize: 11.5, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "4px 11px", borderRadius: 99, letterSpacing: 0.2 }}>{p.tag}</span>}
-                {p?.descricao && (
-                  <div style={{ fontSize: 12.5, color: CINZA, marginTop: 12, lineHeight: 1.55, maxWidth: 520 }}>{p.descricao}</div>
-                )}
-              </div>
-              <Ring m={match} />
-            </div>
-
-            {/* DISC dimensions with inline explanation */}
-            <div style={{ marginTop: 22, display: "grid", gap: 20 }}>
-              {(Object.keys(DIM_INFO) as Array<keyof typeof DIM_INFO>).map((d) => {
-                const v = disc[d] ?? 0;
-                const cor = DIM_INFO[d].cor;
-                return (
-                  <div key={d}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 14, marginBottom: 10 }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 12, flex: 1, minWidth: 0 }}>
-                        <div style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 9, background: `${cor}14`, color: cor, border: `1px solid ${cor}30`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800, fontFamily: "Outfit" }}>{d}</div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13.5, color: ROXO_DARK, fontWeight: 700, fontFamily: "Outfit", letterSpacing: -0.1, lineHeight: 1.2 }}>{DIM_INFO[d].nome}</div>
-                          <div style={{ fontSize: 12, color: CINZA, marginTop: 3, lineHeight: 1.5 }}>{DIM_INFO[d].plain}</div>
-                        </div>
-                      </div>
-                      <div style={{ flexShrink: 0, fontFamily: "Outfit", fontSize: 17, fontWeight: 700, color: ROXO_DARK, letterSpacing: -0.4, fontVariantNumeric: "tabular-nums", lineHeight: 1, paddingTop: 8 }}>{v}<span style={{ fontSize: 11, fontWeight: 600, color: CINZA, marginLeft: 1 }}>%</span></div>
-                    </div>
-                    <div style={{ height: 7, background: "#EEF1F6", borderRadius: 99, overflow: "hidden", marginLeft: 46 }}>
-                      <div style={{ height: "100%", width: `${Math.max(2, v)}%`, background: cor, borderRadius: 99, transition: "width .5s ease" }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* KPI tiles */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 24, paddingTop: 22, borderTop: `1px solid ${BORDA}` }}>
-              <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
-              <MiniDet l="Aderência à vaga" v={match} />
-            </div>
+            <PerfilComportamentalCard c={c} p={p} match={match} disc={disc} vaga={vaga} />
           </Bloco>
 
           {c.cv_storage_path && (
