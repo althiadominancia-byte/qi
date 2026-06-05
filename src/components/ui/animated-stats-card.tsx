@@ -122,12 +122,26 @@ export const AnimatedStatsCard = React.forwardRef<HTMLDivElement, AnimatedStatsC
           <div
             style={{
               flex: 1,
-              height: 2,
-              background: "linear-gradient(90deg, #E9E4F5, #c9c0e8)",
+              height: 8,
+              background: "#F1ECFB",
               borderRadius: 99,
-              marginBottom: 8,
+              marginBottom: 6,
+              position: "relative",
+              overflow: "hidden",
+              border: "1px solid #E9E4F5",
             }}
-          />
+          >
+            <motion.div
+              initial={{ width: 0 }}
+              animate={isInView ? { width: `${Math.max(0, Math.min(100, primaryValue))}%` } : { width: 0 }}
+              transition={{ duration: 1.2, ease: "easeOut" }}
+              style={{
+                height: "100%",
+                background: `linear-gradient(90deg, ${accent}, ${accent}cc)`,
+                borderRadius: 99,
+              }}
+            />
+          </div>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
             <span
