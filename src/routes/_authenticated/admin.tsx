@@ -891,40 +891,140 @@ function imprimirAnaliseCv(c: Candidato, vaga: Vaga | null, cv: any) {
   const esc = (s: any) => String(s ?? "").replace(/[&<>"']/g, (m) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } as any)[m]);
   const nivelTxt = (n: string) => ({ alta: "Alta", media: "Média", baixa: "Baixa" } as any)[String(n || "").toLowerCase()] || (n || "—");
   const nivelCor = (n: string) => ({ alta: "#16a34a", media: "#eab308", baixa: "#dc2626" } as any)[String(n || "").toLowerCase()] || "#6b7280";
-  const exp = (cv.experiencias || []).map((e: any) => `
+
+  const match = vaga ? matchDe(vaga, c) : (c.match_final ?? 0);
+  const perfil = c.perfil_key ? (PERFIS as any)[c.perfil_key] : null;
+  const disc = c.disc_pontuacao || {};
+  const dims: Array<"D"|"I"|"S"|"C"> = ["D","I","S","C"];
+
+  const discBars = dims.map((d) => {
+    const v = Number(disc[d] ?? 0);
+    const info = DIM_INFO[d];
+    return `<div class="dimrow">
+      <div class="dimhead"><span><b style="color:${info.cor}">${info.nome}</b> <span class="m">(${d})</span></span><span class="dimval">${v}%</span></div>
+      <div class="bar"><div class="fill" style="width:${Math.max(2, v)}%;background:${info.cor}"></div></div>
+      <div class="m dimplain">${esc(info.plain)}</div>
+    </div>`;
+  }).join("");
+
+  const exp = cv ? (cv.experiencias || []).map((e: any) => `
     <div class="exp"><div><div class="b">${esc(e.cargo)} · ${esc(e.empresa)}</div><div class="m">${esc(e.periodo || "")}</div></div>
-    <span class="tag" style="background:${nivelCor(e.relevancia)}">${esc(nivelTxt(e.relevancia))}</span></div>`).join("");
+    <span class="tag" style="background:${nivelCor(e.relevancia)}">${esc(nivelTxt(e.relevancia))}</span></div>`).join("") : "";
   const lista = (arr: string[] | undefined, cor: string) => (arr || []).map((x) => `<li><span style="color:${cor}">●</span> ${esc(x)}</li>`).join("");
-  const perg = (cv.perguntas_entrevista || []).map((q: string, i: number) => `<div class="q"><b>${i + 1}.</b> ${esc(q)}</div>`).join("");
+  const perg = cv ? (cv.perguntas_entrevista || []).map((q: string, i: number) => `<div class="q"><b>${i + 1}.</b> ${esc(q)}</div>`).join("") : "";
+
+  const dados = `
+    <div class="kvs">
+      ${c.email ? `<div class="kv"><span class="k">E-mail</span><span class="v">${esc(c.email)}</span></div>` : ""}
+      ${c.celular ? `<div class="kv"><span class="k">Celular</span><span class="v">${esc(c.celular)}</span></div>` : ""}
+      ${c.endereco ? `<div class="kv"><span class="k">Endereço</span><span class="v">${esc(c.endereco)}</span></div>` : ""}
+      ${c.setor_atual ? `<div class="kv"><span class="k">Setor atual</span><span class="v">${esc(c.setor_atual)}</span></div>` : ""}
+      ${c.tempo_empresa ? `<div class="kv"><span class="k">Tempo na empresa</span><span class="v">${esc(c.tempo_empresa)}</span></div>` : ""}
+      ${vaga ? `<div class="kv"><span class="k">Vaga</span><span class="v">${esc(vaga.titulo)}</span></div>` : ""}
+      <div class="kv"><span class="k">Inscrição em</span><span class="v">${esc(fmtData(c.created_at))}</span></div>
+    </div>`;
+
+  const matchCor = corMatch(match);
+  const matchLab = labelMatch(match);
+
+  const perfilBloco = perfil ? `
+    <div class="perfil" style="border-color:${perfil.cor}55">
+      <div class="perfil-head">
+        <div>
+          <div class="perfil-tag" style="background:${perfil.cor}">${esc(perfil.tag)}</div>
+          <div class="perfil-nome" style="color:${perfil.cor}">${esc(perfil.nome)}</div>
+        </div>
+        <div class="match" style="background:${matchCor}">
+          <div class="match-v">${match}%</div>
+          <div class="match-l">Match · ${esc(matchLab)}</div>
+        </div>
+      </div>
+      <div class="perfil-resumo">${esc(perfil.plain || perfil.resumo)}</div>
+      <div class="grid">
+        <div class="box"><h3>Forças do perfil</h3><ul>${(perfil.forcas || []).map((x: string) => `<li><span style="color:${perfil.cor}">●</span> ${esc(x)}</li>`).join("") || "<li>—</li>"}</ul></div>
+        <div class="box"><h3>Pontos de atenção</h3><ul>${(perfil.atencao || []).map((x: string) => `<li><span style="color:#ea580c">●</span> ${esc(x)}</li>`).join("") || "<li>—</li>"}</ul></div>
+      </div>
+    </div>` : `<div class="m">Perfil DISC ainda não calculado.</div>`;
+
+  const posturaBloco = c.postura_score != null ? `
+    <div class="postura">
+      <div class="postura-head"><b>Postura no atendimento</b><span class="postura-v">${c.postura_score}%</span></div>
+      <div class="bar"><div class="fill" style="width:${Math.max(2, c.postura_score)}%;background:#4b2fb3"></div></div>
+    </div>` : "";
+
+  const expTexto = c.experiencia_texto ? `<h2>Descrição enviada pelo candidato</h2><div class="resumo">${esc(c.experiencia_texto)}</div>` : "";
+
+  const cvBloco = cv ? `
+    <h2>Análise do currículo (IA)</h2>
+    <div class="row"><b>Aderência à vaga:</b> <span class="tag" style="background:${nivelCor(cv.aderencia_televendas)}">${esc(nivelTxt(cv.aderencia_televendas))}</span>${cv.anos_relevantes ? `<span class="m">· ${esc(cv.anos_relevantes)}</span>` : ""}</div>
+    ${cv.resumo ? `<div class="resumo" style="margin-top:8px">${esc(cv.resumo)}</div>` : ""}
+    ${exp ? `<h3 class="sub">Experiências relevantes</h3>${exp}` : ""}
+    <div class="grid">
+      <div class="box"><h3>Pontos fortes</h3><ul>${lista(cv.pontos_fortes, "#16a34a") || "<li>—</li>"}</ul></div>
+      <div class="box"><h3>Lacunas</h3><ul>${lista(cv.lacunas, "#ea580c") || "<li>—</li>"}</ul></div>
+    </div>
+    ${perg ? `<h3 class="sub">Sugestões para entrevista</h3>${perg}` : ""}
+  ` : `<h2>Análise do currículo (IA)</h2><div class="m">Currículo ainda não analisado.</div>`;
+
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Análise — ${esc(c.nome)}</title>
 <style>
   *{box-sizing:border-box} body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1f1947;margin:0;padding:32px;background:#fff;font-size:13px;line-height:1.5}
-  h1{font-size:22px;margin:0 0 4px;color:#4b2fb3} h2{font-size:14px;margin:18px 0 8px;color:#4b2fb3;border-bottom:1px solid #e5e1f1;padding-bottom:4px}
-  .meta{color:#6b6485;font-size:12px;margin-bottom:18px}
-  .row{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:12.5px}
+  h1{font-size:22px;margin:0 0 4px;color:#4b2fb3}
+  h2{font-size:14px;margin:22px 0 8px;color:#4b2fb3;border-bottom:1px solid #e5e1f1;padding-bottom:4px;page-break-after:avoid}
+  h3.sub{font-size:12.5px;margin:14px 0 6px;color:#4b2fb3}
+  .meta{color:#6b6485;font-size:12px;margin-bottom:14px}
+  .row{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:12.5px;flex-wrap:wrap}
   .tag{color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px}
   .exp{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;border:1px solid #e5e1f1;border-radius:10px;margin-bottom:6px}
   .b{font-weight:600} .m{font-size:11px;color:#9b93b0}
   .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
-  .box{border:1px solid #e5e1f1;border-radius:10px;padding:10px} .box h3{font-size:12.5px;margin:0 0 6px;color:#4b2fb3}
+  .box{border:1px solid #e5e1f1;border-radius:10px;padding:10px;page-break-inside:avoid} .box h3{font-size:12.5px;margin:0 0 6px;color:#4b2fb3}
   ul{margin:0;padding-left:18px} li{margin-bottom:3px}
   .q{font-size:12.5px;color:#6b6485;margin-bottom:5px}
   .resumo{background:#f6f3fc;border-radius:10px;padding:12px}
+  .kvs{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px;border:1px solid #e5e1f1;border-radius:10px;padding:10px 14px}
+  .kv{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:3px 0;border-bottom:1px dashed #efecf7}
+  .kv .k{color:#9b93b0} .kv .v{font-weight:600;text-align:right}
+  .perfil{border:1.5px solid;border-radius:12px;padding:14px;margin-top:8px;page-break-inside:avoid}
+  .perfil-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+  .perfil-tag{display:inline-block;color:#fff;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;margin-bottom:4px}
+  .perfil-nome{font-size:18px;font-weight:800;letter-spacing:-0.3px}
+  .perfil-resumo{font-size:12.5px;color:#4a4566;margin-bottom:10px}
+  .match{color:#fff;border-radius:10px;padding:8px 14px;text-align:center;min-width:96px}
+  .match-v{font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1}
+  .match-l{font-size:10.5px;opacity:.95;margin-top:2px}
+  .dimrow{margin:8px 0 10px;page-break-inside:avoid}
+  .dimhead{display:flex;justify-content:space-between;align-items:baseline;font-size:12px}
+  .dimval{font-weight:700;color:#1f1947}
+  .bar{height:8px;border-radius:99px;background:#efecf7;overflow:hidden;margin-top:4px}
+  .fill{height:100%;border-radius:99px}
+  .dimplain{margin-top:3px}
+  .postura{margin-top:10px;border:1px solid #e5e1f1;border-radius:10px;padding:10px 12px}
+  .postura-head{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px}
+  .postura-v{font-weight:800;color:#4b2fb3}
   .foot{margin-top:24px;font-size:10.5px;color:#9b93b0;text-align:center}
-  @media print{ body{padding:16px} .noprint{display:none} }
+  @media print{ body{padding:14px;font-size:12px} .noprint{display:none} h2{margin-top:16px} }
 </style></head><body>
-  <h1>Análise de currículo — ${esc(c.nome)}</h1>
-  <div class="meta">${esc(c.email || "")}${c.celular ? " · " + esc(c.celular) : ""}${vaga ? " · Vaga: " + esc(vaga.titulo) : ""}</div>
-  <div class="row"><b>Aderência:</b> <span class="tag" style="background:${nivelCor(cv.aderencia_televendas)}">${esc(nivelTxt(cv.aderencia_televendas))}</span>${cv.anos_relevantes ? `<span class="m">· ${esc(cv.anos_relevantes)}</span>` : ""}</div>
-  <h2>Resumo</h2><div class="resumo">${esc(cv.resumo || "")}</div>
-  ${exp ? `<h2>Experiências relevantes</h2>${exp}` : ""}
-  <div class="grid">
-    <div class="box"><h3>Pontos fortes</h3><ul>${lista(cv.pontos_fortes, "#16a34a") || "<li>—</li>"}</ul></div>
-    <div class="box"><h3>Lacunas</h3><ul>${lista(cv.lacunas, "#ea580c") || "<li>—</li>"}</ul></div>
-  </div>
-  ${perg ? `<h2>Sugestões para entrevista</h2>${perg}` : ""}
-  <div class="foot">Gerado em ${new Date().toLocaleString("pt-BR")} · Estrela</div>
-  <script>window.onload=()=>{setTimeout(()=>window.print(),250)}</script>
+  <h1>Análise completa do candidato</h1>
+  <div class="meta"><b style="color:#1f1947">${esc(c.nome)}</b>${vaga ? " · Vaga: " + esc(vaga.titulo) : ""}</div>
+
+  <h2>Dados cadastrais</h2>
+  ${dados}
+
+  <h2>Perfil comportamental (DISC) e match</h2>
+  ${perfilBloco}
+
+  <h3 class="sub">Pontuação por dimensão</h3>
+  ${discBars}
+
+  ${posturaBloco}
+
+  ${expTexto}
+
+  ${cvBloco}
+
+  <div class="foot">Gerado em ${new Date().toLocaleString("pt-BR")} · Estrela Recrutamento</div>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),300)}</script>
 </body></html>`;
   const w = window.open("", "_blank", "width=900,height=1000");
   if (!w) { alert("Permita pop-ups para imprimir a análise."); return; }
