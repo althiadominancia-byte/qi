@@ -936,6 +936,7 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
             <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19 }}>{c.nome}</div>
             <div style={{ color: "#fff", opacity: 0.85, fontSize: 12.5 }}>{c.setor_atual || "—"}{vaga ? ` · ${vaga.titulo}` : ""}</div>
           </div>
+          <ExcluirCandidatoBtn c={c} onDone={onClose} />
         </div>
 
 
