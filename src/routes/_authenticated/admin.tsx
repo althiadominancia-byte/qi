@@ -27,6 +27,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, BarChart as RBarChart, Bar as RBar, XAxis, YAxis, Cell, LabelList,
 } from "recharts";
+import { AnimatedStatsCard } from "@/components/ui/animated-stats-card";
 
 type AdminSearch = { empresa?: string };
 
@@ -1234,13 +1235,25 @@ function PerfilComportamentalCard({
       </div>
 
       {/* KPI tiles (rodapé do card) */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderTop: `1px solid ${BORDER}`, background: RADAR_BG }}>
-        <div style={{ padding: "14px 20px", borderRight: `1px solid ${BORDER}` }}>
-          <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
-        </div>
-        <div style={{ padding: "14px 20px" }}>
-          <MiniDet l="Aderência à vaga" v={match} />
-        </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, padding: 16, borderTop: `1px solid ${BORDER}`, background: RADAR_BG }}>
+        <AnimatedStatsCard
+          title="Postura no atendimento"
+          primaryValue={c.postura_score ?? 0}
+          primarySuffix="%"
+          secondaryValue={100}
+          secondaryLabel="Meta"
+          icon={<Headphones size={15} />}
+          accent={ROX}
+        />
+        <AnimatedStatsCard
+          title="Aderência à vaga"
+          primaryValue={match}
+          primarySuffix="%"
+          secondaryValue={100}
+          secondaryLabel="Ideal"
+          icon={<Target size={15} />}
+          accent={LAR}
+        />
       </div>
     </div>
   );
