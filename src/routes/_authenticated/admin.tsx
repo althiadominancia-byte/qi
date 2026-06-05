@@ -1052,7 +1052,7 @@ function PerfilComportamentalCard({
   c: Candidato; p: any; match: number; disc: Record<string, number>; vaga: Vaga | null;
 }) {
   const dims = ["D", "I", "S", "C"] as const;
-  // Perfil-alvo: usa perfil do candidato; se houver vaga, prioriza o perfil de maior peso na vaga
+  // Perfil-alvo: usa o perfil-alvo da vaga (maior peso); fallback no perfil do candidato
   const alvoKey = useMemo(() => {
     if (vaga?.pesos) {
       const entries = Object.entries(vaga.pesos) as Array<[string, number]>;
@@ -1065,129 +1065,184 @@ function PerfilComportamentalCard({
   const alvoPerfil = alvoKey ? (PERFIS as any)[alvoKey] : null;
 
   const radarData = dims.map((d) => ({
-    dim: DIM_INFO[d].nome,
-    sigla: d,
+    dim: d,
     Candidato: Number(disc[d] ?? 0),
     Ideal: ideal[d],
   }));
 
-  const barData = dims.map((d) => ({
-    name: DIM_INFO[d].nome,
-    sigla: d,
-    valor: Number(disc[d] ?? 0),
-    ideal: ideal[d],
-    cor: DIM_INFO[d].cor,
-  }));
+  // Design tokens do protótipo selecionado
+  const DARK = "#2D2354";
+  const TINT = "#F4F1FB";
+  const RADAR_BG = "#FBFAFE";
+  const BORDER = "#E9E4F5";
+  const LAR = "#F26A2E";
+  const ROX = "#4b2fb3";
+
+  const matchCor = corMatch(match);
+  const matchLab = labelMatch(match);
 
   return (
-    <>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap", paddingBottom: 18, borderBottom: `1px solid ${BORDA}` }}>
+    <div style={{
+      background: "#fff",
+      border: `1px solid ${BORDER}`,
+      borderRadius: 22,
+      boxShadow: "0 20px 50px rgba(45,35,84,0.08)",
+      overflow: "hidden",
+      marginBottom: 14,
+    }}>
+      {/* Header (acima do split) */}
+      <div style={{ padding: "20px 24px 16px", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 10, color: CINZA, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.8, fontFamily: "Inter" }}>Perfil comportamental</div>
-          <h2 className="h" style={{ fontSize: 32, fontWeight: 800, color: p?.cor ?? ROXO, lineHeight: 1.02, margin: "8px 0 10px", letterSpacing: -0.8 }}>
+          <div className="h" style={{ fontSize: 10, color: ROX, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.8 }}>Perfil comportamental</div>
+          <h2 className="h" style={{ fontSize: 28, fontWeight: 800, color: p?.cor ?? DARK, lineHeight: 1.05, margin: "6px 0 8px", letterSpacing: -0.7 }}>
             {p?.nome ?? c.perfil_nome ?? "—"}
           </h2>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            {p && <span className="h" style={{ fontSize: 11.5, fontWeight: 700, background: ROXO_TINT, color: ROXO, padding: "5px 12px", borderRadius: 99, letterSpacing: 0.3 }}>{p.tag}</span>}
+            {p && <span className="h" style={{ fontSize: 11, fontWeight: 700, background: `${ROX}10`, color: ROX, padding: "5px 12px", borderRadius: 99, letterSpacing: 0.3 }}>{p.tag}</span>}
             {alvoPerfil && alvoKey !== c.perfil_key && (
-              <span className="h" style={{ fontSize: 11.5, fontWeight: 700, background: `${LARANJA}14`, color: LARANJA, padding: "5px 12px", borderRadius: 99, letterSpacing: 0.3 }}>
+              <span className="h" style={{ fontSize: 11, fontWeight: 700, background: `${LAR}14`, color: LAR, padding: "5px 12px", borderRadius: 99, letterSpacing: 0.3 }}>
                 Ideal · {alvoPerfil.nome}
               </span>
             )}
           </div>
           {p?.descricao && (
-            <p style={{ fontSize: 13, color: CINZA, marginTop: 12, lineHeight: 1.55, maxWidth: 540, fontFamily: "Inter" }}>{p.descricao}</p>
+            <p style={{ fontSize: 12.5, color: CINZA, marginTop: 10, lineHeight: 1.55, maxWidth: 560, fontFamily: "Inter" }}>{p.descricao}</p>
           )}
         </div>
-        <Ring m={match} />
       </div>
 
-      {/* Radar: Candidato vs Ideal */}
-      <div style={{ marginTop: 18, background: "linear-gradient(180deg, #FBFAFE 0%, #F4F1FB 100%)", borderRadius: 16, padding: "16px 8px 8px", border: `1px solid ${BORDA}` }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", padding: "0 14px 6px", flexWrap: "wrap", gap: 8 }}>
+      {/* Split: Radar + Análise por dimensão */}
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.1fr)" }}>
+        {/* Coluna esquerda: Radar */}
+        <div style={{ background: RADAR_BG, padding: "22px 22px 26px", borderRight: `1px solid ${BORDER}`, position: "relative", minHeight: 340 }}>
           <div>
-            <div className="h" style={{ fontSize: 15, fontWeight: 800, color: ROXO_DARK, letterSpacing: -0.2 }}>Mapa DISC</div>
-            <div style={{ fontSize: 11.5, color: CINZA, marginTop: 2, fontFamily: "Inter" }}>Comparativo do candidato com o perfil ideal da vaga</div>
+            <h3 className="h" style={{ fontSize: 18, fontWeight: 800, color: DARK, lineHeight: 1.05, letterSpacing: -0.4, margin: 0 }}>
+              Mapa<br />Comportamental
+            </h3>
+            <div style={{ marginTop: 8, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontFamily: "Inter", fontWeight: 700, color: ROX, textTransform: "uppercase", letterSpacing: 1 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: ROX }} /> Candidato
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontFamily: "Inter", fontWeight: 700, color: LAR, textTransform: "uppercase", letterSpacing: 1 }}>
+                <span style={{ width: 8, height: 8, borderRadius: 99, background: LAR }} /> Perfil Ideal
+              </span>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 14, fontSize: 11.5, fontFamily: "Inter", fontWeight: 600 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: ROXO_DARK }}>
-              <span style={{ width: 14, height: 3, background: ROXO, borderRadius: 2, display: "inline-block" }} /> Candidato
-            </span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, color: LARANJA }}>
-              <span style={{ width: 14, height: 0, borderTop: `2px dashed ${LARANJA}`, display: "inline-block" }} /> Ideal
-            </span>
-          </div>
-        </div>
-        <div style={{ width: "100%", height: 280 }}>
-          <ResponsiveContainer>
-            <RadarChart data={radarData} margin={{ top: 8, right: 24, bottom: 8, left: 24 }} outerRadius="78%">
-              <defs>
-                <radialGradient id="radarCandFill" cx="50%" cy="50%" r="65%">
-                  <stop offset="0%" stopColor={ROXO} stopOpacity={0.55} />
-                  <stop offset="100%" stopColor={ROXO} stopOpacity={0.12} />
-                </radialGradient>
-              </defs>
-              <PolarGrid stroke="#D8D3E8" strokeDasharray="3 4" />
-              <PolarAngleAxis dataKey="dim" tick={{ fill: ROXO_DARK, fontSize: 12, fontWeight: 700, fontFamily: "Outfit" }} />
-              <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-              <Radar name="Ideal" dataKey="Ideal" stroke={LARANJA} strokeWidth={2} strokeDasharray="5 4" fill={LARANJA} fillOpacity={0.06} />
-              <Radar name="Candidato" dataKey="Candidato" stroke={ROXO} strokeWidth={2.5} fill="url(#radarCandFill)" fillOpacity={1} />
-            </RadarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      {/* Horizontal bars styled like satisfaction survey */}
-      <div style={{ marginTop: 22 }}>
-        <div className="h" style={{ fontSize: 15, fontWeight: 800, color: ROXO_DARK, letterSpacing: -0.2, marginBottom: 4 }}>Dimensões do perfil</div>
-        <div style={{ fontSize: 11.5, color: CINZA, marginBottom: 14, fontFamily: "Inter" }}>Pontuação do candidato em cada dimensão DISC</div>
-        <div style={{ display: "grid", gap: 14 }}>
-          {barData.map((b) => (
-            <div key={b.sigla} style={{ display: "grid", gridTemplateColumns: "150px 1fr 56px", alignItems: "center", gap: 14 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-                <span className="h" style={{ flexShrink: 0, width: 28, height: 28, borderRadius: 8, background: `${b.cor}18`, color: b.cor, border: `1px solid ${b.cor}40`, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 }}>{b.sigla}</span>
-                <span className="h" style={{ fontSize: 13, fontWeight: 700, color: ROXO_DARK, letterSpacing: -0.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={DIM_INFO[b.sigla].plain}>{b.name}</span>
-              </div>
-              <div style={{ position: "relative", height: 22, background: "#EFEDF6", borderRadius: 99, overflow: "hidden" }}>
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${Math.max(3, b.valor)}%`,
-                    background: `linear-gradient(90deg, ${b.cor} 0%, ${b.cor}DD 100%)`,
-                    borderRadius: 99,
-                    boxShadow: `0 2px 8px ${b.cor}55, inset 0 -2px 4px rgba(0,0,0,.08)`,
-                    transition: "width .6s cubic-bezier(.2,.8,.2,1)",
+          <div style={{ position: "relative", width: "100%", height: 260, marginTop: 18 }}>
+            <ResponsiveContainer>
+              <RadarChart data={radarData} margin={{ top: 18, right: 28, bottom: 18, left: 28 }} outerRadius="82%">
+                <defs>
+                  <radialGradient id="radarCandFill2" cx="50%" cy="50%" r="70%">
+                    <stop offset="0%" stopColor={ROX} stopOpacity={0.42} />
+                    <stop offset="100%" stopColor={ROX} stopOpacity={0.12} />
+                  </radialGradient>
+                </defs>
+                <PolarGrid stroke={BORDER} strokeDasharray="2 3" />
+                <PolarAngleAxis
+                  dataKey="dim"
+                  tick={({ payload, x, y, cx, cy }: any) => {
+                    const cor = (DIM_INFO as any)[payload.value]?.cor || DARK;
+                    return (
+                      <text
+                        x={x} y={y}
+                        dy={y > cy ? 14 : y < cy ? -6 : 4}
+                        textAnchor={x > cx ? "start" : x < cx ? "end" : "middle"}
+                        fill={cor}
+                        style={{ fontFamily: "Outfit", fontSize: 18, fontWeight: 800 }}
+                      >{payload.value}</text>
+                    );
                   }}
                 />
-                {/* Marker for ideal */}
-                <div
-                  title={`Ideal ${b.ideal}%`}
-                  style={{
-                    position: "absolute", top: -3, bottom: -3,
-                    left: `calc(${b.ideal}% - 1.5px)`,
-                    width: 3, background: LARANJA, borderRadius: 2,
-                    boxShadow: `0 0 0 2px ${LARANJA}33`,
-                  }}
-                />
-              </div>
-              <div className="h" style={{ textAlign: "right", fontSize: 16, fontWeight: 800, color: ROXO_DARK, fontVariantNumeric: "tabular-nums", letterSpacing: -0.4 }}>
-                {b.valor}<span style={{ fontSize: 11, color: CINZA, fontWeight: 700, marginLeft: 1 }}>%</span>
+                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+                <Radar name="Ideal" dataKey="Ideal" stroke={LAR} strokeWidth={2} strokeDasharray="5 4" fill="none" />
+                <Radar name="Candidato" dataKey="Candidato" stroke={ROX} strokeWidth={2.5} fill="url(#radarCandFill2)" fillOpacity={1} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Coluna direita: Score + barras */}
+        <div style={{ padding: "22px 24px 24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 18 }}>
+            <div>
+              <div style={{ color: ROX, fontSize: 12, fontWeight: 700, fontFamily: "Inter", marginBottom: 2 }}>Match de perfil</div>
+              <div className="h" style={{ fontSize: 44, fontWeight: 800, color: DARK, lineHeight: 1, letterSpacing: -1.4, fontVariantNumeric: "tabular-nums" }}>
+                {match}<span style={{ fontSize: 20, fontWeight: 700, color: CINZA, marginLeft: 2 }}>%</span>
               </div>
             </div>
-          ))}
-        </div>
-        <div style={{ fontSize: 10.5, color: CINZA, marginTop: 10, fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 3, height: 10, background: LARANJA, borderRadius: 2, display: "inline-block" }} /> marca o valor ideal para o perfil-alvo
+            <span className="h" style={{
+              padding: "5px 11px",
+              background: `${matchCor}12`,
+              color: matchCor,
+              border: `1px solid ${matchCor}33`,
+              fontSize: 10,
+              fontWeight: 800,
+              borderRadius: 99,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+            }}>{matchLab}</span>
+          </div>
+
+          <div style={{ display: "grid", gap: 16 }}>
+            {dims.map((d) => {
+              const v = Number(disc[d] ?? 0);
+              const id = ideal[d];
+              const cor = DIM_INFO[d].cor;
+              return (
+                <div key={d}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 7 }}>
+                    <span className="h" style={{ color: cor, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1.4 }} title={DIM_INFO[d].plain}>
+                      {DIM_INFO[d].nome}
+                    </span>
+                    <span className="h" style={{ color: DARK, fontWeight: 800, fontSize: 13, fontVariantNumeric: "tabular-nums", letterSpacing: -0.2 }}>
+                      <span style={{ color: ROX }}>{v}</span>
+                      <span style={{ color: "#CFC9DF", margin: "0 4px", fontWeight: 600 }}>/</span>
+                      <span style={{ color: LAR }}>{id}</span>
+                    </span>
+                  </div>
+                  <div style={{ position: "relative", height: 10, background: TINT, borderRadius: 99, overflow: "visible" }}>
+                    {/* Candidato (fill) */}
+                    <div style={{
+                      position: "absolute", top: 0, left: 0, height: "100%",
+                      width: `${Math.max(2, v)}%`,
+                      background: `linear-gradient(90deg, ${ROX} 0%, ${ROX}EE 100%)`,
+                      borderRadius: 99,
+                      boxShadow: `0 2px 8px ${ROX}40`,
+                      transition: "width .6s cubic-bezier(.2,.8,.2,1)",
+                      zIndex: 1,
+                    }} />
+                    {/* Ideal (marcador laranja) */}
+                    <div title={`Ideal ${id}%`} style={{
+                      position: "absolute", top: -3, bottom: -3,
+                      left: `calc(${id}% - 1.5px)`,
+                      width: 3, background: LAR, borderRadius: 2,
+                      boxShadow: `0 0 0 2px ${LAR}33`,
+                      zIndex: 2,
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ fontSize: 10.5, color: CINZA, marginTop: 14, fontFamily: "Inter", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 3, height: 10, background: LAR, borderRadius: 2, display: "inline-block" }} />
+            marcador laranja = valor ideal para o perfil-alvo
+          </div>
         </div>
       </div>
 
-      {/* KPI tiles */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 22, paddingTop: 20, borderTop: `1px solid ${BORDA}` }}>
-        <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
-        <MiniDet l="Aderência à vaga" v={match} />
+      {/* KPI tiles (rodapé do card) */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0, borderTop: `1px solid ${BORDER}`, background: RADAR_BG }}>
+        <div style={{ padding: "14px 20px", borderRight: `1px solid ${BORDER}` }}>
+          <MiniDet l="Postura no atendimento" v={c.postura_score ?? 0} />
+        </div>
+        <div style={{ padding: "14px 20px" }}>
+          <MiniDet l="Aderência à vaga" v={match} />
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 
