@@ -47,8 +47,8 @@ export const createUserInvite = createServerFn({ method: "POST" })
     await assertCanManage(userId, data.empresa_id, data.role);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const origin = process.env.SITE_URL || process.env.SUPABASE_URL || "";
-    const redirectTo = origin ? new URL("/auth", origin).toString() : undefined;
+    const origin = process.env.SITE_URL || "";
+    const redirectTo = origin ? new URL("/definir-senha", origin).toString() : undefined;
 
     const { data: invited, error: invErr } = await supabaseAdmin.auth.admin.inviteUserByEmail(
       data.email,
