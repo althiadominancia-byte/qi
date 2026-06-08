@@ -33,7 +33,14 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
     } catch (err: any) {
-      setMsg({ type: "err", text: err.message || "Erro ao autenticar." });
+      const raw = String(err?.message || "");
+      let text = "Erro ao autenticar.";
+      if (/invalid login credentials/i.test(raw)) text = "E-mail ou senha incorretos.";
+      else if (/email not confirmed/i.test(raw)) text = "E-mail ainda não confirmado. Verifique sua caixa de entrada.";
+      else if (/too many requests|rate limit/i.test(raw)) text = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+      else if (/network|fetch/i.test(raw)) text = "Falha de conexão. Verifique sua internet e tente novamente.";
+      else if (raw) text = raw;
+      setMsg({ type: "err", text });
     } finally {
       setLoading(false);
     }
