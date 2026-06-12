@@ -16,14 +16,13 @@ export const Route = createFileRoute("/_authenticated/lideres")({
   component: LideresPage,
 });
 
-type Nivel = "gestor" | "coordenador" | "supervisor";
 type Area = { departamento_id: string; setor_id: string | null };
 type Lider = {
   id?: string;
   nome: string;
   email: string;
   telefone: string;
-  nivel: Nivel;
+  nivel: string;
   ativo: boolean;
   areas: Area[];
 };
@@ -31,10 +30,8 @@ type Lider = {
 const inp: React.CSSProperties = { padding: "8px 10px", border: `1.5px solid ${BORDA}`, borderRadius: 8, fontSize: 13, outline: "none", background: "#fff", color: ROXO_DARK, fontFamily: "inherit", width: "100%" };
 const btn = (bg = ROXO, fg = "#fff"): React.CSSProperties => ({ background: bg, color: fg, border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" });
 
-const NIVEL_LABEL: Record<Nivel, string> = { gestor: "Gestor", coordenador: "Coordenador", supervisor: "Supervisor" };
-
-function emptyLider(): Lider {
-  return { nome: "", email: "", telefone: "", nivel: "gestor", ativo: true, areas: [] };
+function emptyLider(nivel: string): Lider {
+  return { nome: "", email: "", telefone: "", nivel, ativo: true, areas: [] };
 }
 
 function LideresPage() {
