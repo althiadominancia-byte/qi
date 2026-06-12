@@ -1939,7 +1939,7 @@ function JornadaBloco({ c, vaga }: { c: Candidato; vaga: Vaga | null }) {
               <Award size={16} /> Contratado{contr?.data_admissao ? ` · admissão ${fmtData(contr.data_admissao)}` : ""}
             </div>
             <div style={{ fontSize: 12.5, color: ROXO_DARK, marginBottom: 10 }}>
-              Líder imediato: <strong>{contr?.lider ? `${contr.lider.nome} (${contr.lider.nivel === "gestor" ? "Gestor" : contr.lider.nivel === "coordenador" ? "Coordenador" : "Supervisor"})` : "definir depois"}</strong>
+              Líder imediato: <strong>{contr?.lider ? `${contr.lider.nome} (${contr.lider.nivel})` : "definir depois"}</strong>
             </div>
             {contr?.avaliacoes?.length > 0 && (
               <div style={{ background: LARANJA_TINT, borderRadius: 12, padding: 12 }}>
