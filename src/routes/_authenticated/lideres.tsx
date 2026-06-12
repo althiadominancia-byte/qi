@@ -248,10 +248,9 @@ function LideresPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "end" }}>
                 <div>
                   <Label>Nível *</Label>
-                  <select style={inp} value={edit.nivel} onChange={(e) => setEdit({ ...edit, nivel: e.target.value as Nivel })}>
-                    <option value="gestor">Gestor</option>
-                    <option value="coordenador">Coordenador</option>
-                    <option value="supervisor">Supervisor</option>
+                  <select style={inp} value={edit.nivel} onChange={(e) => setEdit({ ...edit, nivel: e.target.value })}>
+                    {niveis.length === 0 && <option value="">— cadastre níveis em Cadastro › Níveis —</option>}
+                    {niveis.map((n) => <option key={n.id} value={n.nome}>{n.nome}</option>)}
                   </select>
                 </div>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: ROXO_DARK, paddingBottom: 8 }}>
