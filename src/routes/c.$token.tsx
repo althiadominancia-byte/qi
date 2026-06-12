@@ -588,7 +588,8 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         {step === "curriculo" && (
           <Card>
             <Titulo icon={FileText} sub="Atualize seu currículo. O sistema vai ler e analisar automaticamente.">Currículo & experiência</Titulo>
-            <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem)">
+            <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem) *">
+
               <div style={{ border: `2px dashed ${cvFile ? ROXO : BORDA}`, borderRadius: 13, padding: 22, textAlign: "center", background: ROXO_TINT }}>
                 <Upload size={26} color={ROXO} style={{ marginBottom: 8 }} />
                 <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK, overflowWrap: "anywhere", wordBreak: "break-word" }}>
