@@ -23,7 +23,7 @@ const UpsertLider = z.object({
   nome: z.string().min(1).max(200),
   email: z.string().email().max(200).optional().nullable().or(z.literal("")),
   telefone: z.string().max(40).optional().nullable().or(z.literal("")),
-  nivel: z.enum(["gestor", "coordenador", "supervisor"]),
+  nivel: z.string().min(1).max(80),
   ativo: z.boolean().optional().default(true),
   areas: z.array(Area).default([]),
 });
