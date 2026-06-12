@@ -109,7 +109,7 @@ function LideresPage() {
   const nomeDep = (id: string) => deps.find((d: any) => d.id === id)?.nome ?? "—";
   const nomeSet = (id: string | null) => (id ? sets.find((s: any) => s.id === id)?.nome ?? "—" : "Todo o departamento");
 
-  function novo() { setErro(""); setEdit(emptyLider()); }
+  function novo() { setErro(""); setEdit(emptyLider(nivelPadrao)); }
   function editar(l: Lider & { id: string }) { setErro(""); setEdit(JSON.parse(JSON.stringify(l))); }
   function addArea() {
     if (!edit) return;
