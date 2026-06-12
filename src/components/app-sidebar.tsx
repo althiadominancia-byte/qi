@@ -145,34 +145,47 @@ export function AppSidebar({
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gap: 2, alignContent: "start" }}>
-        {NAV.filter((i) => !i.superOnly || isSuper).map((item) => {
-          const active = isActive(item.to);
-          const Icon = item.icon;
-          const needsEmpresa = item.to !== "/super";
-          const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+        {NAV.map((item) => {
+          if (item.kind === "leaf") {
+            if (item.superOnly && !isSuper) return null;
+            const active = isActive(item.to);
+            const Icon = item.icon;
+            const needsEmpresa = item.to !== "/super";
+            const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                search={search as any}
+                title={collapsed ? item.label : undefined}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: collapsed ? "10px 0" : "10px 12px",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  borderRadius: 8,
+                  color: "#fff",
+                  textDecoration: "none",
+                  background: active ? ROXO : "transparent",
+                  fontSize: 13,
+                  fontWeight: active ? 700 : 500,
+                }}
+              >
+                <Icon size={18} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          }
+          // group
           return (
-            <Link
-              key={item.to}
-              to={item.to}
-              search={search as any}
-              title={collapsed ? item.label : undefined}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: collapsed ? "10px 0" : "10px 12px",
-                justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: 8,
-                color: "#fff",
-                textDecoration: "none",
-                background: active ? ROXO : "transparent",
-                fontSize: 13,
-                fontWeight: active ? 700 : 500,
-              }}
-            >
-              <Icon size={18} />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
+            <NavGroupItem
+              key={item.id}
+              group={item}
+              collapsed={collapsed}
+              empresaParam={empresaParam}
+              isActivePath={isActive}
+            />
           );
         })}
       </nav>
