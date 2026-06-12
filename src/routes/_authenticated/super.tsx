@@ -149,14 +149,6 @@ function SuperAdminPage() {
             <Headphones size={14} /> {isSuper ? "Controle global" : scope?.empresa_nome || "Sua empresa"}
           </span>
 
-          <button onClick={() => navigate({ to: "/permissoes" })}
-            style={{ background: "rgba(255,255,255,.18)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-            <ShieldCheck size={13} /> Permissões
-          </button>
-
-          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-            <LogOut size={13} /> Sair
-          </button>
         </div>
 
       </div>

@@ -138,12 +138,6 @@ function CatalogoPage() {
             <Building2 size={13} /> {empresaQ.data?.nome ?? "—"}
           </div>
         </div>
-        <button style={btn("rgba(255,255,255,.15)")} onClick={() => navigate({ to: "/lideres", search: { empresa: empresaId } })}>
-          Líderes
-        </button>
-        <button style={btn("rgba(255,255,255,.15)")} onClick={() => navigate({ to: "/admin", search: { empresa: empresaId } })}>
-          <ChevronLeft size={14} /> Voltar
-        </button>
       </header>
 
       <div style={{ maxWidth: 900, margin: "0 auto", padding: 18, display: "grid", gap: 14 }}>

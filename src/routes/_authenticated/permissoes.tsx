@@ -95,10 +95,6 @@ function PermissoesPage() {
               <ChevronDown size={15} color={ROXO} style={{ position: "absolute", right: 9, pointerEvents: "none" }} />
             </div>
           )}
-          <button onClick={() => navigate({ to: "/super" })}
-            style={{ background: "rgba(255,255,255,.18)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
-            <ArrowLeft size={13} /> Voltar
-          </button>
         </div>
       </div>
 
