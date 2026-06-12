@@ -74,6 +74,18 @@ function LideresPage() {
     enabled: !!empresaId,
   });
 
+  const niveisQ = useQuery({
+    queryKey: ["niveis-lid", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase.from("niveis_lideranca").select("id,nome,ordem,ativo").eq("empresa_id", empresaId!).eq("ativo", true).order("ordem").order("nome");
+      return (data ?? []) as { id: string; nome: string; ordem: number; ativo: boolean }[];
+    },
+    enabled: !!empresaId,
+  });
+  const niveis = niveisQ.data ?? [];
+  const nivelPadrao = niveis[0]?.nome ?? "";
+
+
   const [edit, setEdit] = useState<Lider | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
