@@ -1,8 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Briefcase,
+  FolderPlus,
   FolderTree,
   Users,
   ShieldCheck,
@@ -10,25 +12,44 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { ROXO, ROXO_DARK } from "@/lib/recrutamento/data";
 
-type NavItem = {
-  to: "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type NavLeaf = {
+  kind: "leaf";
+  to: LeafTo;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   superOnly?: boolean;
 };
+type NavGroup = {
+  kind: "group";
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }> }[];
+};
+type NavItem = NavLeaf | NavGroup;
 
 const NAV: NavItem[] = [
-  { to: "/admin", label: "Vagas", icon: Briefcase },
-  { to: "/catalogo", label: "Catálogo", icon: FolderTree },
-  { to: "/lideres", label: "Líderes", icon: Users },
-  { to: "/permissoes", label: "Permissões", icon: ShieldCheck },
-  { to: "/super", label: "Empresas", icon: Building2, superOnly: true },
+  { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
+  {
+    kind: "group",
+    id: "cadastro",
+    label: "Cadastro",
+    icon: FolderPlus,
+    children: [
+      { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
+      { to: "/lideres", label: "Líderes", icon: Users },
+    ],
+  },
+  { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },
+  { kind: "leaf", to: "/super", label: "Empresas", icon: Building2, superOnly: true },
 ];
 
 export function AppSidebar({
