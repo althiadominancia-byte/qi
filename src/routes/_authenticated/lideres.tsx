@@ -196,7 +196,7 @@ function LideresPage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <strong style={{ color: ROXO_DARK, fontSize: 14 }}>{l.nome}</strong>
-                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: ROXO, color: "#fff", fontWeight: 700 }}>{NIVEL_LABEL[l.nivel]}</span>
+                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: ROXO, color: "#fff", fontWeight: 700 }}>{l.nivel}</span>
                   {!l.ativo && <span style={{ fontSize: 11, color: VERMELHO, fontWeight: 700 }}>Inativo</span>}
                 </div>
                 <div style={{ fontSize: 12, color: CINZA, marginTop: 2 }}>
