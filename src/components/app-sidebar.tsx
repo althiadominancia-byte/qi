@@ -99,51 +99,50 @@ export function AppSidebar({
         zIndex: 30,
       }}
     >
-      {/* Topo / logo */}
+      {/* Topo / logo + toggle */}
       <div
         style={{
-          padding: collapsed ? "14px 0" : "14px 16px",
+          padding: collapsed ? "14px 8px" : "14px 12px",
           display: "flex",
           alignItems: "center",
-          justifyContent: collapsed ? "center" : "flex-start",
-          gap: 10,
+          justifyContent: collapsed ? "center" : "space-between",
+          gap: 8,
           borderBottom: "1px solid rgba(255,255,255,.08)",
           minHeight: 60,
         }}
       >
-        <MarcaEstrela size={28} branca />
         {!collapsed && (
-          <div style={{ lineHeight: 1.1 }}>
-            <div style={{ fontWeight: 800, fontSize: 14 }}>Estrela</div>
-            <div style={{ fontSize: 11, opacity: 0.75 }}>Recrutamento</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <MarcaEstrela size={28} branca />
+            <div style={{ lineHeight: 1.1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: 14 }}>Estrela</div>
+              <div style={{ fontSize: 11, opacity: 0.75 }}>Recrutamento</div>
+            </div>
           </div>
         )}
+        <button
+          onClick={onToggle}
+          title={collapsed ? "Expandir" : "Recolher"}
+          aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: "rgba(255,255,255,.10)",
+            color: "#fff",
+            border: "1px solid rgba(255,255,255,.18)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
       </div>
 
-      {/* Toggle */}
-      <button
-        onClick={onToggle}
-        title={collapsed ? "Expandir" : "Recolher"}
-        style={{
-          position: "absolute",
-          top: 22,
-          right: -12,
-          width: 24,
-          height: 24,
-          borderRadius: 999,
-          background: "#fff",
-          color: ROXO_DARK,
-          border: `1px solid ${ROXO_DARK}`,
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 2px 6px rgba(0,0,0,.15)",
-          zIndex: 31,
-        }}
-      >
-        {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-      </button>
+
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gap: 2, alignContent: "start" }}>
