@@ -267,56 +267,26 @@ function AdminPage() {
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", color: "#fff", flexWrap: "wrap" }}>
           {isSuper && (
-            <>
-              <select
-                value={empresaAtivaId ?? ""}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  if (!id) return;
-                  try { sessionStorage.setItem("empresa_ativa_id", id); } catch {}
-                  navigate({ to: "/admin", search: { empresa: id } });
-                }}
-                style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.3)", padding: "7px 10px", borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", maxWidth: 220 }}
-              >
-                {(empresasQ.data ?? []).map((e: any) => (
-                  <option key={e.id} value={e.id} style={{ color: ROXO_DARK }}>
-                    {e.nome}{!e.ativo ? " (inativa)" : ""}
-                  </option>
-                ))}
-              </select>
-              <button onClick={() => { try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}; navigate({ to: "/super" }); }}
-                title="Voltar à Administração"
-                style={{ background: LARANJA, color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
-                <Crown size={13} /> Administração
-              </button>
-            </>
+            <select
+              value={empresaAtivaId ?? ""}
+              onChange={(e) => {
+                const id = e.target.value;
+                if (!id) return;
+                try { sessionStorage.setItem("empresa_ativa_id", id); } catch {}
+                navigate({ to: "/admin", search: { empresa: id } });
+              }}
+              style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "1px solid rgba(255,255,255,.3)", padding: "7px 10px", borderRadius: 8, fontSize: 12.5, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", maxWidth: 220 }}
+            >
+              {(empresasQ.data ?? []).map((e: any) => (
+                <option key={e.id} value={e.id} style={{ color: ROXO_DARK }}>
+                  {e.nome}{!e.ativo ? " (inativa)" : ""}
+                </option>
+              ))}
+            </select>
           )}
-          {!isSuper && !!scope?.perms?.gerenciar_usuarios && (
-            <button onClick={() => navigate({ to: "/super" })}
-              title="Gerenciar equipe"
-              style={{ background: LARANJA, color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
-              <UserCog size={13} /> Equipe
-            </button>
-          )}
-          {(isSuper || !!scope?.perms?.gerenciar_usuarios) && (
-            <button onClick={() => navigate({ to: "/permissoes" })}
-              title="Permissões"
-              style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
-              <ShieldCheck size={13} /> Permissões
-            </button>
-          )}
-          {(isSuper || !!scope?.perms?.gerenciar_catalogo) && empresaAtivaId && (
-            <button onClick={() => navigate({ to: "/catalogo", search: { empresa: empresaAtivaId } })}
-              title="Departamentos e Setores"
-              style={{ background: "#fff", color: ROXO, border: `1px solid ${BORDA}`, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}>
-              <Layers size={13} /> Catálogo
-            </button>
-          )}
-
           <span data-header-sub style={{ fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6 }}><Headphones size={15} /> Recrutamento interno</span>
-
-          <button onClick={sair} style={{ background: "rgba(255,255,255,.15)", color: "#fff", border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 5, minHeight: 36 }}><LogOut size={13} /> Sair</button>
         </div>
+
       </div>
 
       {isSuper && empresaAtiva && (
