@@ -19,7 +19,7 @@ import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { ROXO, ROXO_DARK } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
