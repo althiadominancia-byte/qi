@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, Wand2, Loader2, Plus, X, CheckCircle2, AlertCircle, Save, Send, Brain, MessageCircle, Link2, Copy, Check, ExternalLink } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarFormularioVaga } from "@/lib/recrutamento.functions";
 import {
@@ -163,7 +162,6 @@ function PreviaPage() {
         @media (max-width:640px){ input,select,textarea{font-size:16px!important} }
       `}</style>
       <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
-        <MarcaEstrela size={32} branca />
         <div style={{ lineHeight: 1, minWidth: 0, flex: 1 }}>
           <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>PRÉVIA DO FORMULÁRIO</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 16, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{vaga.titulo}</div>

@@ -6,7 +6,6 @@ import {
   ShieldCheck, Save, RotateCcw, CheckCircle2, Info, ChevronDown, Briefcase,
   Users, Crown, ArrowLeft, Loader2, UserCog, UserSearch, Eye,
 } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import {
@@ -79,7 +78,6 @@ function PermissoesPage() {
       `}</style>
 
       <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30, flexWrap: "wrap" }}>
-        <MarcaEstrela size={30} branca />
         <div style={{ lineHeight: 1, minWidth: 0 }}>
           <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>PLATAFORMA · CONTROLE DE ACESSO</div>
           <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17, display: "flex", alignItems: "center", gap: 7 }}>

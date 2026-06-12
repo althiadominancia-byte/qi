@@ -8,7 +8,6 @@ import {
   Circle, Info, Link2, Copy, Check, Target, Layers, GraduationCap, Settings2, Calculator,
   Crown, Building2, ChevronDown, RefreshCw, UserCog, Trash2, Printer,
 } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
@@ -260,7 +259,6 @@ function AdminPage() {
       `}</style>
 
       <div style={{ background: ROXO, padding: "13px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30, flexWrap: "wrap" }}>
-        <MarcaEstrela size={32} branca />
         <div style={{ lineHeight: 1, minWidth: 0 }}>
           <div data-header-sub className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 10.5, opacity: 0.85 }}>
             {empresaAtiva?.nome?.toUpperCase() || "DISTRIBUIDORA ESTRELA"}

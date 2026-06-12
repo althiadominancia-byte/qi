@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { saveCatalogo, seedCatalogoPadrao } from "@/lib/catalogo.functions";
 import { ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO } from "@/lib/recrutamento/data";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 
 type Search = { empresa?: string };
 export const Route = createFileRoute("/_authenticated/catalogo")({
@@ -133,7 +132,6 @@ function CatalogoPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#FAFAFC" }}>
       <header style={{ background: ROXO, color: "#fff", padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-        <MarcaEstrela size={28} branca />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>Catálogo · Departamentos &amp; Setores</div>
           <div style={{ fontSize: 12, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
