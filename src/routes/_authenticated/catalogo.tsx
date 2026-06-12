@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { saveCatalogo, seedCatalogoPadrao } from "@/lib/catalogo.functions";
 import { ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO } from "@/lib/recrutamento/data";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 
 type Search = { empresa?: string };
 export const Route = createFileRoute("/_authenticated/catalogo")({

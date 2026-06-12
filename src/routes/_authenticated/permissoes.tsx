@@ -6,7 +6,6 @@ import {
   ShieldCheck, Save, RotateCcw, CheckCircle2, Info, ChevronDown, Briefcase,
   Users, Crown, ArrowLeft, Loader2, UserCog, UserSearch, Eye,
 } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import {

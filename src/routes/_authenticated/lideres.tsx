@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { upsertLider, excluirLider } from "@/lib/lideres.functions";
 import { ROXO, ROXO_DARK, BORDA, CINZA, LARANJA, VERDE, VERMELHO } from "@/lib/recrutamento/data";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 
 type Search = { empresa?: string };
 export const Route = createFileRoute("/_authenticated/lideres")({

@@ -8,7 +8,6 @@ import {
   Circle, Info, Link2, Copy, Check, Target, Layers, GraduationCap, Settings2, Calculator,
   Crown, Building2, ChevronDown, RefreshCw, UserCog, Trash2, Printer,
 } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
 import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";

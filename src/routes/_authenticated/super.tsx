@@ -7,7 +7,6 @@ import {
   Save, Crown, UserCog, UserSearch, Eye, Pencil, Power, Layers, LogOut,
   Headphones, Loader2, ArrowRight,
 } from "lucide-react";
-import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
