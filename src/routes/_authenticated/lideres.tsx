@@ -16,14 +16,13 @@ export const Route = createFileRoute("/_authenticated/lideres")({
   component: LideresPage,
 });
 
-type Nivel = "gestor" | "coordenador" | "supervisor";
 type Area = { departamento_id: string; setor_id: string | null };
 type Lider = {
   id?: string;
   nome: string;
   email: string;
   telefone: string;
-  nivel: Nivel;
+  nivel: string;
   ativo: boolean;
   areas: Area[];
 };
@@ -31,10 +30,8 @@ type Lider = {
 const inp: React.CSSProperties = { padding: "8px 10px", border: `1.5px solid ${BORDA}`, borderRadius: 8, fontSize: 13, outline: "none", background: "#fff", color: ROXO_DARK, fontFamily: "inherit", width: "100%" };
 const btn = (bg = ROXO, fg = "#fff"): React.CSSProperties => ({ background: bg, color: fg, border: "none", padding: "8px 12px", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "inherit" });
 
-const NIVEL_LABEL: Record<Nivel, string> = { gestor: "Gestor", coordenador: "Coordenador", supervisor: "Supervisor" };
-
-function emptyLider(): Lider {
-  return { nome: "", email: "", telefone: "", nivel: "gestor", ativo: true, areas: [] };
+function emptyLider(nivel: string): Lider {
+  return { nome: "", email: "", telefone: "", nivel, ativo: true, areas: [] };
 }
 
 function LideresPage() {
@@ -77,6 +74,18 @@ function LideresPage() {
     enabled: !!empresaId,
   });
 
+  const niveisQ = useQuery({
+    queryKey: ["niveis-lid", empresaId],
+    queryFn: async () => {
+      const { data } = await supabase.from("niveis_lideranca").select("id,nome,ordem,ativo").eq("empresa_id", empresaId!).eq("ativo", true).order("ordem").order("nome");
+      return (data ?? []) as { id: string; nome: string; ordem: number; ativo: boolean }[];
+    },
+    enabled: !!empresaId,
+  });
+  const niveis = niveisQ.data ?? [];
+  const nivelPadrao = niveis[0]?.nome ?? "";
+
+
   const [edit, setEdit] = useState<Lider | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
@@ -100,7 +109,7 @@ function LideresPage() {
   const nomeDep = (id: string) => deps.find((d: any) => d.id === id)?.nome ?? "—";
   const nomeSet = (id: string | null) => (id ? sets.find((s: any) => s.id === id)?.nome ?? "—" : "Todo o departamento");
 
-  function novo() { setErro(""); setEdit(emptyLider()); }
+  function novo() { setErro(""); setEdit(emptyLider(nivelPadrao)); }
   function editar(l: Lider & { id: string }) { setErro(""); setEdit(JSON.parse(JSON.stringify(l))); }
   function addArea() {
     if (!edit) return;
@@ -187,7 +196,7 @@ function LideresPage() {
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <strong style={{ color: ROXO_DARK, fontSize: 14 }}>{l.nome}</strong>
-                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: ROXO, color: "#fff", fontWeight: 700 }}>{NIVEL_LABEL[l.nivel]}</span>
+                  <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 999, background: ROXO, color: "#fff", fontWeight: 700 }}>{l.nivel}</span>
                   {!l.ativo && <span style={{ fontSize: 11, color: VERMELHO, fontWeight: 700 }}>Inativo</span>}
                 </div>
                 <div style={{ fontSize: 12, color: CINZA, marginTop: 2 }}>
@@ -239,10 +248,9 @@ function LideresPage() {
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "end" }}>
                 <div>
                   <Label>Nível *</Label>
-                  <select style={inp} value={edit.nivel} onChange={(e) => setEdit({ ...edit, nivel: e.target.value as Nivel })}>
-                    <option value="gestor">Gestor</option>
-                    <option value="coordenador">Coordenador</option>
-                    <option value="supervisor">Supervisor</option>
+                  <select style={inp} value={edit.nivel} onChange={(e) => setEdit({ ...edit, nivel: e.target.value })}>
+                    {niveis.length === 0 && <option value="">— cadastre níveis em Cadastro › Níveis —</option>}
+                    {niveis.map((n) => <option key={n.id} value={n.nome}>{n.nome}</option>)}
                   </select>
                 </div>
                 <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: ROXO_DARK, paddingBottom: 8 }}>

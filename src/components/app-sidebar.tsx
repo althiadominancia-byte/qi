@@ -6,6 +6,7 @@ import {
   Briefcase,
   FolderPlus,
   FolderTree,
+  Crown,
   Users,
   ShieldCheck,
   Building2,
@@ -19,7 +20,7 @@ import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { ROXO, ROXO_DARK } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
@@ -46,6 +47,7 @@ const NAV: NavItem[] = [
     children: [
       { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
       { to: "/lideres", label: "Líderes", icon: Users },
+      { to: "/niveis", label: "Níveis de Liderança", icon: Crown },
     ],
   },
   { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },

@@ -1768,11 +1768,10 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
               <div style={{ fontSize: 12.5, fontWeight: 600, color: ROXO_DARK, marginBottom: 6 }}>Líder imediato <span style={{ fontWeight: 500, color: "#9b93b0" }}>(líderes do setor da vaga)</span></div>
               <select value={liderId} onChange={(e) => setLiderId(e.target.value)} style={inp}>
                 <option value="">{(lideresQ.data ?? []).length ? "Selecione…" : "Nenhum líder cadastrado para o setor — definir depois"}</option>
-                {(["gestor","coordenador","supervisor"] as const).map((nv) => {
+                {Array.from(new Set((lideresQ.data ?? []).map((l: any) => l.nivel))).map((nv: any) => {
                   const grupo = (lideresQ.data ?? []).filter((l: any) => l.nivel === nv);
                   if (!grupo.length) return null;
-                  const label = nv === "gestor" ? "Gestor" : nv === "coordenador" ? "Coordenador" : "Supervisor";
-                  return <optgroup key={nv} label={label}>{grupo.map((l: any) => <option key={l.id} value={l.id}>{l.nome}</option>)}</optgroup>;
+                  return <optgroup key={nv} label={nv}>{grupo.map((l: any) => <option key={l.id} value={l.id}>{l.nome}</option>)}</optgroup>;
                 })}
               </select>
             </div>
@@ -1940,7 +1939,7 @@ function JornadaBloco({ c, vaga }: { c: Candidato; vaga: Vaga | null }) {
               <Award size={16} /> Contratado{contr?.data_admissao ? ` · admissão ${fmtData(contr.data_admissao)}` : ""}
             </div>
             <div style={{ fontSize: 12.5, color: ROXO_DARK, marginBottom: 10 }}>
-              Líder imediato: <strong>{contr?.lider ? `${contr.lider.nome} (${contr.lider.nivel === "gestor" ? "Gestor" : contr.lider.nivel === "coordenador" ? "Coordenador" : "Supervisor"})` : "definir depois"}</strong>
+              Líder imediato: <strong>{contr?.lider ? `${contr.lider.nome} (${contr.lider.nivel})` : "definir depois"}</strong>
             </div>
             {contr?.avaliacoes?.length > 0 && (
               <div style={{ background: LARANJA_TINT, borderRadius: 12, padding: 12 }}>
