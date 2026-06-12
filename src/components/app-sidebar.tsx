@@ -234,6 +234,119 @@ export function AppSidebar({
   );
 }
 
+function NavGroupItem({
+  group,
+  collapsed,
+  empresaParam,
+  isActivePath,
+}: {
+  group: NavGroup;
+  collapsed: boolean;
+  empresaParam: string | undefined;
+  isActivePath: (to: string) => boolean;
+}) {
+  const childActive = group.children.some((c) => isActivePath(c.to));
+  const [open, setOpen] = useState(childActive);
+  useEffect(() => { if (childActive) setOpen(true); }, [childActive]);
+
+  const Icon = group.icon;
+  const search = empresaParam ? { empresa: empresaParam } : undefined;
+
+  if (collapsed) {
+    // No modo recolhido, mostra os filhos diretamente como ícones
+    return (
+      <>
+        {group.children.map((c) => {
+          const active = isActivePath(c.to);
+          const CIcon = c.icon;
+          return (
+            <Link
+              key={c.to}
+              to={c.to}
+              search={search as any}
+              title={c.label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "10px 0",
+                borderRadius: 8,
+                color: "#fff",
+                textDecoration: "none",
+                background: active ? ROXO : "transparent",
+              }}
+            >
+              <CIcon size={18} />
+            </Link>
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 2 }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "10px 12px",
+          borderRadius: 8,
+          background: childActive ? "rgba(255,255,255,.06)" : "transparent",
+          border: "none",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: childActive ? 700 : 500,
+          textAlign: "left",
+          fontFamily: "inherit",
+        }}
+      >
+        <Icon size={18} />
+        <span style={{ flex: 1 }}>{group.label}</span>
+        <ChevronDown
+          size={14}
+          style={{ transition: "transform .15s", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+        />
+      </button>
+      {open && (
+        <div style={{ display: "grid", gap: 2, paddingLeft: 10 }}>
+          {group.children.map((c) => {
+            const active = isActivePath(c.to);
+            const CIcon = c.icon;
+            return (
+              <Link
+                key={c.to}
+                to={c.to}
+                search={search as any}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px 8px 14px",
+                  borderRadius: 8,
+                  color: "#fff",
+                  textDecoration: "none",
+                  background: active ? ROXO : "transparent",
+                  fontSize: 12.5,
+                  fontWeight: active ? 700 : 500,
+                  borderLeft: "2px solid rgba(255,255,255,.15)",
+                }}
+              >
+                <CIcon size={14} />
+                <span>{c.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function labelRole(r: string) {
   switch (r) {
     case "super_admin": return "Super Admin";
