@@ -1,8 +1,10 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Briefcase,
+  FolderPlus,
   FolderTree,
   Users,
   ShieldCheck,
@@ -10,25 +12,44 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { ROXO, ROXO_DARK } from "@/lib/recrutamento/data";
 
-type NavItem = {
-  to: "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/permissoes" | "/super";
+type NavLeaf = {
+  kind: "leaf";
+  to: LeafTo;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   superOnly?: boolean;
 };
+type NavGroup = {
+  kind: "group";
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+  children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }> }[];
+};
+type NavItem = NavLeaf | NavGroup;
 
 const NAV: NavItem[] = [
-  { to: "/admin", label: "Vagas", icon: Briefcase },
-  { to: "/catalogo", label: "Catálogo", icon: FolderTree },
-  { to: "/lideres", label: "Líderes", icon: Users },
-  { to: "/permissoes", label: "Permissões", icon: ShieldCheck },
-  { to: "/super", label: "Empresas", icon: Building2, superOnly: true },
+  { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
+  {
+    kind: "group",
+    id: "cadastro",
+    label: "Cadastro",
+    icon: FolderPlus,
+    children: [
+      { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
+      { to: "/lideres", label: "Líderes", icon: Users },
+    ],
+  },
+  { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },
+  { kind: "leaf", to: "/super", label: "Empresas", icon: Building2, superOnly: true },
 ];
 
 export function AppSidebar({
@@ -124,34 +145,47 @@ export function AppSidebar({
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gap: 2, alignContent: "start" }}>
-        {NAV.filter((i) => !i.superOnly || isSuper).map((item) => {
-          const active = isActive(item.to);
-          const Icon = item.icon;
-          const needsEmpresa = item.to !== "/super";
-          const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+        {NAV.map((item) => {
+          if (item.kind === "leaf") {
+            if (item.superOnly && !isSuper) return null;
+            const active = isActive(item.to);
+            const Icon = item.icon;
+            const needsEmpresa = item.to !== "/super";
+            const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                search={search as any}
+                title={collapsed ? item.label : undefined}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: collapsed ? "10px 0" : "10px 12px",
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  borderRadius: 8,
+                  color: "#fff",
+                  textDecoration: "none",
+                  background: active ? ROXO : "transparent",
+                  fontSize: 13,
+                  fontWeight: active ? 700 : 500,
+                }}
+              >
+                <Icon size={18} />
+                {!collapsed && <span>{item.label}</span>}
+              </Link>
+            );
+          }
+          // group
           return (
-            <Link
-              key={item.to}
-              to={item.to}
-              search={search as any}
-              title={collapsed ? item.label : undefined}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: collapsed ? "10px 0" : "10px 12px",
-                justifyContent: collapsed ? "center" : "flex-start",
-                borderRadius: 8,
-                color: "#fff",
-                textDecoration: "none",
-                background: active ? ROXO : "transparent",
-                fontSize: 13,
-                fontWeight: active ? 700 : 500,
-              }}
-            >
-              <Icon size={18} />
-              {!collapsed && <span>{item.label}</span>}
-            </Link>
+            <NavGroupItem
+              key={item.id}
+              group={item}
+              collapsed={collapsed}
+              empresaParam={empresaParam}
+              isActivePath={isActive}
+            />
           );
         })}
       </nav>
@@ -199,6 +233,119 @@ export function AppSidebar({
     </aside>
   );
 }
+
+function NavGroupItem({
+  group,
+  collapsed,
+  empresaParam,
+  isActivePath,
+}: {
+  group: NavGroup;
+  collapsed: boolean;
+  empresaParam: string | undefined;
+  isActivePath: (to: string) => boolean;
+}) {
+  const childActive = group.children.some((c) => isActivePath(c.to));
+  const [open, setOpen] = useState(childActive);
+  useEffect(() => { if (childActive) setOpen(true); }, [childActive]);
+
+  const Icon = group.icon;
+  const search = empresaParam ? { empresa: empresaParam } : undefined;
+
+  if (collapsed) {
+    // No modo recolhido, mostra os filhos diretamente como ícones
+    return (
+      <>
+        {group.children.map((c) => {
+          const active = isActivePath(c.to);
+          const CIcon = c.icon;
+          return (
+            <Link
+              key={c.to}
+              to={c.to}
+              search={search as any}
+              title={c.label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "10px 0",
+                borderRadius: 8,
+                color: "#fff",
+                textDecoration: "none",
+                background: active ? ROXO : "transparent",
+              }}
+            >
+              <CIcon size={18} />
+            </Link>
+          );
+        })}
+      </>
+    );
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 2 }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "10px 12px",
+          borderRadius: 8,
+          background: childActive ? "rgba(255,255,255,.06)" : "transparent",
+          border: "none",
+          color: "#fff",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: childActive ? 700 : 500,
+          textAlign: "left",
+          fontFamily: "inherit",
+        }}
+      >
+        <Icon size={18} />
+        <span style={{ flex: 1 }}>{group.label}</span>
+        <ChevronDown
+          size={14}
+          style={{ transition: "transform .15s", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+        />
+      </button>
+      {open && (
+        <div style={{ display: "grid", gap: 2, paddingLeft: 10 }}>
+          {group.children.map((c) => {
+            const active = isActivePath(c.to);
+            const CIcon = c.icon;
+            return (
+              <Link
+                key={c.to}
+                to={c.to}
+                search={search as any}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px 8px 14px",
+                  borderRadius: 8,
+                  color: "#fff",
+                  textDecoration: "none",
+                  background: active ? ROXO : "transparent",
+                  fontSize: 12.5,
+                  fontWeight: active ? 700 : 500,
+                  borderLeft: "2px solid rgba(255,255,255,.15)",
+                }}
+              >
+                <CIcon size={14} />
+                <span>{c.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function labelRole(r: string) {
   switch (r) {
