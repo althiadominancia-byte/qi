@@ -6,6 +6,7 @@ import {
   Briefcase,
   FolderPlus,
   FolderTree,
+  Crown,
   Users,
   ShieldCheck,
   Building2,
