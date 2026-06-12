@@ -46,6 +46,7 @@ const NAV: NavItem[] = [
     children: [
       { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
       { to: "/lideres", label: "Líderes", icon: Users },
+      { to: "/niveis", label: "Níveis de Liderança", icon: Crown },
     ],
   },
   { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },
