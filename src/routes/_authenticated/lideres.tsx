@@ -165,7 +165,6 @@ function LideresPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#FAFAFC" }}>
       <header style={{ background: ROXO, color: "#fff", padding: "14px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-        <MarcaEstrela size={28} branca />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800 }}>Líderes · Gestores, Coordenadores e Supervisores</div>
           <div style={{ fontSize: 12, opacity: 0.85, display: "flex", alignItems: "center", gap: 6 }}>
