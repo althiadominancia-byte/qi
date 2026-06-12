@@ -631,6 +631,9 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                 <div style={{ fontSize: 11, color: CINZA, marginTop: 8 }}>
                   PDF é o formato ideal. Imagens são comprimidas automaticamente. Limite: {CV_MAX_ORIGINAL_MB} MB.
                 </div>
+                <div style={{ fontSize: 11.5, color: "#B91C1C", marginTop: 6, fontWeight: 600 }}>
+                  Campo obrigatório — necessário para gerar sua análise.
+                </div>
               </div>
             </Campo>
             <Campo label="Já trabalhou com algo relacionado à vaga? Conte rapidamente.">
@@ -639,7 +642,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Campo label="Por que você quer essa vaga?">
               <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={a.motivo || ""} onChange={(e) => set("motivo", e.target.value)} placeholder="Conte com suas palavras..." />
             </Campo>
-            <Nav back={back} next={next} pode />
+            <Nav back={back} next={next} pode={podeAvancar} aviso={!cvPrep ? "Anexe seu currículo para continuar." : (cvProcessando ? "Aguarde o processamento do arquivo..." : "")} />
           </Card>
         )}
 
