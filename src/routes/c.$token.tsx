@@ -317,10 +317,11 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
 
   const podeAvancar = useMemo(() => {
     if (step === "dados") return a.nome && a.email && a.celular;
+    if (step === "curriculo") return !!cvPrep && !cvProcessando;
     if (step === "situacional") return SITUACIONAIS.every((_q, i) => a["sit_" + i]);
     if (step === "disc") return discDone === DISC_BLOCKS.length;
     return true;
-  }, [step, a, discDone]);
+  }, [step, a, discDone, cvPrep, cvProcessando]);
 
   const next = () => {
     if (step === "revisao") { void enviarInscricao(); return; }
@@ -587,7 +588,8 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         {step === "curriculo" && (
           <Card>
             <Titulo icon={FileText} sub="Atualize seu currículo. O sistema vai ler e analisar automaticamente.">Currículo & experiência</Titulo>
-            <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem)">
+            <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem) *">
+
               <div style={{ border: `2px dashed ${cvFile ? ROXO : BORDA}`, borderRadius: 13, padding: 22, textAlign: "center", background: ROXO_TINT }}>
                 <Upload size={26} color={ROXO} style={{ marginBottom: 8 }} />
                 <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK, overflowWrap: "anywhere", wordBreak: "break-word" }}>
@@ -629,6 +631,9 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
                 <div style={{ fontSize: 11, color: CINZA, marginTop: 8 }}>
                   PDF é o formato ideal. Imagens são comprimidas automaticamente. Limite: {CV_MAX_ORIGINAL_MB} MB.
                 </div>
+                <div style={{ fontSize: 11.5, color: "#B91C1C", marginTop: 6, fontWeight: 600 }}>
+                  Campo obrigatório — necessário para gerar sua análise.
+                </div>
               </div>
             </Campo>
             <Campo label="Já trabalhou com algo relacionado à vaga? Conte rapidamente.">
@@ -637,7 +642,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
             <Campo label="Por que você quer essa vaga?">
               <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={a.motivo || ""} onChange={(e) => set("motivo", e.target.value)} placeholder="Conte com suas palavras..." />
             </Campo>
-            <Nav back={back} next={next} pode />
+            <Nav back={back} next={next} pode={podeAvancar} aviso={!cvPrep ? "Anexe seu currículo para continuar." : (cvProcessando ? "Aguarde o processamento do arquivo..." : "")} />
           </Card>
         )}
 
