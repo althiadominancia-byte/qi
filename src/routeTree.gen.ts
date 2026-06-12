@@ -17,6 +17,7 @@ import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
 import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
+import { Route as AuthenticatedLideresRouteImport } from './routes/_authenticated/lideres'
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
@@ -62,6 +63,11 @@ const AuthenticatedPermissoesRoute = AuthenticatedPermissoesRouteImport.update({
   path: '/permissoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLideresRoute = AuthenticatedLideresRouteImport.update({
+  id: '/lideres',
+  path: '/lideres',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCatalogoRoute = AuthenticatedCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/lideres': typeof AuthenticatedLideresRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/lideres': typeof AuthenticatedLideresRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/definir-senha': typeof DefinirSenhaRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/catalogo': typeof AuthenticatedCatalogoRoute
+  '/_authenticated/lideres': typeof AuthenticatedLideresRoute
   '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/c/$token': typeof CTokenRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/lideres'
     | '/permissoes'
     | '/super'
     | '/c/$token'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/lideres'
     | '/permissoes'
     | '/super'
     | '/c/$token'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/_authenticated/admin'
     | '/_authenticated/catalogo'
+    | '/_authenticated/lideres'
     | '/_authenticated/permissoes'
     | '/_authenticated/super'
     | '/c/$token'
@@ -248,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPermissoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lideres': {
+      id: '/_authenticated/lideres'
+      path: '/lideres'
+      fullPath: '/lideres'
+      preLoaderRoute: typeof AuthenticatedLideresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/catalogo': {
       id: '/_authenticated/catalogo'
       path: '/catalogo'
@@ -289,6 +308,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCatalogoRoute: typeof AuthenticatedCatalogoRoute
+  AuthenticatedLideresRoute: typeof AuthenticatedLideresRoute
   AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
   AuthenticatedCandidatoIdRoute: typeof AuthenticatedCandidatoIdRoute
@@ -298,6 +318,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCatalogoRoute: AuthenticatedCatalogoRoute,
+  AuthenticatedLideresRoute: AuthenticatedLideresRoute,
   AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,
   AuthenticatedSuperRoute: AuthenticatedSuperRoute,
   AuthenticatedCandidatoIdRoute: AuthenticatedCandidatoIdRoute,
@@ -319,13 +340,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
