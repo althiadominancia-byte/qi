@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPerm } from "@/lib/tenant.server";
 
 const AnalyzeInput = z.object({
   candidatoId: z.string().uuid().optional(),
@@ -38,6 +39,9 @@ async function callGemini(userContent: any[]) {
   }
 }
 
+// PÚBLICA POR DESIGN: chamada pelo formulário do candidato (não autenticado).
+// Protegida pelas guardas internas — o cv_storage_path precisa bater com a
+// inscrição e a vaga precisa aceitar inscrição (vaga_aceita_inscricao).
 export const analisarCv = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AnalyzeInput.parse(d))
   .handler(async ({ data }) => {
@@ -93,8 +97,10 @@ const GerarVagaInput = z.object({
 });
 
 export const gerarPerfilVaga = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => GerarVagaInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertPerm((context as any).userId, "gerenciar_vagas");
     const prompt = `Você é especialista em RH. Com base nos dados de uma vaga, gere um PERFIL recomendado para preenchê-la e também uma DESCRIÇÃO reescrita, mais clara, organizada e fácil de entender, para ficar no topo do formulário. Responda SOMENTE com JSON válido, sem markdown, neste formato:
 {"descricao":"texto reescrito da vaga","pesos":{"comunicador":0,"fechador":0,"diplomatico":0,"executor":0,"analitico":0},"habilidades":[{"nome":"","nivel":"essencial|importante|desejavel"}],"competencias":["",""],"experiencia":"texto curto","escolaridade":"texto curto","requisitos":"texto curto"}
 
@@ -223,8 +229,10 @@ const DISC_FALLBACK = [
 ];
 
 export const gerarFormularioVaga = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => GerarFormularioInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await assertPerm((context as any).userId, "gerenciar_vagas");
     const out: { disc_blocks?: any[]; situacoes?: any[]; disc_fallback?: boolean } = {};
 
     if (data.modo === "ambos" || data.modo === "disc") {

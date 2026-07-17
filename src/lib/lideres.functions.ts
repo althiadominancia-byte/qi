@@ -1,16 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function ensurePerm(userId: string, perm: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin.from("usuarios").select("id, role, ativo, empresa_id").eq("id", userId).maybeSingle();
-  if (!me?.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return me;
-  const { data: perms } = await supabaseAdmin.rpc("user_effective_perms" as any, { _user_id: userId });
-  if (!(perms as any)?.[perm]) throw new Error("Permissão negada: " + perm);
-  return me;
-}
+import { assertPerm, assertEscopo, assertEscopoVaga, assertEscopoLider, carregarUsuario } from "@/lib/tenant.server";
 
 const Area = z.object({
   departamento_id: z.string().uuid(),
@@ -33,8 +24,10 @@ export const upsertLider = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpsertLider.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    const me: any = await ensurePerm(userId, "gerenciar_catalogo");
-    if (me?.role !== "super_admin" && me?.empresa_id !== data.empresa_id) throw new Error("Empresa fora do escopo.");
+    const me = await assertPerm(userId, "gerenciar_catalogo");
+    await assertEscopo(me, { empresa_id: data.empresa_id });
+    // Se estiver editando, o líder alvo precisa ser da mesma empresa (evita mover líder entre empresas).
+    if (data.id) await assertEscopoLider(me, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const payload = {
@@ -77,7 +70,8 @@ export const excluirLider = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => DelLider.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePerm(userId, "gerenciar_catalogo");
+    const me = await assertPerm(userId, "gerenciar_catalogo");
+    await assertEscopoLider(me, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("lideres").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
@@ -89,10 +83,11 @@ const ListBySetor = z.object({ vaga_id: z.string().uuid() });
 export const listLideresDaVaga = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ListBySetor.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const me = await carregarUsuario(userId);
+    const vaga = await assertEscopoVaga(me, data.vaga_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: vaga } = await supabaseAdmin.from("vagas").select("empresa_id, departamento_id, setor_id").eq("id", data.vaga_id).maybeSingle();
-    if (!vaga) return [];
     if (!vaga.departamento_id && !vaga.setor_id) return [];
 
     const { data: areas } = await supabaseAdmin

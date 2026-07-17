@@ -1,16 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function ensurePerm(userId: string, perm: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin.from("usuarios").select("id, role, ativo, empresa_id").eq("id", userId).maybeSingle();
-  if (!me?.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return me;
-  const { data: perms } = await supabaseAdmin.rpc("user_effective_perms" as any, { _user_id: userId });
-  if (!(perms as any)?.[perm]) throw new Error("Permissão negada: " + perm);
-  return me;
-}
+import { assertPerm, assertEscopo } from "@/lib/tenant.server";
 
 const Item = z.object({
   id: z.string().uuid().optional().nullable(),
@@ -30,8 +21,8 @@ export const salvarNiveisLideranca = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => Payload.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    const me: any = await ensurePerm(userId, "gerenciar_catalogo");
-    if (me?.role !== "super_admin" && me?.empresa_id !== data.empresa_id) throw new Error("Empresa fora do escopo.");
+    const me = await assertPerm(userId, "gerenciar_catalogo");
+    await assertEscopo(me, { empresa_id: data.empresa_id });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Excluir solicitados (se houver líderes usando o nivel = nome, ainda assim removemos o item — o nome textual permanece no líder)

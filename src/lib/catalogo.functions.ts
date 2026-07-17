@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPerm, assertEscopo } from "@/lib/tenant.server";
 
 const SetorIn = z.object({
   id: z.string().uuid().optional(),
@@ -20,14 +21,10 @@ const SaveInput = z.object({
   departamentos: z.array(DepIn),
 });
 
+// Valida permissão efetiva (preset do papel + override) E escopo de empresa.
 async function assertCanManage(userId: string, empresaId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: u } = await supabaseAdmin
-    .from("usuarios").select("role, empresa_id, perms, ativo").eq("id", userId).maybeSingle();
-  if (!u || !u.ativo) throw new Error("Não autorizado");
-  if (u.role === "super_admin") return;
-  if (u.empresa_id !== empresaId) throw new Error("Empresa fora do escopo");
-  if (!(u.perms as any)?.gerenciar_vagas) throw new Error("Sem permissão para gerenciar catálogo");
+  const me = await assertPerm(userId, "gerenciar_vagas");
+  await assertEscopo(me, { empresa_id: empresaId });
 }
 
 export const saveCatalogo = createServerFn({ method: "POST" })

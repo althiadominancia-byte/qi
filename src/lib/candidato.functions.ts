@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPerm, carregarUsuario, assertEscopoCandidato } from "@/lib/tenant.server";
 
 const Input = z.object({
   id: z.string().uuid(),
@@ -12,21 +13,13 @@ const Input = z.object({
   tempo_empresa: z.string().max(100).optional().nullable(),
 });
 
-async function ensurePerm(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin.from("usuarios").select("id, role, ativo").eq("id", userId).maybeSingle();
-  if (!me?.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return;
-  const { data: perms } = await supabaseAdmin.rpc("user_effective_perms" as any, { _user_id: userId });
-  if (!(perms as any)?.gerenciar_vagas) throw new Error("Sem permissão para editar dados do candidato.");
-}
-
 export const atualizarCadastroCandidato = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => Input.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePerm(userId);
+    const me = await assertPerm(userId, "gerenciar_vagas");
+    await assertEscopoCandidato(me, data.id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("candidatos_televendas").update({
       nome: data.nome,
@@ -46,12 +39,13 @@ export const excluirCandidato = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => DelInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await supabaseAdmin
-      .from("usuarios").select("role, ativo").eq("id", userId).maybeSingle();
-    if (!me?.ativo || me.role !== "super_admin") {
+    const me = await carregarUsuario(userId);
+    if (me.role !== "super_admin") {
       throw new Error("Apenas super admin pode excluir candidatos.");
     }
+    // Valida existência (assertEscopo é no-op para super_admin, mas confirma o registro).
+    await assertEscopoCandidato(me, data.id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("candidatos_televendas").delete().eq("id", data.id);
     if (error) throw new Error(error.message);

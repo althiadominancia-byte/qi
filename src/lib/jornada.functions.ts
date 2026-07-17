@@ -1,15 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-async function ensurePerm(userId: string, perm: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin.from("usuarios").select("id, role, ativo").eq("id", userId).maybeSingle();
-  if (!me?.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return;
-  const { data: perms } = await supabaseAdmin.rpc("user_effective_perms" as any, { _user_id: userId });
-  if (!(perms as any)?.[perm]) throw new Error("Permissão negada: " + perm);
-}
+import { assertPerm, assertEscopo, assertEscopoCandidato, assertEscopoContratacao } from "@/lib/tenant.server";
 
 const SelecionarInput = z.object({
   candidato_id: z.string().uuid(),
@@ -22,14 +14,10 @@ export const selecionarParaEntrevista = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SelecionarInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePerm(userId, "gerenciar_vagas");
+    const me = await assertPerm(userId, "gerenciar_vagas");
+    const cand = await assertEscopoCandidato(me, data.candidato_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: cand } = await supabaseAdmin
-      .from("candidatos_televendas")
-      .select("id, vaga_id, etapa")
-      .eq("id", data.candidato_id).maybeSingle();
-    if (!cand) throw new Error("Candidato não encontrado.");
     if (cand.etapa === "contratado" || cand.etapa === "nao_contratado") throw new Error("Jornada já encerrada.");
     if (cand.vaga_id) {
       const { data: vaga } = await supabaseAdmin.from("vagas").select("status, encerrada_em").eq("id", cand.vaga_id).maybeSingle();
@@ -50,10 +38,9 @@ export const removerEntrevista = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RemoverInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePerm(userId, "gerenciar_vagas");
+    const me = await assertPerm(userId, "gerenciar_vagas");
+    const cand = await assertEscopoCandidato(me, data.candidato_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: cand } = await supabaseAdmin.from("candidatos_televendas").select("id, vaga_id, etapa").eq("id", data.candidato_id).maybeSingle();
-    if (!cand) throw new Error("Candidato não encontrado.");
     if (cand.etapa !== "entrevista") throw new Error("Candidato não está na etapa de entrevista.");
     if (cand.vaga_id) {
       const { data: vaga } = await supabaseAdmin.from("vagas").select("status, encerrada_em").eq("id", cand.vaga_id).maybeSingle();
@@ -72,8 +59,17 @@ export const definirLiderContratacao = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SetLiderInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePerm(userId, "encerrar_vagas");
+    const me = await assertPerm(userId, "encerrar_vagas");
+    const contr = await assertEscopoContratacao(me, data.contratacao_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Líder precisa ser da mesma empresa da contratação.
+    if (data.lider_id) {
+      const { data: lider } = await supabaseAdmin
+        .from("lideres").select("id, empresa_id").eq("id", data.lider_id).maybeSingle();
+      if (!lider) throw new Error("Líder não encontrado.");
+      await assertEscopo(me, { empresa_id: lider.empresa_id });
+      if (lider.empresa_id !== contr.empresa_id) throw new Error("Líder não pertence à empresa da contratação.");
+    }
     const { error } = await supabaseAdmin.from("contratacoes").update({ lider_id: data.lider_id }).eq("id", data.contratacao_id);
     if (error) throw new Error(error.message);
     return { ok: true };

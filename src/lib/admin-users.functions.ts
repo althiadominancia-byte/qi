@@ -90,8 +90,15 @@ export const updateUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await assertCanManage(userId, data.empresa_id, data.role);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Valida o registro ATUAL do alvo (evita que um admin puxe/mova um usuário de
+    // outra empresa passando empresa_id da sua própria empresa no payload).
+    const { data: atual } = await supabaseAdmin
+      .from("usuarios").select("empresa_id, role").eq("id", data.id).maybeSingle();
+    if (!atual) throw new Error("Usuário não encontrado.");
+    await assertCanManage(userId, atual.empresa_id, atual.role);
+    // Valida também o destino (empresa/role novos do payload).
+    await assertCanManage(userId, data.empresa_id, data.role);
     const { error } = await supabaseAdmin.from("usuarios").update({
       nome: data.nome, role: data.role,
       empresa_id: data.role === "super_admin" ? null : data.empresa_id,

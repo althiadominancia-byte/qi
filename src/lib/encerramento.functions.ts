@@ -1,6 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  assertPerm,
+  assertEscopo,
+  assertEscopoVaga,
+  assertEscopoAvaliacao,
+} from "@/lib/tenant.server";
 
 const EncerrarInput = z.object({
   vaga_id: z.string().uuid(),
@@ -17,15 +23,8 @@ function addDaysISO(iso: string, days: number) {
   return d.toISOString().slice(0, 10);
 }
 
-async function ensurePermEncerrar(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin.from("usuarios").select("id, role, ativo").eq("id", userId).maybeSingle();
-  if (!me?.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return;
-  const { data: perm } = await supabaseAdmin.rpc("user_effective_perms" as any, { _user_id: userId });
-  const allow = (perm as any)?.encerrar_vagas ?? false;
-  if (!allow) throw new Error("Você não tem permissão para encerrar vagas.");
-}
+// Garante a permissão de encerrar vagas e retorna o ator (para checagem de escopo).
+const ensurePermEncerrar = (userId: string) => assertPerm(userId, "encerrar_vagas");
 
 export const encerrarVaga = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -33,11 +32,10 @@ export const encerrarVaga = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await ensurePermEncerrar(userId);
+    const me = await ensurePermEncerrar(userId);
 
-    const { data: vaga, error: vErr } = await supabaseAdmin
-      .from("vagas").select("id, empresa_id, unidade_id, status").eq("id", data.vaga_id).maybeSingle();
-    if (vErr || !vaga) throw new Error("Vaga não encontrada.");
+    // Escopo: a vaga precisa pertencer à empresa/unidade do usuário.
+    const vaga = await assertEscopoVaga(me, data.vaga_id);
 
     if (data.selecionou) {
       if (!data.candidato_id || !data.data_admissao) {
@@ -49,6 +47,14 @@ export const encerrarVaga = createServerFn({ method: "POST" })
         .eq("id", data.candidato_id).maybeSingle();
       if (cErr || !cand) throw new Error("Candidato não encontrado.");
       if (cand.vaga_id !== data.vaga_id) throw new Error("Candidato não pertence a esta vaga.");
+
+      // Líder (opcional) precisa ser da mesma empresa da vaga.
+      if (data.lider_id) {
+        const { data: lider } = await supabaseAdmin
+          .from("lideres").select("id, empresa_id").eq("id", data.lider_id).maybeSingle();
+        if (!lider) throw new Error("Líder não encontrado.");
+        await assertEscopo(me, { empresa_id: lider.empresa_id });
+      }
 
       // 1) Encerra vaga
       const { error: upErr } = await supabaseAdmin.from("vagas")
@@ -118,7 +124,10 @@ const ListCandInput = z.object({ vaga_id: z.string().uuid() });
 export const listCandidatosDaVaga = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => ListCandInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const me = await assertPerm(userId, "ver_candidatos");
+    await assertEscopoVaga(me, data.vaga_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: rows, error } = await supabaseAdmin
       .from("candidatos_televendas")
@@ -133,7 +142,10 @@ const VagaIdInput = z.object({ vaga_id: z.string().uuid() });
 export const getContratacaoByVaga = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => VagaIdInput.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { userId } = context as any;
+    const me = await assertPerm(userId, "ver_candidatos");
+    await assertEscopoVaga(me, data.vaga_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: contr } = await supabaseAdmin.from("contratacoes")
       .select("id, nome, email, telefone, data_admissao, status, candidato_id, lider_id")
@@ -157,7 +169,8 @@ export const reenviarAvaliacao = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AvIdInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePermEncerrar(userId);
+    const me = await ensurePermEncerrar(userId);
+    await assertEscopoAvaliacao(me, data.avaliacao_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("avaliacoes_experiencia")
       .update({ status: "enviada", enviada_em: new Date().toISOString() })
@@ -171,7 +184,8 @@ export const marcarAvaliacaoRespondida = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AvIdInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    await ensurePermEncerrar(userId);
+    const me = await ensurePermEncerrar(userId);
+    await assertEscopoAvaliacao(me, data.avaliacao_id);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("avaliacoes_experiencia")
       .update({ status: "respondida" })

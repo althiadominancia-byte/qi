@@ -1,28 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPerm, assertEscopo, carregarUsuario } from "@/lib/tenant.server";
 
 const RoleEditavel = z.enum(["admin_empresa", "recrutador", "visualizador"]);
 const PermsSchema = z.record(z.string().min(1).max(64), z.boolean());
 
+// Exige a permissão efetiva `gerenciar_usuarios` E que o alvo seja da mesma empresa.
 async function assertManagerOfEmpresa(userId: string, empresaAlvo: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: me } = await supabaseAdmin
-    .from("usuarios").select("role, empresa_id, ativo").eq("id", userId).maybeSingle();
-  if (!me || !me.ativo) throw new Error("Usuário não autorizado.");
-  if (me.role === "super_admin") return { isSuper: true };
-  if (me.empresa_id !== empresaAlvo) throw new Error("Você só pode gerenciar a sua própria empresa.");
-  const { data: pode, error } = await supabaseAdmin.rpc("user_has_perm", { _perm: "gerenciar_usuarios" });
-  // user_has_perm é SECURITY DEFINER e usa auth.uid() — chamando via admin não funciona.
-  // Em vez disso, resolvemos efetiva manualmente:
-  const { data: eff } = await supabaseAdmin.rpc("user_effective_perms", { _user_id: userId });
-  if (!eff || !(eff as any).gerenciar_usuarios) {
-    throw new Error("Sem permissão para gerenciar usuários.");
-  }
-  if (error || pode === false) {
-    // fallback silencioso — checagem efetiva acima já passou
-  }
-  return { isSuper: false };
+  const me = await assertPerm(userId, "gerenciar_usuarios");
+  await assertEscopo(me, { empresa_id: empresaAlvo });
+  return me;
 }
 
 /* ------------ Padrão por papel ------------ */
@@ -34,13 +22,10 @@ export const listPermissoesPapel = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ListInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // controle de acesso: precisa ser super OU pertencer à empresa
-    const { data: me } = await supabaseAdmin.from("usuarios").select("role, empresa_id, ativo").eq("id", userId).maybeSingle();
-    if (!me?.ativo) throw new Error("Usuário não autorizado.");
-    if (me.role !== "super_admin" && me.empresa_id !== data.empresa_id) {
-      throw new Error("Acesso negado a esta empresa.");
-    }
+    const me = await carregarUsuario(userId);
+    await assertEscopo(me, { empresa_id: data.empresa_id });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Garante linhas-padrão se ainda não existirem (idempotente)
     const roles = ["admin_empresa", "recrutador", "visualizador"] as const;
     for (const role of roles) {
@@ -84,12 +69,9 @@ export const listUsuariosDaEmpresa = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ListInput.parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context as any;
+    const me = await carregarUsuario(userId);
+    await assertEscopo(me, { empresa_id: data.empresa_id });
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: me } = await supabaseAdmin.from("usuarios").select("role, empresa_id, ativo").eq("id", userId).maybeSingle();
-    if (!me?.ativo) throw new Error("Usuário não autorizado.");
-    if (me.role !== "super_admin" && me.empresa_id !== data.empresa_id) {
-      throw new Error("Acesso negado a esta empresa.");
-    }
     const { data: rows, error } = await supabaseAdmin
       .from("usuarios")
       .select("id, nome, email, role, perms, ativo")
