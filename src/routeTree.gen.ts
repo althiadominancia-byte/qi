@@ -19,6 +19,7 @@ import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
 import { Route as AuthenticatedNiveisRouteImport } from './routes/_authenticated/niveis'
 import { Route as AuthenticatedLideresRouteImport } from './routes/_authenticated/lideres'
+import { Route as AuthenticatedIdentidadeRouteImport } from './routes/_authenticated/identidade'
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
@@ -74,6 +75,11 @@ const AuthenticatedLideresRoute = AuthenticatedLideresRouteImport.update({
   path: '/lideres',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIdentidadeRoute = AuthenticatedIdentidadeRouteImport.update({
+  id: '/identidade',
+  path: '/identidade',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCatalogoRoute = AuthenticatedCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/identidade': typeof AuthenticatedIdentidadeRoute
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/identidade': typeof AuthenticatedIdentidadeRoute
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/definir-senha': typeof DefinirSenhaRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/catalogo': typeof AuthenticatedCatalogoRoute
+  '/_authenticated/identidade': typeof AuthenticatedIdentidadeRoute
   '/_authenticated/lideres': typeof AuthenticatedLideresRoute
   '/_authenticated/niveis': typeof AuthenticatedNiveisRoute
   '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
@@ -160,6 +169,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/identidade'
     | '/lideres'
     | '/niveis'
     | '/permissoes'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/identidade'
     | '/lideres'
     | '/niveis'
     | '/permissoes'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/_authenticated/admin'
     | '/_authenticated/catalogo'
+    | '/_authenticated/identidade'
     | '/_authenticated/lideres'
     | '/_authenticated/niveis'
     | '/_authenticated/permissoes'
@@ -286,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLideresRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/identidade': {
+      id: '/_authenticated/identidade'
+      path: '/identidade'
+      fullPath: '/identidade'
+      preLoaderRoute: typeof AuthenticatedIdentidadeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/catalogo': {
       id: '/_authenticated/catalogo'
       path: '/catalogo'
@@ -327,6 +346,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCatalogoRoute: typeof AuthenticatedCatalogoRoute
+  AuthenticatedIdentidadeRoute: typeof AuthenticatedIdentidadeRoute
   AuthenticatedLideresRoute: typeof AuthenticatedLideresRoute
   AuthenticatedNiveisRoute: typeof AuthenticatedNiveisRoute
   AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
@@ -338,6 +358,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCatalogoRoute: AuthenticatedCatalogoRoute,
+  AuthenticatedIdentidadeRoute: AuthenticatedIdentidadeRoute,
   AuthenticatedLideresRoute: AuthenticatedLideresRoute,
   AuthenticatedNiveisRoute: AuthenticatedNiveisRoute,
   AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,

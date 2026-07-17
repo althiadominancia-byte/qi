@@ -5,14 +5,16 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   Building2, Users, Plus, X, ShieldCheck, ChevronDown, ChevronRight, MapPin,
   Save, Crown, UserCog, UserSearch, Eye, Pencil, Power, Layers, LogOut,
-  Headphones, Loader2, ArrowRight,
+  Headphones, Loader2, ArrowRight, Palette,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
+import { BrandingEditor } from "@/components/BrandingEditor";
+import { BrandingStyle } from "@/components/BrandingStyle";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
 import { ROLES, ORDEM_ROLES, PRESET, type RoleKey } from "@/lib/recrutamento/perms";
 import {
-  ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO,
+  ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO, PLATAFORMA,
 } from "@/lib/recrutamento/data";
 
 export const Route = createFileRoute("/_authenticated/super")({
@@ -127,6 +129,8 @@ function SuperAdminPage() {
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
+      {/* Super admin = plataforma neutra: substitui a marca (roxo/laranja) por slate. */}
+      {isSuper && <BrandingStyle cor_primaria={PLATAFORMA.primary} cor_sidebar={PLATAFORMA.primary} cor_botao={PLATAFORMA.primary} />}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box} html,body{overflow-x:hidden} .h{font-family:'Outfit',sans-serif}
         input:focus,select:focus,textarea:focus{outline:none;border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT}}
@@ -489,6 +493,7 @@ function EmpresasTab({ empresas, unidades, loading, onAbrirPainel, onChanged }: 
 function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpresa, onAbrirPainel, onChanged }: any) {
   const [novoNome, setNovoNome] = useState(""); const [novaCidade, setNovaCidade] = useState("");
   const [criando, setCriando] = useState(false);
+  const [marcaAberta, setMarcaAberta] = useState(false);
   const matriz = unidades.find((u: Unidade) => u.tipo === "matriz");
   const filiais = unidades.filter((u: Unidade) => u.tipo === "filial");
 
@@ -532,6 +537,26 @@ function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpres
           <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
             <Layers size={12} /> A matriz vincula todas as filiais desta empresa.
           </div>
+
+          {/* Identidade visual (white-label) */}
+          <div style={{ borderTop: `1px solid ${BORDA}`, marginTop: 14, paddingTop: 12 }}>
+            <button onClick={() => setMarcaAberta((v) => !v)} style={{
+              width: "100%", display: "flex", alignItems: "center", gap: 8, background: "none", border: "none",
+              cursor: "pointer", fontFamily: "inherit", padding: 0, color: ROXO_DARK,
+            }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Palette size={15} color={ROXO} />
+              </div>
+              <span style={{ fontWeight: 700, fontSize: 13.5, flex: 1, textAlign: "left" }}>Identidade visual (logo e cores)</span>
+              {marcaAberta ? <ChevronDown size={18} color="#9b93b0" /> : <ChevronRight size={18} color="#9b93b0" />}
+            </button>
+            {marcaAberta && (
+              <div style={{ marginTop: 14 }}>
+                <BrandingEditor empresaId={empresa.id} onSaved={onChanged} />
+              </div>
+            )}
+          </div>
+
           <div style={{ borderTop: `1px solid ${BORDA}`, marginTop: 14, paddingTop: 12, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontSize: 11.5, color: CINZA, flex: "1 1 220px" }}>
               {empresa.ativo

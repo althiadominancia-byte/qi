@@ -1,7 +1,11 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { AppSidebar } from "@/components/app-sidebar";
+import { BrandingStyle } from "@/components/BrandingStyle";
+import { getMyScope } from "@/lib/scope.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -25,8 +29,19 @@ function AuthLayout() {
       return n;
     });
   };
+  // Compartilha o cache ["my-scope"] com a sidebar — sem request extra.
+  const fetchScope = useServerFn(getMyScope);
+  const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
+  const branding = scopeQ.data?.branding;
   return (
     <div style={{ display: "flex", minHeight: "100vh", width: "100%" }}>
+      {branding && (
+        <BrandingStyle
+          cor_primaria={branding.cor_primaria}
+          cor_sidebar={branding.cor_sidebar}
+          cor_botao={branding.cor_botao}
+        />
+      )}
       <AppSidebar collapsed={collapsed} onToggle={toggle} />
       <main style={{ flex: 1, minWidth: 0 }}>
         <Outlet />

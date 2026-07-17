@@ -1,16 +1,39 @@
 // Fonte da verdade — NÃO ALTERAR DISC/SITUACIONAIS sem revisar com RH.
 
-export const ROXO = "#50328A";
-export const ROXO_DARK = "#3A2566";
-export const ROXO_TINT = "#F4F1FB";
-export const ROXO_TINT2 = "#E9E3F7";
-export const LARANJA = "#EB5717";
-export const LARANJA_TINT = "#FDEDE5";
+// Cores de MARCA (white-label): referenciam CSS variables com o valor Estrela
+// como fallback. Sem branding definido para a empresa, cai no fallback e o app
+// fica idêntico ao padrão. Os valores das vars são injetados em runtime por
+// <BrandingStyle>. NÃO troque os fallbacks sem revisar com RH/design.
+export const ROXO = "var(--brand-primary, #50328A)";
+export const ROXO_DARK = "var(--brand-primary-dark, #3A2566)";
+export const ROXO_TINT = "var(--brand-primary-tint, #F4F1FB)";
+export const ROXO_TINT2 = "var(--brand-primary-tint2, #E9E3F7)";
+export const LARANJA = "var(--brand-accent, #EB5717)";
+export const LARANJA_TINT = "var(--brand-accent-tint, #FDEDE5)";
+// Cores semânticas (status) — NÃO fazem parte do white-label.
 export const CINZA = "#5B5566";
 export const BORDA = "#E6E1F0";
 export const VERDE = "#16A34A";
 export const AMARELO = "#CA8A04";
 export const VERMELHO = "#DC2626";
+// Valores literais da marca padrão (Estrela) — usados como fallback default
+// quando uma cor de branding não foi configurada. Exportados para o editor.
+export const MARCA_DEFAULT = {
+  primary: "#50328A",
+  sidebar: "#3A2566",
+  accent: "#EB5717",
+} as const;
+
+// Paleta NEUTRA da plataforma (SaaS/super admin — sem marca de tenant). Usada no
+// shell do super admin: sidebar clara + conteúdo em slate, sem roxo/laranja.
+export const PLATAFORMA = {
+  primary: "#334155",       // slate-700 — destaques/ativos/cabeçalho
+  sidebarBg: "#F1F5F9",     // slate-100 — fundo da sidebar (claro)
+  sidebarText: "#0F172A",   // slate-900 — texto principal
+  sidebarMuted: "#64748B",  // slate-500 — texto secundário
+  sidebarActive: "#E2E8F0", // slate-200 — item ativo
+  sidebarBorder: "#E2E8F0", // bordas
+} as const;
 
 export type Dim = "D" | "I" | "S" | "C";
 export type PerfilKey = "comunicador" | "fechador" | "diplomatico" | "executor" | "analitico";

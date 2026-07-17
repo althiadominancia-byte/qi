@@ -10,6 +10,8 @@ import {
   Users,
   ShieldCheck,
   Building2,
+  Palette,
+  Layers,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -18,15 +20,17 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
-import { ROXO, ROXO_DARK } from "@/lib/recrutamento/data";
+import { logoUrl } from "@/components/BrandingStyle";
+import { ROXO, PLATAFORMA } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
-  superOnly?: boolean;
+  // "super" => só super_admin; "admin" => super_admin ou admin_empresa.
+  visible?: "super" | "admin";
 };
 type NavGroup = {
   kind: "group";
@@ -36,6 +40,43 @@ type NavGroup = {
   children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }> }[];
 };
 type NavItem = NavLeaf | NavGroup;
+
+// Tema do shell da sidebar: claro/neutro para a plataforma (super admin, sem
+// tenant) e escuro com a marca do tenant para os demais.
+type SidebarTheme = {
+  bg: string;
+  text: string;
+  muted: string;
+  active: string;
+  activeText: string;
+  border: string;
+  hover: string;
+  btnBg: string;
+  btnBorder: string;
+};
+
+const TEMA_TENANT: SidebarTheme = {
+  bg: "var(--brand-sidebar, var(--brand-primary-dark, #3A2566))",
+  text: "#fff",
+  muted: "rgba(255,255,255,.75)",
+  active: ROXO,
+  activeText: "#fff",
+  border: "rgba(255,255,255,.08)",
+  hover: "rgba(255,255,255,.06)",
+  btnBg: "rgba(255,255,255,.10)",
+  btnBorder: "rgba(255,255,255,.18)",
+};
+const TEMA_PLATAFORMA: SidebarTheme = {
+  bg: PLATAFORMA.sidebarBg,
+  text: PLATAFORMA.sidebarText,
+  muted: PLATAFORMA.sidebarMuted,
+  active: PLATAFORMA.sidebarActive,
+  activeText: PLATAFORMA.sidebarText,
+  border: PLATAFORMA.sidebarBorder,
+  hover: "rgba(15,23,42,.05)",
+  btnBg: "rgba(15,23,42,.06)",
+  btnBorder: "rgba(15,23,42,.14)",
+};
 
 const NAV: NavItem[] = [
   { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
@@ -51,7 +92,8 @@ const NAV: NavItem[] = [
     ],
   },
   { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },
-  { kind: "leaf", to: "/super", label: "Empresas", icon: Building2, superOnly: true },
+  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, visible: "admin" },
+  { kind: "leaf", to: "/super", label: "Empresas", icon: Building2, visible: "super" },
 ];
 
 export function AppSidebar({
@@ -67,6 +109,13 @@ export function AppSidebar({
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
+  const isAdminEmpresa = scope?.role === "admin_empresa";
+
+  // Super admin = plataforma (SaaS): shell neutro, sem marca de tenant.
+  const neutro = isSuper;
+  const T = neutro ? TEMA_PLATAFORMA : TEMA_TENANT;
+  const customLogo = logoUrl(scope?.branding?.logo_path);
+  const marcaNome = neutro ? "Plataforma" : (scope?.empresa_nome || "Estrela");
 
   // Preserva ?empresa= entre páginas
   const currentEmpresa = (location.search as any)?.empresa as string | undefined;
@@ -88,8 +137,8 @@ export function AppSidebar({
       style={{
         width,
         minWidth: width,
-        background: ROXO_DARK,
-        color: "#fff",
+        background: T.bg,
+        color: T.text,
         display: "flex",
         flexDirection: "column",
         transition: "width .2s ease",
@@ -97,6 +146,7 @@ export function AppSidebar({
         top: 0,
         height: "100vh",
         zIndex: 30,
+        borderRight: neutro ? `1px solid ${T.border}` : undefined,
       }}
     >
       {/* Topo / logo + toggle */}
@@ -107,16 +157,22 @@ export function AppSidebar({
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
           gap: 8,
-          borderBottom: "1px solid rgba(255,255,255,.08)",
+          borderBottom: `1px solid ${T.border}`,
           minHeight: 60,
         }}
       >
         {!collapsed && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <MarcaEstrela size={28} branca />
+            {neutro ? (
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: PLATAFORMA.primary, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Layers size={16} color="#fff" />
+              </div>
+            ) : (
+              <MarcaEstrela size={28} branca src={customLogo} alt={marcaNome} />
+            )}
             <div style={{ lineHeight: 1.1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 14 }}>Estrela</div>
-              <div style={{ fontSize: 11, opacity: 0.75 }}>Recrutamento</div>
+              <div style={{ fontWeight: 800, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marcaNome}</div>
+              <div style={{ fontSize: 11, color: T.muted }}>Recrutamento</div>
             </div>
           </div>
         )}
@@ -128,9 +184,9 @@ export function AppSidebar({
             width: 28,
             height: 28,
             borderRadius: 8,
-            background: "rgba(255,255,255,.10)",
-            color: "#fff",
-            border: "1px solid rgba(255,255,255,.18)",
+            background: T.btnBg,
+            color: T.text,
+            border: `1px solid ${T.btnBorder}`,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
@@ -148,10 +204,11 @@ export function AppSidebar({
       <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gap: 2, alignContent: "start" }}>
         {NAV.map((item) => {
           if (item.kind === "leaf") {
-            if (item.superOnly && !isSuper) return null;
+            if (item.visible === "super" && !isSuper) return null;
+            if (item.visible === "admin" && !isSuper && !isAdminEmpresa) return null;
             const active = isActive(item.to);
             const Icon = item.icon;
-            const needsEmpresa = item.to !== "/super";
+            const needsEmpresa = item.to !== "/super" && item.to !== "/identidade";
             const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
             return (
               <Link
@@ -166,9 +223,9 @@ export function AppSidebar({
                   padding: collapsed ? "10px 0" : "10px 12px",
                   justifyContent: collapsed ? "center" : "flex-start",
                   borderRadius: 8,
-                  color: "#fff",
+                  color: active ? T.activeText : T.text,
                   textDecoration: "none",
-                  background: active ? ROXO : "transparent",
+                  background: active ? T.active : "transparent",
                   fontSize: 13,
                   fontWeight: active ? 700 : 500,
                 }}
@@ -186,6 +243,7 @@ export function AppSidebar({
               collapsed={collapsed}
               empresaParam={empresaParam}
               isActivePath={isActive}
+              theme={T}
             />
           );
         })}
@@ -194,19 +252,19 @@ export function AppSidebar({
       {/* Rodapé / usuário */}
       <div
         style={{
-          borderTop: "1px solid rgba(255,255,255,.08)",
+          borderTop: `1px solid ${T.border}`,
           padding: collapsed ? "10px 0" : "10px 12px",
           display: "grid",
           gap: 8,
         }}
       >
         {!collapsed && scope && (
-          <div style={{ fontSize: 11, opacity: 0.8, lineHeight: 1.3 }}>
-            <div style={{ fontWeight: 700, color: "#fff", fontSize: 12 }}>
+          <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.3 }}>
+            <div style={{ fontWeight: 700, color: T.text, fontSize: 12 }}>
               {scope.nome || scope.email}
             </div>
-            {scope.empresa_nome && <div>{scope.empresa_nome}</div>}
-            <div style={{ opacity: 0.7 }}>{labelRole(scope.role)}</div>
+            {!neutro && scope.empresa_nome && <div>{scope.empresa_nome}</div>}
+            <div style={{ color: T.muted }}>{labelRole(scope.role)}</div>
           </div>
         )}
         <button
@@ -217,9 +275,9 @@ export function AppSidebar({
             alignItems: "center",
             justifyContent: collapsed ? "center" : "flex-start",
             gap: 8,
-            background: "rgba(255,255,255,.08)",
-            color: "#fff",
-            border: "none",
+            background: T.btnBg,
+            color: T.text,
+            border: `1px solid ${T.btnBorder}`,
             padding: collapsed ? "10px 0" : "8px 10px",
             borderRadius: 8,
             cursor: "pointer",
@@ -240,17 +298,20 @@ function NavGroupItem({
   collapsed,
   empresaParam,
   isActivePath,
+  theme,
 }: {
   group: NavGroup;
   collapsed: boolean;
   empresaParam: string | undefined;
   isActivePath: (to: string) => boolean;
+  theme: SidebarTheme;
 }) {
   const childActive = group.children.some((c) => isActivePath(c.to));
   const [open, setOpen] = useState(childActive);
   useEffect(() => { if (childActive) setOpen(true); }, [childActive]);
 
   const Icon = group.icon;
+  const T = theme;
   const search = empresaParam ? { empresa: empresaParam } : undefined;
 
   if (collapsed) {
@@ -272,9 +333,9 @@ function NavGroupItem({
                 justifyContent: "center",
                 padding: "10px 0",
                 borderRadius: 8,
-                color: "#fff",
+                color: active ? T.activeText : T.text,
                 textDecoration: "none",
-                background: active ? ROXO : "transparent",
+                background: active ? T.active : "transparent",
               }}
             >
               <CIcon size={18} />
@@ -295,9 +356,9 @@ function NavGroupItem({
           gap: 12,
           padding: "10px 12px",
           borderRadius: 8,
-          background: childActive ? "rgba(255,255,255,.06)" : "transparent",
+          background: childActive ? T.hover : "transparent",
           border: "none",
-          color: "#fff",
+          color: T.text,
           cursor: "pointer",
           fontSize: 13,
           fontWeight: childActive ? 700 : 500,
@@ -328,12 +389,12 @@ function NavGroupItem({
                   gap: 10,
                   padding: "8px 10px 8px 14px",
                   borderRadius: 8,
-                  color: "#fff",
+                  color: active ? T.activeText : T.text,
                   textDecoration: "none",
-                  background: active ? ROXO : "transparent",
+                  background: active ? T.active : "transparent",
                   fontSize: 12.5,
                   fontWeight: active ? 700 : 500,
-                  borderLeft: "2px solid rgba(255,255,255,.15)",
+                  borderLeft: `2px solid ${T.border}`,
                 }}
               >
                 <CIcon size={14} />

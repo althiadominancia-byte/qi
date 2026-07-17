@@ -8,6 +8,7 @@ import {
   Loader2, Briefcase, AlertCircle, Lightbulb, ThumbsUp, Ban,
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
+import { BrandingStyle, logoUrl, type Branding } from "@/components/BrandingStyle";
 import { supabase } from "@/integrations/supabase/client";
 import { analisarCv } from "@/lib/recrutamento.functions";
 import { prepararCv, fmtSize, CV_MAX_ORIGINAL_MB, type CvPreparado } from "@/lib/recrutamento/cv-upload";
@@ -136,14 +137,30 @@ function NivelBadge({ nivel }: any) {
   return <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: cor, padding: "2px 9px", borderRadius: 99 }}>{txt}</span>;
 }
 
-function HeaderRoxo({ titulo = "Processo Seletivo" }: { titulo?: string }) {
+function HeaderRoxo({
+  titulo = "Processo Seletivo",
+  logo,
+  marca,
+  branding,
+}: {
+  titulo?: string;
+  logo?: string | null;
+  marca?: string | null;
+  branding?: Branding;
+}) {
+  const custom = !!marca;
   return (
     <div style={{ background: ROXO, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
-      <MarcaEstrela size={34} branca />
-      <div style={{ lineHeight: 1 }}>
-        <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 11, opacity: 0.85 }}>DISTRIBUIDORA</div>
-        <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}>ESTRELA</div>
-      </div>
+      {branding && <BrandingStyle cor_primaria={branding.cor_primaria} cor_sidebar={branding.cor_sidebar} cor_botao={branding.cor_botao} />}
+      <MarcaEstrela size={34} branca src={logo} alt={marca || "Distribuidora Estrela"} />
+      {custom ? (
+        <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 0.5, lineHeight: 1.1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marca}</div>
+      ) : (
+        <div style={{ lineHeight: 1 }}>
+          <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 11, opacity: 0.85 }}>DISTRIBUIDORA</div>
+          <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}>ESTRELA</div>
+        </div>
+      )}
       <div data-header-sub style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
         <Headphones size={15} /> {titulo}
       </div>
@@ -161,6 +178,27 @@ function FormPublico() {
       return data as any;
     },
   });
+
+  // Identidade visual (white-label) da empresa da vaga — resolvida por RPC pública.
+  const empresaId = (vagaQ.data as any)?.empresa_id as string | undefined;
+  const brandingQ = useQuery({
+    queryKey: ["empresa-branding", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_empresa_branding" as any, { p_empresa_id: empresaId });
+      if (error) throw error;
+      const row: any = Array.isArray(data) ? data[0] : data;
+      return (row ?? null) as
+        | { nome: string | null; logo_path: string | null; cor_primaria: string | null; cor_sidebar: string | null; cor_botao: string | null }
+        | null;
+    },
+  });
+  const marcaNome = brandingQ.data?.nome ?? null;
+  const marcaLogo = logoUrl(brandingQ.data?.logo_path ?? null);
+  const marcaBranding: Branding | undefined = brandingQ.data
+    ? { cor_primaria: brandingQ.data.cor_primaria, cor_sidebar: brandingQ.data.cor_sidebar, cor_botao: brandingQ.data.cor_botao }
+    : undefined;
+  const headerMarca = { logo: marcaLogo, marca: marcaNome, branding: marcaBranding };
 
   if (vagaQ.isLoading) {
     return (
@@ -193,7 +231,7 @@ function FormPublico() {
   if (encerrada) {
     return (
       <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK }}>
-        <HeaderRoxo titulo={vaga.titulo} />
+        <HeaderRoxo titulo={vaga.titulo} {...headerMarca} />
         <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 18px" }}>
           <Card>
             <div style={{ textAlign: "center" }}>
@@ -209,8 +247,10 @@ function FormPublico() {
     );
   }
 
-  return <FormularioVaga vaga={vaga} />;
+  return <FormularioVaga vaga={vaga} headerMarca={headerMarca} />;
 }
+
+type HeaderMarca = { logo?: string | null; marca?: string | null; branding?: Branding };
 
 const FLOW_BASE = ["intro", "dados", "curriculo", "situacional", "disc", "diversidade", "revisao", "resultado"];
 const FORM_BASE = ["dados", "curriculo", "situacional", "disc", "diversidade", "revisao"];
@@ -223,7 +263,7 @@ const STEP_META: Record<string, { n: string; icon: any }> = {
   revisao: { n: "Revisão", icon: CheckCircle2 },
 };
 
-function FormularioVaga({ vaga }: { vaga: Vaga }) {
+function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: HeaderMarca }) {
   const DISC_BLOCKS = useMemo(() => getDiscBlocks(vaga), [vaga]);
   const SITUACIONAIS = useMemo(() => vaga.usar_situacional ? getSituacoes(vaga) : [], [vaga]);
   const usarSit = vaga.usar_situacional && SITUACIONAIS.length > 0;
@@ -505,7 +545,7 @@ function FormularioVaga({ vaga }: { vaga: Vaga }) {
         }
       `}</style>
 
-      <HeaderRoxo titulo={vaga.titulo} />
+      <HeaderRoxo titulo={vaga.titulo} {...headerMarca} />
 
       <div data-pad style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
         {formIdx >= 0 && (
