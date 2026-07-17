@@ -96,7 +96,10 @@ function SuperAdminPage() {
   const usuarios = usuariosQ.data ?? [];
   const userUnidades = userUnidadesQ.data ?? [];
 
-  const [aba, setAba] = useState<"usuarios" | "empresas">("usuarios");
+  // Super_admin abre já na aba Empresas (impersonação em primeiro plano);
+  // demais papéis só têm a aba Usuários.
+  const [aba, setAba] = useState<"usuarios" | "empresas">("empresas");
+  const abaEfetiva = isSuper ? aba : "usuarios";
   const [editUser, setEditUser] = useState<UsuarioEdit | null>(null);
 
   const nomeEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome || "—";
@@ -161,13 +164,13 @@ function SuperAdminPage() {
           ).map(([k, t, Ic]) => (
             <button key={k} onClick={() => setAba(k as any)} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
-              fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${aba === k ? ROXO : BORDA}`, background: aba === k ? ROXO : "#fff", color: aba === k ? "#fff" : CINZA,
+              fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${abaEfetiva === k ? ROXO : BORDA}`, background: abaEfetiva === k ? ROXO : "#fff", color: abaEfetiva === k ? "#fff" : CINZA,
             }}><Ic size={15} /> {t}</button>
           ))}
         </div>
 
 
-        {aba === "usuarios" && (
+        {abaEfetiva === "usuarios" && (
           <UsuariosTab
             usuarios={usuarios} loading={usuariosQ.isLoading}
             nomeEmpresa={nomeEmpresa}
@@ -189,7 +192,7 @@ function SuperAdminPage() {
           />
         )}
 
-        {aba === "empresas" && (
+        {abaEfetiva === "empresas" && (
           <EmpresasTab
             empresas={empresas} unidades={unidades}
             loading={empresasQ.isLoading}

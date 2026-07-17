@@ -16,14 +16,22 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "err" | "ok"; text: string } | null>(null);
 
+  // Roteia por papel: super_admin → gestão (/super); demais → painel do recrutador (/admin).
+  async function rotearPorPapel(userId: string) {
+    const { data: u } = await supabase
+      .from("usuarios").select("role").eq("id", userId).maybeSingle();
+    navigate({ to: u?.role === "super_admin" ? "/super" : "/admin", replace: true });
+  }
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session) navigate({ to: "/admin", replace: true });
+      if (session) rotearPorPapel(session.user.id);
     });
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin", replace: true });
+      if (data.session) rotearPorPapel(data.session.user.id);
     });
     return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   async function submit(e: React.FormEvent) {
