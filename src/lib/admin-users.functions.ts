@@ -5,6 +5,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const RoleEnum = z.enum(["super_admin", "admin_empresa", "recrutador", "visualizador"]);
 const PermsSchema = z.record(z.string(), z.boolean());
 
+// Regra de vínculo: só o super_admin é global (empresa_id nulo). Todos os demais
+// papéis PRECISAM estar vinculados a uma empresa (tenant).
+const vinculoEmpresaValido = (d: { role: string; empresa_id: string | null }) =>
+  d.role === "super_admin" || !!d.empresa_id;
+const VINCULO_MSG = {
+  message: "Usuário que não é super admin precisa estar vinculado a uma empresa.",
+  path: ["empresa_id"] as (string | number)[],
+};
+
 const CreateInput = z.object({
   nome: z.string().min(1).max(120),
   email: z.string().email().max(200),
@@ -14,7 +23,7 @@ const CreateInput = z.object({
   unidades: z.array(z.string().uuid()).default([]),
   perms: PermsSchema,
   ativo: z.boolean().default(true),
-});
+}).refine(vinculoEmpresaValido, VINCULO_MSG);
 
 const UpdateInput = z.object({
   id: z.string().uuid(),
@@ -25,7 +34,7 @@ const UpdateInput = z.object({
   unidades: z.array(z.string().uuid()).default([]),
   perms: PermsSchema,
   ativo: z.boolean(),
-});
+}).refine(vinculoEmpresaValido, VINCULO_MSG);
 
 async function assertCanManage(userId: string, alvoEmpresa: string | null, alvoRole: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
