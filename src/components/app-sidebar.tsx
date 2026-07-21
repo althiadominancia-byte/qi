@@ -13,6 +13,7 @@ import {
   Palette,
   Layers,
   LogOut,
+  ArrowLeft,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -21,22 +22,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { logoUrl } from "@/components/BrandingStyle";
+import type { PermKey } from "@/lib/recrutamento/perms";
 import { ROXO, PLATAFORMA } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade" | "/usuarios";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
-  // "super" => só super_admin; "admin" => super_admin ou admin_empresa.
-  visible?: "super" | "admin";
+  perm?: PermKey;            // exige permissão efetiva de aplicação (super passa)
+  soAdminEmpresa?: boolean;  // exige role admin_empresa (não faz sentido p/ super)
+  tab?: "empresas" | "usuarios"; // item do /super: deep-link da aba
 };
 type NavGroup = {
   kind: "group";
   id: string;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
+  perm?: PermKey;
   children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }> }[];
 };
 type NavItem = NavLeaf | NavGroup;
@@ -78,22 +82,32 @@ const TEMA_PLATAFORMA: SidebarTheme = {
   btnBorder: "rgba(15,23,42,.14)",
 };
 
-const NAV: NavItem[] = [
+// Plano de USO DA APLICAÇÃO (dentro de uma empresa). Itens escondidos conforme
+// a permissão efetiva do usuário. super_admin impersonando vê tudo.
+const NAV_APP: NavItem[] = [
   { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
   {
     kind: "group",
     id: "cadastro",
     label: "Cadastro",
     icon: FolderPlus,
+    perm: "gerenciar_catalogo",
     children: [
       { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
       { to: "/lideres", label: "Líderes", icon: Users },
       { to: "/niveis", label: "Níveis de Liderança", icon: Crown },
     ],
   },
-  { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck },
-  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, visible: "admin" },
-  { kind: "leaf", to: "/super", label: "Empresas", icon: Building2, visible: "super" },
+  { kind: "leaf", to: "/usuarios", label: "Usuários", icon: Users, perm: "gerenciar_usuarios" },
+  { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck, perm: "gerenciar_usuarios" },
+  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, soAdminEmpresa: true },
+];
+
+// Plano de GESTÃO DO SAAS (governança da plataforma). Só super_admin, fora de
+// impersonação. Deep-link nas abas do /super.
+const NAV_SAAS: NavItem[] = [
+  { kind: "leaf", to: "/super", label: "Empresas & unidades", icon: Building2, tab: "empresas" },
+  { kind: "leaf", to: "/super", label: "Usuários", icon: Users, tab: "usuarios" },
 ];
 
 export function AppSidebar({
@@ -111,21 +125,55 @@ export function AppSidebar({
   const isSuper = scope?.role === "super_admin";
   const isAdminEmpresa = scope?.role === "admin_empresa";
 
-  // Super admin = plataforma (SaaS): shell neutro, sem marca de tenant.
-  const neutro = isSuper;
-  const T = neutro ? TEMA_PLATAFORMA : TEMA_TENANT;
-  const customLogo = logoUrl(scope?.branding?.logo_path);
-  const marcaNome = neutro ? "Plataforma" : (scope?.empresa_nome || "Estrela");
-
-  // Preserva ?empresa= entre páginas
+  // ?empresa= (impersonação) e ?tab= (aba do /super), preservados entre páginas.
   const currentEmpresa = (location.search as any)?.empresa as string | undefined;
+  const currentTab = (location.search as any)?.tab as string | undefined;
   const empresaParam = currentEmpresa || (scope?.empresa_id ?? undefined);
+
+  // Dois planos: super_admin sem empresa ativa = GESTÃO DO SAAS (shell neutro);
+  // super_admin impersonando OU qualquer papel de empresa = USO DA APLICAÇÃO.
+  const impersonando = !!isSuper && !!currentEmpresa;
+  const contexto: "saas" | "app" = isSuper && !impersonando ? "saas" : "app";
+  const neutro = contexto === "saas";
+  const T = neutro ? TEMA_PLATAFORMA : TEMA_TENANT;
+  const nav = contexto === "saas" ? NAV_SAAS : NAV_APP;
+
+  const customLogo = logoUrl(scope?.branding?.logo_path);
+
+  // Nome da empresa impersonada (faixa de gestão + header no plano de aplicação).
+  const empresaImpQ = useQuery({
+    queryKey: ["sidebar-empresa", currentEmpresa],
+    enabled: impersonando,
+    queryFn: async () => {
+      const { data } = await supabase.from("empresas").select("nome").eq("id", currentEmpresa!).maybeSingle();
+      return data?.nome ?? null;
+    },
+  });
+  const marcaNome = neutro
+    ? "Plataforma"
+    : impersonando
+      ? (empresaImpQ.data || "Empresa")
+      : (scope?.empresa_nome || "Estrela");
+
+  // Gating de item por plano de permissão. No plano de aplicação, super vê tudo.
+  const podeVer = (item: NavItem): boolean => {
+    if (contexto === "saas") return true;
+    if (isSuper) return true;
+    if (item.kind === "leaf" && item.soAdminEmpresa) return isAdminEmpresa;
+    if (item.perm) return !!scope?.perms?.[item.perm];
+    return true;
+  };
 
   const isActive = (to: string) => location.pathname.startsWith(to);
 
   async function sair() {
     await supabase.auth.signOut();
     navigate({ to: "/auth" });
+  }
+
+  function voltarGestao() {
+    try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}
+    navigate({ to: "/super", search: { tab: "empresas" } as any });
   }
 
   const W_OPEN = 220;
@@ -147,6 +195,11 @@ export function AppSidebar({
         height: "100vh",
         zIndex: 30,
         borderRight: neutro ? `1px solid ${T.border}` : undefined,
+        // Clipa o conteúdo enquanto a largura anima (expandir/recolher), senão os
+        // rótulos do menu transbordam para fora da sidebar. Scroll vertical se o
+        // menu ficar alto.
+        overflowX: "hidden",
+        overflowY: "auto",
       }}
     >
       {/* Topo / logo + toggle */}
@@ -200,19 +253,57 @@ export function AppSidebar({
 
 
 
+      {/* Faixa de gestão — super_admin impersonando uma empresa */}
+      {impersonando && (
+        collapsed ? (
+          <button
+            onClick={voltarGestao}
+            title={`Gerenciando ${marcaNome} — voltar à gestão`}
+            style={{
+              margin: "8px auto 0", width: 40, height: 40, borderRadius: 10,
+              background: T.btnBg, color: T.text, border: `1px solid ${T.btnBorder}`,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <ArrowLeft size={16} />
+          </button>
+        ) : (
+          <div style={{ margin: "8px 8px 0", padding: "9px 11px", borderRadius: 10, background: T.hover, border: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: T.muted, fontWeight: 700 }}>Gerenciando</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marcaNome}</div>
+            <button
+              onClick={voltarGestao}
+              style={{
+                marginTop: 7, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                background: T.btnBg, color: T.text, border: `1px solid ${T.btnBorder}`, borderRadius: 8,
+                padding: "6px 8px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              <ArrowLeft size={13} /> Voltar à gestão
+            </button>
+          </div>
+        )
+      )}
+
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gap: 2, alignContent: "start" }}>
-        {NAV.map((item) => {
+      <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 2, alignContent: "start" }}>
+        {nav.map((item) => {
+          if (!podeVer(item)) return null;
           if (item.kind === "leaf") {
-            if (item.visible === "super" && !isSuper) return null;
-            if (item.visible === "admin" && !isSuper && !isAdminEmpresa) return null;
-            const active = isActive(item.to);
             const Icon = item.icon;
-            const needsEmpresa = item.to !== "/super" && item.to !== "/identidade";
-            const search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+            let search: any = undefined;
+            let active = isActive(item.to);
+            if (item.tab) {
+              // item do plano SaaS: aba do /super
+              search = { tab: item.tab };
+              active = location.pathname.startsWith("/super") && (currentTab ?? "empresas") === item.tab;
+            } else {
+              const needsEmpresa = item.to !== "/super" && item.to !== "/identidade";
+              search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
+            }
             return (
               <Link
-                key={item.to}
+                key={item.label}
                 to={item.to}
                 search={search as any}
                 title={collapsed ? item.label : undefined}
@@ -228,10 +319,12 @@ export function AppSidebar({
                   background: active ? T.active : "transparent",
                   fontSize: 13,
                   fontWeight: active ? 700 : 500,
+                  minWidth: 0,
+                  overflow: "hidden",
                 }}
               >
                 <Icon size={18} />
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>}
               </Link>
             );
           }

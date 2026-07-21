@@ -15,6 +15,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
 import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
 import { Route as AuthenticatedNiveisRouteImport } from './routes/_authenticated/niveis'
@@ -54,6 +55,11 @@ const CTokenRoute = CTokenRouteImport.update({
   id: '/c/$token',
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
   id: '/super',
@@ -119,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/super': typeof AuthenticatedSuperRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_authenticated/niveis': typeof AuthenticatedNiveisRoute
   '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
+  '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/candidato/$id': typeof AuthenticatedCandidatoIdRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/niveis'
     | '/permissoes'
     | '/super'
+    | '/usuarios'
     | '/c/$token'
     | '/s/$code'
     | '/candidato/$id'
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/niveis'
     | '/permissoes'
     | '/super'
+    | '/usuarios'
     | '/c/$token'
     | '/s/$code'
     | '/candidato/$id'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/niveis'
     | '/_authenticated/permissoes'
     | '/_authenticated/super'
+    | '/_authenticated/usuarios'
     | '/c/$token'
     | '/s/$code'
     | '/_authenticated/candidato/$id'
@@ -269,6 +281,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/$token'
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/usuarios': {
+      id: '/_authenticated/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/super': {
       id: '/_authenticated/super'
@@ -351,6 +370,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNiveisRoute: typeof AuthenticatedNiveisRoute
   AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
+  AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedCandidatoIdRoute: typeof AuthenticatedCandidatoIdRoute
   AuthenticatedPreviaIdRoute: typeof AuthenticatedPreviaIdRoute
 }
@@ -363,6 +383,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNiveisRoute: AuthenticatedNiveisRoute,
   AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,
   AuthenticatedSuperRoute: AuthenticatedSuperRoute,
+  AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedCandidatoIdRoute: AuthenticatedCandidatoIdRoute,
   AuthenticatedPreviaIdRoute: AuthenticatedPreviaIdRoute,
 }

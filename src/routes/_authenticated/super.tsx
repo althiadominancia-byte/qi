@@ -10,15 +10,19 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { BrandingEditor } from "@/components/BrandingEditor";
-import { BrandingStyle } from "@/components/BrandingStyle";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
 import { ROLES, ORDEM_ROLES, PRESET, type RoleKey } from "@/lib/recrutamento/perms";
 import {
-  ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO, PLATAFORMA,
+  ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO,
 } from "@/lib/recrutamento/data";
+
+type SuperSearch = { tab?: "usuarios" | "empresas" };
 
 export const Route = createFileRoute("/_authenticated/super")({
   head: () => ({ meta: [{ title: "Super Admin · Estrela" }] }),
+  validateSearch: (s: Record<string, unknown>): SuperSearch => ({
+    tab: s.tab === "usuarios" || s.tab === "empresas" ? s.tab : undefined,
+  }),
   component: SuperAdminPage,
 });
 
@@ -47,11 +51,14 @@ function SuperAdminPage() {
     (scope.role === "super_admin" || !!scope.perms?.gerenciar_usuarios);
   const isSuper = scope?.role === "super_admin";
 
+  // /super é o plano de GESTÃO DO SAAS: exclusivo do super_admin. Usuários de
+  // empresa são gerenciados no painel da empresa (/usuarios).
   useEffect(() => {
-    if (scopeQ.isSuccess && scope && !podeGerenciar) {
-      navigate({ to: "/admin", replace: true });
+    if (!scopeQ.isSuccess || !scope) return;
+    if (scope.role !== "super_admin") {
+      navigate({ to: scope.perms?.gerenciar_usuarios ? "/usuarios" : "/admin", replace: true });
     }
-  }, [scopeQ.isSuccess, scope, podeGerenciar, navigate]);
+  }, [scopeQ.isSuccess, scope, navigate]);
 
   const enabled = podeGerenciar;
 
@@ -98,10 +105,12 @@ function SuperAdminPage() {
   const usuarios = usuariosQ.data ?? [];
   const userUnidades = userUnidadesQ.data ?? [];
 
-  // Super_admin abre já na aba Empresas (impersonação em primeiro plano);
-  // demais papéis só têm a aba Usuários.
-  const [aba, setAba] = useState<"usuarios" | "empresas">("empresas");
+  // Aba controlada pela URL (?tab=) — deep-link a partir da sidebar de gestão.
+  // Default: Empresas (impersonação em primeiro plano). Demais papéis: só Usuários.
+  const search = Route.useSearch();
+  const aba: "usuarios" | "empresas" = search.tab ?? "empresas";
   const abaEfetiva = isSuper ? aba : "usuarios";
+  const irAba = (k: "usuarios" | "empresas") => navigate({ to: "/super", search: { tab: k } });
   const [editUser, setEditUser] = useState<UsuarioEdit | null>(null);
 
   const nomeEmpresa = (id: string | null) => empresas.find((e) => e.id === id)?.nome || "—";
@@ -129,8 +138,7 @@ function SuperAdminPage() {
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
-      {/* Super admin = plataforma neutra: substitui a marca (roxo/laranja) por slate. */}
-      {isSuper && <BrandingStyle cor_primaria={PLATAFORMA.primary} cor_sidebar={PLATAFORMA.primary} cor_botao={PLATAFORMA.primary} />}
+      {/* A paleta neutra da plataforma (super admin sem tenant) é aplicada pelo AuthLayout. */}
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box} html,body{overflow-x:hidden} .h{font-family:'Outfit',sans-serif}
         input:focus,select:focus,textarea:focus{outline:none;border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT}}
@@ -166,7 +174,7 @@ function SuperAdminPage() {
             ? ([["usuarios", "Usuários", Users], ["empresas", "Empresas & unidades", Building2]] as const)
             : ([["usuarios", "Usuários", Users]] as const)
           ).map(([k, t, Ic]) => (
-            <button key={k} onClick={() => setAba(k as any)} style={{
+            <button key={k} onClick={() => irAba(k as any)} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
               fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${abaEfetiva === k ? ROXO : BORDA}`, background: abaEfetiva === k ? ROXO : "#fff", color: abaEfetiva === k ? "#fff" : CINZA,
             }}><Ic size={15} /> {t}</button>
@@ -176,14 +184,15 @@ function SuperAdminPage() {
 
         {abaEfetiva === "usuarios" && (
           <UsuariosTab
-            usuarios={usuarios} loading={usuariosQ.isLoading}
+            // Plano de gestão do SaaS: só a equipe da plataforma (super_admins).
+            // Usuários de empresa aparecem no painel da empresa (/usuarios).
+            usuarios={usuarios.filter((u: Usuario) => u.role === "super_admin")} loading={usuariosQ.isLoading}
             nomeEmpresa={nomeEmpresa}
             unidadesUsuario={unidadesUsuario}
             onNovo={() => setEditUser({
-              id: "", nome: "", email: "", role: "recrutador",
-              empresa_id: isSuper ? (empresas[0]?.id ?? null) : (scope?.empresa_id ?? null),
-              todas_unidades: true,
-              perms: { ...PRESET.recrutador }, ativo: true, unidades: [], _novo: true,
+              id: "", nome: "", email: "", role: "super_admin",
+              empresa_id: null, todas_unidades: true,
+              perms: {}, ativo: true, unidades: [], _novo: true,
             })}
 
             onEditar={(u: Usuario) => setEditUser({ ...u, unidades: unidadesUsuario(u.id) })}
