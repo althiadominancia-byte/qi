@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveFeatures } from "@/lib/recrutamento/features";
 
 export type ScopeBranding = {
   logo_path: string | null;
@@ -21,6 +22,7 @@ export type UserScope = {
   perms: Record<string, boolean>; // permissões EFETIVAS (padrão do papel + overrides)
   ativo: boolean;
   branding: ScopeBranding | null; // identidade visual (white-label) da empresa
+  features: Record<string, boolean>; // entitlements EFETIVOS (plano + override da empresa)
 };
 
 export const getMyScope = createServerFn({ method: "GET" })
@@ -38,12 +40,15 @@ export const getMyScope = createServerFn({ method: "GET" })
         id: userId, nome: "", email: "", role: "visualizador",
         empresa_id: null, empresa_nome: null, empresa_ativa: false,
         todas_unidades: false, unidades_permitidas: [], perms: {}, ativo: false,
-        branding: null,
+        branding: null, features: resolveFeatures(null, null),
       } as UserScope;
     }
     let empresa_nome: string | null = null;
     let empresa_ativa = true;
     let branding: UserScope["branding"] = null;
+    // Sem empresa (super_admin) => permissivo; enforcement por empresa acontece na
+    // empresa impersonada (via get_empresa_features na UI).
+    let features: Record<string, boolean> = resolveFeatures(null, null);
     if (u.empresa_id) {
       const { data: e } = await supabase
         .from("empresas")
@@ -60,6 +65,8 @@ export const getMyScope = createServerFn({ method: "GET" })
           cor_botao: (e as any).cor_botao ?? null,
         };
       }
+      const { data: merged } = await supabase.rpc("get_empresa_features", { p_empresa_id: u.empresa_id });
+      features = resolveFeatures((merged ?? null) as any, null);
     }
     const { data: uu } = await supabase.from("usuario_unidades").select("unidade_id").eq("usuario_id", userId);
     const { data: eff } = await supabase.rpc("user_effective_perms", { _user_id: userId });
@@ -71,5 +78,6 @@ export const getMyScope = createServerFn({ method: "GET" })
       perms: (eff ?? {}) as Record<string, boolean>,
       ativo: u.ativo,
       branding,
+      features,
     } as UserScope;
   });

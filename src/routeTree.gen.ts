@@ -17,6 +17,7 @@ import { Route as SCodeRouteImport } from './routes/s.$code'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
+import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
 import { Route as AuthenticatedNiveisRouteImport } from './routes/_authenticated/niveis'
 import { Route as AuthenticatedLideresRouteImport } from './routes/_authenticated/lideres'
@@ -64,6 +65,11 @@ const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
 const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
   id: '/super',
   path: '/super',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlanosRoute = AuthenticatedPlanosRouteImport.update({
+  id: '/planos',
+  path: '/planos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPermissoesRoute = AuthenticatedPermissoesRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
   '/permissoes': typeof AuthenticatedPermissoesRoute
+  '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/lideres': typeof AuthenticatedLideresRoute
   '/_authenticated/niveis': typeof AuthenticatedNiveisRoute
   '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
+  '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/lideres'
     | '/niveis'
     | '/permissoes'
+    | '/planos'
     | '/super'
     | '/usuarios'
     | '/c/$token'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/lideres'
     | '/niveis'
     | '/permissoes'
+    | '/planos'
     | '/super'
     | '/usuarios'
     | '/c/$token'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/_authenticated/lideres'
     | '/_authenticated/niveis'
     | '/_authenticated/permissoes'
+    | '/_authenticated/planos'
     | '/_authenticated/super'
     | '/_authenticated/usuarios'
     | '/c/$token'
@@ -296,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/planos': {
+      id: '/_authenticated/planos'
+      path: '/planos'
+      fullPath: '/planos'
+      preLoaderRoute: typeof AuthenticatedPlanosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/permissoes': {
       id: '/_authenticated/permissoes'
       path: '/permissoes'
@@ -369,6 +388,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLideresRoute: typeof AuthenticatedLideresRoute
   AuthenticatedNiveisRoute: typeof AuthenticatedNiveisRoute
   AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
+  AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedCandidatoIdRoute: typeof AuthenticatedCandidatoIdRoute
@@ -382,6 +402,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLideresRoute: AuthenticatedLideresRoute,
   AuthenticatedNiveisRoute: AuthenticatedNiveisRoute,
   AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,
+  AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedSuperRoute: AuthenticatedSuperRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedCandidatoIdRoute: AuthenticatedCandidatoIdRoute,

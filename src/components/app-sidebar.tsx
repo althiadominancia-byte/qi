@@ -23,9 +23,10 @@ import { getMyScope } from "@/lib/scope.functions";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { logoUrl } from "@/components/BrandingStyle";
 import type { PermKey } from "@/lib/recrutamento/perms";
+import { resolveFeatures, hasFeature, type FeatureKey } from "@/lib/recrutamento/features";
 import { ROXO, PLATAFORMA } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade" | "/usuarios";
+type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade" | "/usuarios" | "/planos";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
@@ -33,6 +34,7 @@ type NavLeaf = {
   icon: React.ComponentType<{ size?: number }>;
   perm?: PermKey;            // exige permissão efetiva de aplicação (super passa)
   soAdminEmpresa?: boolean;  // exige role admin_empresa (não faz sentido p/ super)
+  feature?: FeatureKey;      // exige entitlement (feature liberada no plano da empresa)
   tab?: "empresas" | "usuarios"; // item do /super: deep-link da aba
 };
 type NavGroup = {
@@ -100,7 +102,7 @@ const NAV_APP: NavItem[] = [
   },
   { kind: "leaf", to: "/usuarios", label: "Usuários", icon: Users, perm: "gerenciar_usuarios" },
   { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck, perm: "gerenciar_usuarios" },
-  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, soAdminEmpresa: true },
+  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, soAdminEmpresa: true, feature: "white_label" },
 ];
 
 // Plano de GESTÃO DO SAAS (governança da plataforma). Só super_admin, fora de
@@ -108,6 +110,7 @@ const NAV_APP: NavItem[] = [
 const NAV_SAAS: NavItem[] = [
   { kind: "leaf", to: "/super", label: "Empresas & unidades", icon: Building2, tab: "empresas" },
   { kind: "leaf", to: "/super", label: "Usuários", icon: Users, tab: "usuarios" },
+  { kind: "leaf", to: "/planos", label: "Planos & contratações", icon: Layers },
 ];
 
 export function AppSidebar({
@@ -155,9 +158,23 @@ export function AppSidebar({
       ? (empresaImpQ.data || "Empresa")
       : (scope?.empresa_nome || "Estrela");
 
-  // Gating de item por plano de permissão. No plano de aplicação, super vê tudo.
+  // Entitlements efetivos da empresa ativa: super impersonando busca da empresa
+  // aberta (RPC); demais papéis herdam do scope. Enquanto carrega => permissivo.
+  const featuresImpQ = useQuery({
+    queryKey: ["sidebar-features", currentEmpresa],
+    enabled: impersonando,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_empresa_features" as any, { p_empresa_id: currentEmpresa! });
+      return resolveFeatures((data ?? null) as any, null);
+    },
+  });
+  const features: Record<string, boolean> | null = impersonando ? (featuresImpQ.data ?? null) : (scope?.features ?? null);
+
+  // Gating de item. A FEATURE (entitlement da empresa) aplica a todos, inclusive
+  // super impersonando. A PERMISSÃO de usuário é que o super ignora.
   const podeVer = (item: NavItem): boolean => {
     if (contexto === "saas") return true;
+    if (item.kind === "leaf" && item.feature && !hasFeature(features, item.feature)) return false;
     if (isSuper) return true;
     if (item.kind === "leaf" && item.soAdminEmpresa) return isAdminEmpresa;
     if (item.perm) return !!scope?.perms?.[item.perm];
