@@ -43,7 +43,7 @@ type NavGroup = {
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   perm?: PermKey;
-  children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }> }[];
+  children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }>; feature?: FeatureKey }[];
 };
 type NavItem = NavLeaf | NavGroup;
 
@@ -96,8 +96,8 @@ const NAV_APP: NavItem[] = [
     perm: "gerenciar_catalogo",
     children: [
       { to: "/catalogo", label: "Departamentos e Setores", icon: FolderTree },
-      { to: "/lideres", label: "Líderes", icon: Users },
-      { to: "/niveis", label: "Níveis de Liderança", icon: Crown },
+      { to: "/lideres", label: "Líderes", icon: Users, feature: "niveis_lideranca" },
+      { to: "/niveis", label: "Níveis de Liderança", icon: Crown, feature: "niveis_lideranca" },
     ],
   },
   { kind: "leaf", to: "/usuarios", label: "Usuários", icon: Users, perm: "gerenciar_usuarios" },
@@ -345,11 +345,13 @@ export function AppSidebar({
               </Link>
             );
           }
-          // group
+          // group — filtra filhos por entitlement; some se esvaziar
+          const filhos = item.children.filter((c) => !c.feature || hasFeature(features, c.feature));
+          if (filhos.length === 0) return null;
           return (
             <NavGroupItem
               key={item.id}
-              group={item}
+              group={{ ...item, children: filhos }}
               collapsed={collapsed}
               empresaParam={empresaParam}
               isActivePath={isActive}

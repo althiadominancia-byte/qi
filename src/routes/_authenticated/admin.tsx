@@ -15,6 +15,7 @@ import { selecionarParaEntrevista, removerEntrevista } from "@/lib/jornada.funct
 import { listLideresDaVaga } from "@/lib/lideres.functions";
 import { atualizarCadastroCandidato, excluirCandidato } from "@/lib/candidato.functions";
 import { getMyScope } from "@/lib/scope.functions";
+import { useFeatures } from "@/lib/recrutamento/use-features";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE, VERMELHO, AMARELO,
@@ -69,6 +70,7 @@ function AdminPage() {
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
+  const { has } = useFeatures(); // entitlements da empresa ativa
 
   // Empresa ativa: super_admin escolhe via ?empresa=; outros são fixados pela própria empresa.
   const empresaAtivaId = isSuper ? (search.empresa ?? null) : (scope?.empresa_id ?? null);
@@ -311,7 +313,9 @@ function AdminPage() {
 
       <div data-pad style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
         <div data-tabs style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
-          {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users], ["diversidade", "Diversidade (agregado)", BarChart3]] as const).map(([k, t, Ic]) => (
+          {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users], ["diversidade", "Diversidade (agregado)", BarChart3]] as const)
+            .filter(([k]) => k !== "diversidade" || has("diversidade"))
+            .map(([k, t, Ic]) => (
             <button key={k} onClick={() => { setAba(k as any); setEditando(null); }} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
               fontSize: 13.5, fontWeight: 700, border: `1.5px solid ${aba === k ? ROXO : BORDA}`,
@@ -327,7 +331,7 @@ function AdminPage() {
         )}
 
         {aba === "vagas" && (editando
-          ? <ConstrutorVaga vaga={editando} empresaId={empresaAtivaId} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} />
+          ? <ConstrutorVaga vaga={editando} empresaId={empresaAtivaId} unidades={unidadesQ.data ?? []} onSave={salvarVaga} onCancel={() => setEditando(null)} has={has} />
 
           : <VagasLista vagas={vagas} loading={vagasQ.isLoading} contagem={contagem} isSuper={isSuper}
               onPrevia={(v: Vaga) => navigate({ to: "/previa/$id", params: { id: v.id } })}
@@ -344,7 +348,7 @@ function AdminPage() {
             onAbrir={(c: Candidato) => navigate({ to: "/candidato/$id", params: { id: c.id } })} />
         )}
 
-        {aba === "diversidade" && <Diversidade rows={diversidadeQ.data ?? []} loading={diversidadeQ.isLoading} />}
+        {aba === "diversidade" && has("diversidade") && <Diversidade rows={diversidadeQ.data ?? []} loading={diversidadeQ.isLoading} />}
       </div>
 
 
@@ -507,7 +511,7 @@ function LinkPublico({ vaga }: { vaga: Vaga }) {
 }
 
 /* ========== Aba Vagas — Construtor ========== */
-function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga: any; empresaId: string | null; unidades: any[]; onSave: (v: any) => void; onCancel: () => void }) {
+function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { vaga: any; empresaId: string | null; unidades: any[]; onSave: (v: any) => void; onCancel: () => void; has: (k: import("@/lib/recrutamento/features").FeatureKey) => boolean }) {
   const [v, setV] = useState<any>(vaga);
   const set = (k: string, val: any) => setV((p: any) => ({ ...p, [k]: val }));
   const [novaHab, setNovaHab] = useState("");
@@ -661,6 +665,7 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga:
         <CampoLabel label="Descrição da vaga"><textarea style={{ ...inp, minHeight: 76, resize: "vertical" }} value={v.descricao} onChange={(e) => set("descricao", e.target.value)} /></CampoLabel>
       </CardBox>
 
+      {has("analise_cv_ia") && (
       <CardBox destaque>
         <div data-ai-card style={{ display: "flex", alignItems: "center", gap: 13, flexWrap: "wrap" }}>
           <div style={{ width: 40, height: 40, borderRadius: 11, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Wand2 size={20} color={ROXO} /></div>
@@ -674,6 +679,7 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga:
         </div>
         {erroIA && <div style={{ marginTop: 10, fontSize: 12.5, color: VERMELHO, fontWeight: 600 }}>{erroIA}</div>}
       </CardBox>
+      )}
 
       <CardBox><Cab icon={Target} t="Perfil comportamental ideal" />
         <p style={{ fontSize: 13, color: CINZA, lineHeight: 1.55, margin: "-6px 0 16px" }}>O peso de cada perfil vira a <strong>base do match</strong> de quem for classificado nele pelo DISC.</p>
@@ -765,10 +771,12 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel }: { vaga:
           <CampoLabel label="Escolaridade mínima"><input style={inp} value={v.escolaridade} onChange={(e) => set("escolaridade", e.target.value)} /></CampoLabel>
           <CampoLabel label="Outros requisitos"><input style={inp} value={v.requisitos} onChange={(e) => set("requisitos", e.target.value)} /></CampoLabel>
         </div>
+        {has("situacional") && (
         <label style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13, color: ROXO_DARK, marginTop: 6, cursor: "pointer" }}>
           <input type="checkbox" checked={v.usar_situacional} onChange={(e) => set("usar_situacional", e.target.checked)} />
           Incluir o bloco de <strong>situações de atendimento</strong> (vagas com contato direto com cliente)
         </label>
+        )}
       </CardBox>
 
       <div data-save-row style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
