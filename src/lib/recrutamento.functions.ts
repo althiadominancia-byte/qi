@@ -12,25 +12,29 @@ const AnalyzeInput = z.object({
   vagaContexto: z.string().optional().default(""),
 });
 
-async function callGemini(userContent: any[]) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("LOVABLE_API_KEY ausente");
-  const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
+// IA via API da Anthropic (SDK oficial). Import dinâmico => server-only (não vai
+// para o bundle do cliente). Espera JSON no texto da resposta.
+async function callClaude(userContent: any[]) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) throw new Error("ANTHROPIC_API_KEY ausente");
+  const { default: Anthropic } = await import("@anthropic-ai/sdk");
+  const client = new Anthropic({ apiKey: key });
+  let resp: any;
+  try {
+    resp = await client.messages.create({
+      model: "claude-opus-4-8",
+      max_tokens: 16000,
       messages: [{ role: "user", content: userContent }],
-    }),
-  });
-  if (!resp.ok) {
-    const txt = await resp.text();
-    if (resp.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
-    if (resp.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
-    throw new Error("Falha na IA: " + txt.slice(0, 200));
+    });
+  } catch (e: any) {
+    if (e?.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
+    if (e?.status === 401 || e?.status === 403) throw new Error("Chave da IA inválida ou sem permissão.");
+    throw new Error("Falha na IA: " + String(e?.message ?? e).slice(0, 200));
   }
-  const json = await resp.json();
-  const text = json?.choices?.[0]?.message?.content ?? "";
+  const text = (resp.content ?? [])
+    .filter((b: any) => b.type === "text")
+    .map((b: any) => b.text)
+    .join("");
   const cleaned = String(text).replace(/```json|```/g, "").trim();
   try { return JSON.parse(cleaned); } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
@@ -57,14 +61,19 @@ Regras: foque no que importa para a vaga. No máximo 3 experiências mais releva
       if (error || !file) throw new Error("Falha ao baixar currículo: " + (error?.message ?? "desconhecido"));
       const ab = await file.arrayBuffer();
       const b64 = Buffer.from(ab).toString("base64");
-      userContent.push({ type: "image_url", image_url: { url: `data:${data.mimeType};base64,${b64}` } });
+      // Blocos multimodais no formato da Anthropic (documento p/ PDF, imagem p/ o resto).
+      if (data.mimeType === "application/pdf") {
+        userContent.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: b64 } });
+      } else {
+        userContent.push({ type: "image", source: { type: "base64", media_type: data.mimeType, data: b64 } });
+      }
       userContent.push({ type: "text", text: INSTRUCAO + (data.textoExtra ?? "") });
     } else if (data.textoBruto) {
       userContent.push({ type: "text", text: INSTRUCAO + "\n\nCURRÍCULO (texto extraído):\n" + data.textoBruto + (data.textoExtra ?? "") });
     } else {
       userContent.push({ type: "text", text: INSTRUCAO + "\n\nDESCRIÇÃO FORNECIDA PELO CANDIDATO:\n" + (data.textoExtra || "Nenhuma informação adicional foi fornecida.") });
     }
-    const analysis = await callGemini(userContent);
+    const analysis = await callClaude(userContent);
     if (data.candidatoId && data.storagePath) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: candidato, error: candError } = await supabaseAdmin
@@ -125,7 +134,7 @@ Modelo: ${data.modelo} | Tipo: ${data.tipo}
 Descrição: ${data.descricao || "(não informada)"}`;
 
 
-    return callGemini([{ type: "text", text: prompt }]);
+    return callClaude([{ type: "text", text: prompt }]);
   });
 
 const GerarFormularioInput = z.object({
@@ -239,7 +248,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let disc: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_DISC(data) }]);
+          const j = await callClaude([{ type: "text", text: PROMPT_DISC(data) }]);
           if (validaDisc(j)) { disc = j.blocos; break; }
         } catch {}
       }
@@ -251,7 +260,7 @@ export const gerarFormularioVaga = createServerFn({ method: "POST" })
       let sit: any = null;
       for (let i = 0; i < 2; i++) {
         try {
-          const j = await callGemini([{ type: "text", text: PROMPT_SIT(data) }]);
+          const j = await callClaude([{ type: "text", text: PROMPT_SIT(data) }]);
           if (validaSit(j)) { sit = j.situacoes; break; }
         } catch {}
       }
