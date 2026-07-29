@@ -1663,6 +1663,7 @@ function Ring({ m }: { m: number }) {
 
 /* ========== Encerramento de vaga ========== */
 function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClose: () => void; onDone: () => void }) {
+  const { has } = useFeatures();
   const listCands = useServerFn(listCandidatosDaVaga);
   const listLideres = useServerFn(listLideresDaVaga);
   const encerrar = useServerFn(encerrarVagaFn);
@@ -1751,7 +1752,7 @@ function EncerrarVagaModal({ vagaId, onClose, onDone }: { vagaId: string; onClos
                 })}
               </select>
             </div>
-            {dataAdm && (
+            {dataAdm && has("avaliacao_experiencia") && (
               <div style={{ background: ROXO_TINT, borderRadius: 10, padding: 12, fontSize: 12.5, color: ROXO_DARK, marginBottom: 12 }}>
                 <div style={{ fontWeight: 700, marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
                   <CalendarClock size={13} color={ROXO} /> Avaliações de experiência agendadas:

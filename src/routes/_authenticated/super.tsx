@@ -12,6 +12,7 @@ import { getMyScope } from "@/lib/scope.functions";
 import { BrandingEditor } from "@/components/BrandingEditor";
 import { createUserInvite, updateUser, toggleUserAtivo } from "@/lib/admin-users.functions";
 import { ROLES, ORDEM_ROLES, PRESET, type RoleKey } from "@/lib/recrutamento/perms";
+import { resolveFeatures } from "@/lib/recrutamento/features";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO,
 } from "@/lib/recrutamento/data";
@@ -506,6 +507,16 @@ function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpres
   const matriz = unidades.find((u: Unidade) => u.tipo === "matriz");
   const filiais = unidades.filter((u: Unidade) => u.tipo === "filial");
 
+  // Entitlement da empresa: só permite filiais se o plano liberar multiplas_unidades.
+  const featQ = useQuery({
+    queryKey: ["empresa-features", empresa.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_empresa_features" as any, { p_empresa_id: empresa.id });
+      return resolveFeatures((data ?? null) as any, null);
+    },
+  });
+  const podeFilial = featQ.data?.multiplas_unidades !== false; // permissivo enquanto carrega
+
   async function addFilial() {
     if (!novoNome.trim() || criando) return;
     setCriando(true);
@@ -536,16 +547,24 @@ function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpres
             {filiais.map((f: Unidade) => <UnidadeRow key={f.id} u={f} />)}
             {unidades.length === 0 && <div style={{ fontSize: 12, color: "#9b93b0" }}>Sem unidades.</div>}
           </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
-            <input style={{ ...inp, flex: "1 1 160px" }} placeholder="Nome da filial" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
-            <input style={{ ...inp, flex: "1 1 120px" }} placeholder="Cidade" value={novaCidade} onChange={(e) => setNovaCidade(e.target.value)} />
-            <button onClick={addFilial} disabled={criando || !novoNome.trim()} style={{ ...btnRoxo, flexShrink: 0, opacity: criando || !novoNome.trim() ? 0.55 : 1 }}>
-              {criando ? <Loader2 size={14} className="spin" /> : <Plus size={15} />} Filial
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
-            <Layers size={12} /> A matriz vincula todas as filiais desta empresa.
-          </div>
+          {podeFilial ? (
+            <>
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                <input style={{ ...inp, flex: "1 1 160px" }} placeholder="Nome da filial" value={novoNome} onChange={(e) => setNovoNome(e.target.value)} />
+                <input style={{ ...inp, flex: "1 1 120px" }} placeholder="Cidade" value={novaCidade} onChange={(e) => setNovaCidade(e.target.value)} />
+                <button onClick={addFilial} disabled={criando || !novoNome.trim()} style={{ ...btnRoxo, flexShrink: 0, opacity: criando || !novoNome.trim() ? 0.55 : 1 }}>
+                  {criando ? <Loader2 size={14} className="spin" /> : <Plus size={15} />} Filial
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <Layers size={12} /> A matriz vincula todas as filiais desta empresa.
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 11.5, color: "#9b93b0", marginTop: 12, display: "flex", alignItems: "center", gap: 6 }}>
+              <Layers size={12} /> Múltiplas unidades não está no plano desta empresa — só a matriz. Ajuste em Planos.
+            </div>
+          )}
 
           {/* Identidade visual (white-label) */}
           <div style={{ borderTop: `1px solid ${BORDA}`, marginTop: 14, paddingTop: 12 }}>

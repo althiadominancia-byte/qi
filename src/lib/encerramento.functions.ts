@@ -81,19 +81,23 @@ export const encerrarVaga = createServerFn({ method: "POST" })
         throw new Error("Falha ao registrar contratação: " + (insErr?.message ?? ""));
       }
 
-      // 3) Cria 3 avaliações
-      const marcos = [30, 60, 90] as const;
-      const rows = marcos.map((m) => ({
-        contratacao_id: contr.id,
-        marco: m,
-        data_prevista: addDaysISO(data.data_admissao!, m),
-        status: "agendada",
-      }));
-      const { error: avErr } = await supabaseAdmin.from("avaliacoes_experiencia").insert(rows as any);
-      if (avErr) {
-        await supabaseAdmin.from("contratacoes").delete().eq("id", contr.id);
-        await supabaseAdmin.from("vagas").update({ status: vaga.status, encerrada_em: null }).eq("id", data.vaga_id);
-        throw new Error("Falha ao agendar avaliações: " + avErr.message);
+      // 3) Cria 3 avaliações — só se a empresa tiver o entitlement.
+      const { empresaFeatures } = await import("@/lib/tenant.server");
+      const feats = await empresaFeatures(vaga.empresa_id);
+      if (feats.avaliacao_experiencia) {
+        const marcos = [30, 60, 90] as const;
+        const rows = marcos.map((m) => ({
+          contratacao_id: contr.id,
+          marco: m,
+          data_prevista: addDaysISO(data.data_admissao!, m),
+          status: "agendada",
+        }));
+        const { error: avErr } = await supabaseAdmin.from("avaliacoes_experiencia").insert(rows as any);
+        if (avErr) {
+          await supabaseAdmin.from("contratacoes").delete().eq("id", contr.id);
+          await supabaseAdmin.from("vagas").update({ status: vaga.status, encerrada_em: null }).eq("id", data.vaga_id);
+          throw new Error("Falha ao agendar avaliações: " + avErr.message);
+        }
       }
 
       // 4) Atualiza jornada dos candidatos

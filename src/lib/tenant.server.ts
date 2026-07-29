@@ -9,6 +9,7 @@
 // TS, lendo `usuarios` + `usuario_unidades` diretamente.
 
 import type { Database } from "@/integrations/supabase/types";
+import { resolveFeatures } from "@/lib/recrutamento/features";
 
 export type Role = Database["public"]["Enums"]["user_role"];
 
@@ -52,6 +53,24 @@ export async function unidadesDoUsuario(userId: string): Promise<string[]> {
   const supabaseAdmin = await admin();
   const { data } = await supabaseAdmin.from("usuario_unidades").select("unidade_id").eq("usuario_id", userId);
   return (data ?? []).map((x: any) => x.unidade_id as string);
+}
+
+/**
+ * Entitlements efetivos de uma empresa (plano + override). Sem plano/override
+ * definidos => permissivo (tudo liberado), para não travar empresas legadas.
+ */
+export async function empresaFeatures(empresaId: string | null): Promise<Record<string, boolean>> {
+  if (!empresaId) return resolveFeatures(null, null);
+  const supabaseAdmin = await admin();
+  const { data: e } = await supabaseAdmin
+    .from("empresas" as any).select("plano_id, features").eq("id", empresaId).maybeSingle();
+  let planoFeatures: Record<string, boolean> | null = null;
+  const planoId = (e as any)?.plano_id ?? null;
+  if (planoId) {
+    const { data: p } = await supabaseAdmin.from("planos" as any).select("features").eq("id", planoId).maybeSingle();
+    planoFeatures = ((p as any)?.features ?? null) as Record<string, boolean> | null;
+  }
+  return resolveFeatures(planoFeatures, ((e as any)?.features ?? null) as Record<string, boolean> | null);
 }
 
 /**
