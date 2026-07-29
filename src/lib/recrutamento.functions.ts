@@ -14,7 +14,7 @@ const AnalyzeInput = z.object({
 
 // IA via API da Anthropic (SDK oficial). Import dinâmico => server-only (não vai
 // para o bundle do cliente). Espera JSON no texto da resposta.
-async function callClaude(userContent: any[]) {
+export async function callClaude(userContent: any[]) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("ANTHROPIC_API_KEY ausente");
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
