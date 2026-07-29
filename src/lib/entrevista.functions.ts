@@ -46,11 +46,16 @@ export const getEntrevistaDoCandidato = createServerFn({ method: "GET" })
     const me = await assertPerm((context as any).userId, "conduzir_entrevistas");
     await assertEscopoCandidato(me, data.candidatoId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: e } = await (supabaseAdmin as any).from("entrevistas")
+    const admin = supabaseAdmin as any;
+    const { data: e } = await admin.from("entrevistas")
       .select("id, token, status, agendada_para, decisao_humana, decisao_em")
       .eq("candidato_id", data.candidatoId).neq("status", "cancelada")
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
-    return e ?? null;
+    if (!e) return null;
+    const { data: cons } = await admin.from("entrevista_consentimentos")
+      .select("consentiu, created_at").eq("entrevista_id", e.id)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    return { ...e, consentimento: cons ?? null };
   });
 
 // ===== Consentimento LGPD do candidato (público — autenticado pelo token) =====

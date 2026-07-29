@@ -71,6 +71,14 @@ export function EntrevistaBloco({ candidatoId, etapa }: { candidatoId: string; e
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: CINZA }}>Status:</span>
             <span style={{ fontSize: 11.5, fontWeight: 800, color: ROXO, background: ROXO_TINT, padding: "3px 10px", borderRadius: 99, textTransform: "uppercase" }}>{ent.status}</span>
+            {/* Consentimento LGPD do candidato */}
+            {ent.consentimento == null ? (
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: LARANJA }}>Aguardando consentimento</span>
+            ) : ent.consentimento.consentiu ? (
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: VERDE }}>Consentiu a gravação</span>
+            ) : (
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: CINZA }}>Recusou — entrevista sem gravação</span>
+            )}
           </div>
           {/* Link do candidato */}
           <div>
