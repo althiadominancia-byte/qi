@@ -17,6 +17,7 @@ import { atualizarCadastroCandidato, excluirCandidato } from "@/lib/candidato.fu
 import { getMyScope } from "@/lib/scope.functions";
 import { useFeatures } from "@/lib/recrutamento/use-features";
 import { PassaporteBloco } from "@/components/PassaporteBloco";
+import { EntrevistaBloco } from "@/components/EntrevistaBloco";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ROXO, ROXO_DARK, ROXO_TINT, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE, VERMELHO, AMARELO,
@@ -1301,6 +1302,8 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
           <PerfilComportamentalCard c={c} p={p} match={match} disc={disc} vaga={vaga} />
 
           <PassaporteBloco candidatoId={c.id} />
+
+          <EntrevistaBloco candidatoId={c.id} etapa={c.etapa ?? "inscrito"} />
 
           {c.cv_storage_path && (
             <Bloco>

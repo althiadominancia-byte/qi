@@ -1,0 +1,74 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPerm, assertEscopoCandidato, empresaFeatures } from "@/lib/tenant.server";
+
+// Módulo de entrevista por vídeo com IA — camada de acesso.
+// A sala LiveKit e a análise ficam para as fases seguintes; aqui já garantimos
+// a estrutura de acesso CORRETA: permissão conduzir_entrevistas + escopo do
+// candidato (tenant) + entitlement entrevista_ia da empresa.
+
+const CandId = z.object({ candidatoId: z.string().uuid() });
+
+/**
+ * Cria (ou reutiliza) a entrevista do candidato. Gera o token do link público.
+ * Acesso: conduzir_entrevistas + escopo do candidato + entitlement entrevista_ia.
+ */
+export const agendarEntrevista = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CandId.parse(d))
+  .handler(async ({ data, context }) => {
+    const me = await assertPerm((context as any).userId, "conduzir_entrevistas");
+    const cand = await assertEscopoCandidato(me, data.candidatoId);
+    const feats = await empresaFeatures((cand as any).empresa_id ?? null);
+    if (!feats.entrevista_ia) throw new Error("O plano desta empresa não inclui entrevista por vídeo com IA.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    // Reutiliza uma entrevista ainda ativa se já houver.
+    const { data: existente } = await admin.from("entrevistas")
+      .select("id, token, status").eq("candidato_id", data.candidatoId).neq("status", "cancelada")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (existente) return { id: existente.id, token: existente.token, status: existente.status, reused: true };
+
+    const { data: nova, error } = await admin.from("entrevistas")
+      .insert({ candidato_id: data.candidatoId, criado_por: (context as any).userId, status: "agendada" })
+      .select("id, token, status").maybeSingle();
+    if (error || !nova) throw new Error(error?.message ?? "Falha ao criar a entrevista.");
+    return { id: nova.id, token: nova.token, status: nova.status, reused: false };
+  });
+
+/** Entrevista atual do candidato (para a UI do recrutador). Acesso idêntico. */
+export const getEntrevistaDoCandidato = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => CandId.parse(d))
+  .handler(async ({ data, context }) => {
+    const me = await assertPerm((context as any).userId, "conduzir_entrevistas");
+    await assertEscopoCandidato(me, data.candidatoId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: e } = await (supabaseAdmin as any).from("entrevistas")
+      .select("id, token, status, agendada_para, decisao_humana, decisao_em")
+      .eq("candidato_id", data.candidatoId).neq("status", "cancelada")
+      .order("created_at", { ascending: false }).limit(1).maybeSingle();
+    return e ?? null;
+  });
+
+const Decisao = z.object({
+  candidatoId: z.string().uuid(),
+  entrevista_id: z.string().uuid(),
+  decisao: z.enum(["avancar", "reprovar"]),
+});
+/** Registra a decisão HUMANA sobre a entrevista (nunca automática). */
+export const registrarDecisaoEntrevista = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => Decisao.parse(d))
+  .handler(async ({ data, context }) => {
+    const me = await assertPerm((context as any).userId, "conduzir_entrevistas");
+    await assertEscopoCandidato(me, data.candidatoId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any).from("entrevistas")
+      .update({ decisao_humana: data.decisao, decisao_por: (context as any).userId, decisao_em: new Date().toISOString() })
+      .eq("id", data.entrevista_id).eq("candidato_id", data.candidatoId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
