@@ -36,6 +36,12 @@ function CatalogoPage() {
   const isSuper = scope?.role === "super_admin";
   const empresaId = isSuper ? (search.empresa ?? null) : (scope?.empresa_id ?? null);
 
+  // Acesso: exige gerenciar_catalogo (super passa). Sem isso, volta ao painel.
+  const podeAcessar = isSuper || !!scope?.perms?.gerenciar_catalogo;
+  useEffect(() => {
+    if (scopeQ.isSuccess && scope && !podeAcessar) navigate({ to: "/admin", replace: true });
+  }, [scopeQ.isSuccess, scope, podeAcessar, navigate]);
+
   const empresaQ = useQuery({
     queryKey: ["empresa", empresaId],
     queryFn: async () => {

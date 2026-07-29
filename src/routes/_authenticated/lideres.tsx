@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, Plus, X, Save, Edit3, Trash2, Users, Building2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
+import { useFeatures } from "@/lib/recrutamento/use-features";
 import { upsertLider, excluirLider } from "@/lib/lideres.functions";
 import { ROXO, ROXO_DARK, BORDA, CINZA, LARANJA, VERDE, VERMELHO } from "@/lib/recrutamento/data";
 
@@ -41,6 +42,13 @@ function LideresPage() {
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
   const empresaId = isSuper ? (search.empresa ?? null) : (scope?.empresa_id ?? null);
+
+  // Acesso: gerenciar_catalogo + entitlement niveis_lideranca (permissivo enquanto carrega).
+  const { has } = useFeatures();
+  const podeAcessar = (isSuper || !!scope?.perms?.gerenciar_catalogo) && has("niveis_lideranca");
+  useEffect(() => {
+    if (scopeQ.isSuccess && scope && !podeAcessar) navigate({ to: "/admin", replace: true });
+  }, [scopeQ.isSuccess, scope, podeAcessar, navigate]);
 
   const callUpsert = useServerFn(upsertLider);
   const callDel = useServerFn(excluirLider);
