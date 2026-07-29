@@ -1,17 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Video, ShieldCheck, Check, Loader2, AlertCircle, Mic, Camera, Brain } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandingStyle, logoUrl } from "@/components/BrandingStyle";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
-import { registrarConsentimento } from "@/lib/entrevista.functions";
+import { registrarConsentimento, emitirTokenSalaCandidato } from "@/lib/entrevista.functions";
 import { ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE } from "@/lib/recrutamento/data";
 
 const TERMO_VERSAO = "1.0";
+const SalaVideo = lazy(() => import("@/components/SalaVideo"));
 
 export const Route = createFileRoute("/e/$token")({
+  ssr: false, // sala de vídeo (livekit-client) roda só no cliente
   head: () => ({ meta: [{ title: "Entrevista por vídeo" }] }),
   component: EntrevistaPublica,
 });
@@ -29,9 +31,19 @@ function EntrevistaPublica() {
     },
   });
 
+  const emitir = useServerFn(emitirTokenSalaCandidato);
   const [aceito, setAceito] = useState(false);
   const [resultado, setResultado] = useState<null | "aceito" | "recusado">(null);
   const [enviando, setEnviando] = useState(false);
+  const [sala, setSala] = useState<{ url: string; token: string } | null>(null);
+  const [entrando, setEntrando] = useState(false);
+
+  async function entrarNaSala() {
+    setEntrando(true);
+    try { const t: any = await emitir({ data: { token } }); setSala({ url: t.url, token: t.token }); }
+    catch (e: any) { alert(e?.message || "Falha ao entrar na sala."); }
+    finally { setEntrando(false); }
+  }
 
   const ent = entQ.data;
   const branding = ent ? { cor_primaria: ent.cor_primaria, cor_sidebar: ent.cor_sidebar, cor_botao: ent.cor_botao } : undefined;
@@ -76,11 +88,17 @@ function EntrevistaPublica() {
           <Card>
             <div style={{ textAlign: "center" }}>
               <Video size={34} color={ROXO} />
-              <h2 className="h" style={{ fontSize: 21, fontWeight: 800, marginTop: 10 }}>Consentimento registrado</h2>
+              <h2 className="h" style={{ fontSize: 21, fontWeight: 800, marginTop: 10 }}>Tudo pronto</h2>
               <p style={{ color: CINZA, fontSize: 14, lineHeight: 1.6 }}>
-                Obrigado! No horário combinado, o link da sala de vídeo aparecerá aqui.
-                {ent.vaga_titulo ? <> Vaga: <strong>{ent.vaga_titulo}</strong>.</> : null}
+                Obrigado! Entre na sala quando estiver pronto{ent.vaga_titulo ? <> — vaga <strong>{ent.vaga_titulo}</strong></> : null}.
               </p>
+              <button onClick={entrarNaSala} disabled={entrando} style={{
+                margin: "16px auto 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                background: entrando ? "#D8D2E6" : LARANJA, color: "#fff", border: "none",
+                padding: "13px 22px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: entrando ? "wait" : "pointer", fontFamily: "inherit",
+              }}>
+                {entrando ? <Loader2 size={17} className="spin" /> : <Video size={17} />} Entrar na sala
+              </button>
               <div style={{ marginTop: 14, background: ROXO_TINT, borderRadius: 10, padding: 12, fontSize: 12.5, color: ROXO_DARK }}>
                 Você pode revogar seu consentimento a qualquer momento respondendo ao recrutador.
               </div>
@@ -148,6 +166,12 @@ function EntrevistaPublica() {
           </Card>
         )}
       </div>
+
+      {sala && (
+        <Suspense fallback={null}>
+          <SalaVideo url={sala.url} token={sala.token} onSair={() => setSala(null)} />
+        </Suspense>
+      )}
     </div>
   );
 }

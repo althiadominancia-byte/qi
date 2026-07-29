@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Video, Loader2, Copy, Check, ThumbsUp, ThumbsDown } from "lucide-react";
 import { getMyScope } from "@/lib/scope.functions";
 import { useFeatures } from "@/lib/recrutamento/use-features";
-import { agendarEntrevista, getEntrevistaDoCandidato, registrarDecisaoEntrevista } from "@/lib/entrevista.functions";
+import { agendarEntrevista, getEntrevistaDoCandidato, registrarDecisaoEntrevista, emitirTokenSala } from "@/lib/entrevista.functions";
+
+const SalaVideo = lazy(() => import("@/components/SalaVideo"));
 import { ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE, VERMELHO } from "@/lib/recrutamento/data";
 
 /**
@@ -30,8 +32,18 @@ export function EntrevistaBloco({ candidatoId, etapa }: { candidatoId: string; e
     enabled: has("entrevista_ia") && podePerm,
   });
 
+  const emitir = useServerFn(emitirTokenSala);
   const [criando, setCriando] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [sala, setSala] = useState<{ url: string; token: string } | null>(null);
+  const [entrando, setEntrando] = useState(false);
+
+  async function entrarNaSala(entrevistaId: string) {
+    setEntrando(true);
+    try { const t: any = await emitir({ data: { entrevista_id: entrevistaId } }); setSala({ url: t.url, token: t.token }); }
+    catch (e: any) { alert(e?.message || "Falha ao entrar na sala."); }
+    finally { setEntrando(false); }
+  }
 
   // Gate da estrutura de acesso: entitlement + permissão. Só na etapa de entrevista/contratado.
   if (!has("entrevista_ia") || !podePerm) return null;
@@ -80,6 +92,15 @@ export function EntrevistaBloco({ candidatoId, etapa }: { candidatoId: string; e
               <span style={{ fontSize: 11.5, fontWeight: 700, color: CINZA }}>Recusou — entrevista sem gravação</span>
             )}
           </div>
+          {/* Entrar na sala de vídeo */}
+          <button onClick={() => entrarNaSala(ent.id)} disabled={entrando} style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8, width: "fit-content",
+            background: entrando ? "#D8D2E6" : ROXO, color: "#fff", border: "none",
+            padding: "9px 15px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: entrando ? "wait" : "pointer", fontFamily: "inherit",
+          }}>
+            {entrando ? <Loader2 size={15} className="spin" /> : <Video size={15} />} Entrar na sala
+          </button>
+
           {/* Link do candidato */}
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: ROXO_DARK, marginBottom: 5 }}>Link do candidato</div>
@@ -91,7 +112,7 @@ export function EntrevistaBloco({ candidatoId, etapa }: { candidatoId: string; e
               </button>
             </div>
             <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 6 }}>
-              A sala de vídeo e a análise de conteúdo entram nas próximas fases (config do provedor LiveKit).
+              A sala de vídeo está pronta. A gravação e a análise de conteúdo entram na próxima fase.
             </div>
           </div>
           {/* Decisão humana */}
@@ -109,6 +130,12 @@ export function EntrevistaBloco({ candidatoId, etapa }: { candidatoId: string; e
             )}
           </div>
         </div>
+      )}
+
+      {sala && (
+        <Suspense fallback={null}>
+          <SalaVideo url={sala.url} token={sala.token} onSair={() => setSala(null)} />
+        </Suspense>
       )}
     </div>
   );

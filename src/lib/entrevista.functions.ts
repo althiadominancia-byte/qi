@@ -10,6 +10,56 @@ import { assertPerm, assertEscopoCandidato, empresaFeatures } from "@/lib/tenant
 
 const CandId = z.object({ candidatoId: z.string().uuid() });
 
+// Emite um access token do LiveKit (server-only: usa API key/secret). Import
+// dinâmico para não ir ao bundle do cliente.
+async function mintLivekitToken(room: string, identity: string, nome: string) {
+  const url = process.env.LIVEKIT_URL, key = process.env.LIVEKIT_API_KEY, secret = process.env.LIVEKIT_API_SECRET;
+  if (!url || !key || !secret) throw new Error("LiveKit não configurado (LIVEKIT_URL/API_KEY/API_SECRET).");
+  const { AccessToken } = await import("livekit-server-sdk");
+  const at = new AccessToken(key, secret, { identity, name: nome, ttl: "2h" });
+  at.addGrant({ roomJoin: true, room, canPublish: true, canSubscribe: true });
+  const token = await at.toJwt();
+  return { url, token, room };
+}
+
+/** Token da sala para o RECRUTADOR. Acesso: conduzir_entrevistas + escopo + entitlement. */
+export const emitirTokenSala = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ entrevista_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const me = await assertPerm((context as any).userId, "conduzir_entrevistas");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: ent } = await admin.from("entrevistas")
+      .select("id, candidato_id, empresa_id, livekit_room, status").eq("id", data.entrevista_id).maybeSingle();
+    if (!ent) throw new Error("Entrevista não encontrada.");
+    await assertEscopoCandidato(me, ent.candidato_id);
+    const feats = await empresaFeatures(ent.empresa_id ?? null);
+    if (!feats.entrevista_ia) throw new Error("O plano desta empresa não inclui entrevista por vídeo com IA.");
+    const room = ent.livekit_room || `entrevista-${ent.id}`;
+    if (!ent.livekit_room || ent.status === "agendada") {
+      await admin.from("entrevistas").update({ livekit_room: room, status: "em_andamento" }).eq("id", ent.id);
+    }
+    return mintLivekitToken(room, `rec-${(context as any).userId}`, "Recrutador");
+  });
+
+/** Token da sala para o CANDIDATO (público, por token). Exige consentimento aceito. */
+export const emitirTokenSalaCandidato = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ token: z.string().min(6).max(200) }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: ent } = await admin.from("entrevistas")
+      .select("id, livekit_room, candidato:candidatos_televendas(nome)").eq("token", data.token).maybeSingle();
+    if (!ent) throw new Error("Entrevista não encontrada.");
+    const { data: cons } = await admin.from("entrevista_consentimentos")
+      .select("consentiu").eq("entrevista_id", ent.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (!cons?.consentiu) throw new Error("É preciso aceitar o termo de consentimento antes de entrar na sala.");
+    const room = ent.livekit_room || `entrevista-${ent.id}`;
+    if (!ent.livekit_room) await admin.from("entrevistas").update({ livekit_room: room }).eq("id", ent.id);
+    return mintLivekitToken(room, `cand-${ent.id}`, ent.candidato?.nome || "Candidato");
+  });
+
 /**
  * Cria (ou reutiliza) a entrevista do candidato. Gera o token do link público.
  * Acesso: conduzir_entrevistas + escopo do candidato + entitlement entrevista_ia.
