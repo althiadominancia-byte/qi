@@ -53,6 +53,37 @@ export const getEntrevistaDoCandidato = createServerFn({ method: "GET" })
     return e ?? null;
   });
 
+// ===== Consentimento LGPD do candidato (público — autenticado pelo token) =====
+const Consent = z.object({
+  token: z.string().min(6).max(200),
+  consentiu: z.boolean(),
+  versao_termo: z.string().max(20),
+});
+/**
+ * Registra o consentimento (ou recusa) do candidato para gravação/IA. Público:
+ * o token da entrevista é a credencial. Se recusar, a entrevista segue SEM
+ * gravação/IA (fallback), para o consentimento ser livre (sem penalização).
+ */
+export const registrarConsentimento = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => Consent.parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: ent } = await admin.from("entrevistas")
+      .select("id, candidato_id, status").eq("token", data.token).maybeSingle();
+    if (!ent) throw new Error("Entrevista não encontrada.");
+    const { error } = await admin.from("entrevista_consentimentos").insert({
+      entrevista_id: ent.id, candidato_id: ent.candidato_id,
+      consentiu: data.consentiu, versao_termo: data.versao_termo,
+    });
+    if (error) throw new Error(error.message);
+    // Recusa => segue sem gravação/IA (consentimento livre, sem penalização).
+    if (!data.consentiu && ent.status === "agendada") {
+      await admin.from("entrevistas").update({ status: "sem_gravacao" }).eq("id", ent.id);
+    }
+    return { ok: true, consentiu: data.consentiu };
+  });
+
 const Decisao = z.object({
   candidatoId: z.string().uuid(),
   entrevista_id: z.string().uuid(),

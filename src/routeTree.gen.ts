@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SCodeRouteImport } from './routes/s.$code'
+import { Route as ETokenRouteImport } from './routes/e.$token'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
@@ -50,6 +51,11 @@ const IndexRoute = IndexRouteImport.update({
 const SCodeRoute = SCodeRouteImport.update({
   id: '/s/$code',
   path: '/s/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ETokenRoute = ETokenRouteImport.update({
+  id: '/e/$token',
+  path: '/e/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CTokenRoute = CTokenRouteImport.update({
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
+  '/e/$token': typeof ETokenRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
+  '/e/$token': typeof ETokenRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/c/$token': typeof CTokenRoute
+  '/e/$token': typeof ETokenRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/_authenticated/previa/$id': typeof AuthenticatedPreviaIdRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/super'
     | '/usuarios'
     | '/c/$token'
+    | '/e/$token'
     | '/s/$code'
     | '/candidato/$id'
     | '/previa/$id'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/super'
     | '/usuarios'
     | '/c/$token'
+    | '/e/$token'
     | '/s/$code'
     | '/candidato/$id'
     | '/previa/$id'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/_authenticated/super'
     | '/_authenticated/usuarios'
     | '/c/$token'
+    | '/e/$token'
     | '/s/$code'
     | '/_authenticated/candidato/$id'
     | '/_authenticated/previa/$id'
@@ -246,6 +258,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   CTokenRoute: typeof CTokenRoute
+  ETokenRoute: typeof ETokenRoute
   SCodeRoute: typeof SCodeRoute
   ApiPublicHooksAvaliacoesRoute: typeof ApiPublicHooksAvaliacoesRoute
 }
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/s/$code'
       fullPath: '/s/$code'
       preLoaderRoute: typeof SCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/e/$token': {
+      id: '/e/$token'
+      path: '/e/$token'
+      fullPath: '/e/$token'
+      preLoaderRoute: typeof ETokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/c/$token': {
@@ -418,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   CTokenRoute: CTokenRoute,
+  ETokenRoute: ETokenRoute,
   SCodeRoute: SCodeRoute,
   ApiPublicHooksAvaliacoesRoute: ApiPublicHooksAvaliacoesRoute,
 }
