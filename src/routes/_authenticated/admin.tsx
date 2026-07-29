@@ -17,6 +17,7 @@ import { atualizarCadastroCandidato, excluirCandidato } from "@/lib/candidato.fu
 import { getMyScope } from "@/lib/scope.functions";
 import { useFeatures } from "@/lib/recrutamento/use-features";
 import { PassaporteBloco } from "@/components/PassaporteBloco";
+import { QinMatchBloco } from "@/components/QinMatchBloco";
 import { EntrevistaBloco } from "@/components/EntrevistaBloco";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -1300,6 +1301,8 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
 
 
           <PerfilComportamentalCard c={c} p={p} match={match} disc={disc} vaga={vaga} />
+
+          <QinMatchBloco candidatoId={c.id} vagaId={c.vaga_id ?? null} />
 
           <PassaporteBloco candidatoId={c.id} />
 
