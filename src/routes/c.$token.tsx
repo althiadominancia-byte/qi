@@ -2,21 +2,63 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Phone, Mail, MapPin, User, FileText, Upload, Brain, Users,
-  ChevronRight, ChevronLeft, CheckCircle2, Target, ShieldCheck,
-  BarChart3, Star, Headphones, MessageCircle,
-  Loader2, Briefcase, AlertCircle, Lightbulb, ThumbsUp, Ban,
+  Phone,
+  Mail,
+  MapPin,
+  User,
+  FileText,
+  Upload,
+  Brain,
+  Users,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle2,
+  Target,
+  ShieldCheck,
+  BarChart3,
+  Star,
+  Headphones,
+  MessageCircle,
+  Loader2,
+  Briefcase,
+  AlertCircle,
+  Lightbulb,
+  ThumbsUp,
+  Ban,
 } from "lucide-react";
 import { MarcaEstrela } from "@/components/MarcaEstrela";
 import { BrandingStyle, logoUrl, type Branding } from "@/components/BrandingStyle";
 import { supabase } from "@/integrations/supabase/client";
 import { analisarCv } from "@/lib/recrutamento.functions";
-import { prepararCv, fmtSize, CV_MAX_ORIGINAL_MB, type CvPreparado } from "@/lib/recrutamento/cv-upload";
+import { lerCurriculo } from "@/lib/curriculo.functions";
+import { TERMO_PORTAL } from "@/lib/portal-candidato.functions";
 import {
-  ROXO, ROXO_DARK, ROXO_TINT, ROXO_TINT2, LARANJA, LARANJA_TINT, CINZA, BORDA, VERDE,
-  DIM_INFO, getDiscBlocks, getSituacoes,
-  COR_RACA, GENERO, ORIENTACAO, PCD, POLITICO,
-  computeResults, corNivel, efetivamenteEncerrada,
+  prepararCv,
+  fmtSize,
+  CV_MAX_ORIGINAL_MB,
+  type CvPreparado,
+} from "@/lib/recrutamento/cv-upload";
+import {
+  ROXO,
+  ROXO_DARK,
+  ROXO_TINT,
+  ROXO_TINT2,
+  LARANJA,
+  LARANJA_TINT,
+  CINZA,
+  BORDA,
+  VERDE,
+  DIM_INFO,
+  getDiscBlocks,
+  getSituacoes,
+  COR_RACA,
+  GENERO,
+  ORIENTACAO,
+  PCD,
+  POLITICO,
+  computeResults,
+  corNivel,
+  efetivamenteEncerrada,
   type Vaga,
 } from "@/lib/recrutamento/data";
 
@@ -26,32 +68,107 @@ export const Route = createFileRoute("/c/$token")({
 });
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "11px 13px", border: `1.5px solid ${BORDA}`, borderRadius: 11,
-  fontSize: 14, outline: "none", background: "#fff", color: ROXO_DARK, boxSizing: "border-box", fontFamily: "inherit",
+  width: "100%",
+  padding: "11px 13px",
+  border: `1.5px solid ${BORDA}`,
+  borderRadius: 11,
+  fontSize: 14,
+  outline: "none",
+  background: "#fff",
+  color: ROXO_DARK,
+  boxSizing: "border-box",
+  fontFamily: "inherit",
 };
 const tagBtn = (on: boolean, cor: string): React.CSSProperties => ({
-  flexShrink: 0, padding: "6px 10px", borderRadius: 8, fontSize: 11.5, fontWeight: 700, cursor: "pointer",
-  border: `1.5px solid ${on ? cor : BORDA}`, background: on ? cor : "#fff", color: on ? "#fff" : CINZA, fontFamily: "inherit",
+  flexShrink: 0,
+  padding: "6px 10px",
+  borderRadius: 8,
+  fontSize: 11.5,
+  fontWeight: 700,
+  cursor: "pointer",
+  border: `1.5px solid ${on ? cor : BORDA}`,
+  background: on ? cor : "#fff",
+  color: on ? "#fff" : CINZA,
+  fontFamily: "inherit",
 });
 
-function Card({ children }: any) { return <div data-card style={{ background: "#fff", borderRadius: 18, padding: 24, border: `1px solid ${BORDA}`, boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)", marginBottom: 14 }}>{children}</div>; }
-function Badge({ children }: any) { return <span style={{ fontSize: 11.5, fontWeight: 700, background: LARANJA_TINT, color: LARANJA, padding: "5px 11px", borderRadius: 99, letterSpacing: 0.5 }}>{children}</span>; }
+function Card({ children }: any) {
+  return (
+    <div
+      data-card
+      style={{
+        background: "#fff",
+        borderRadius: 18,
+        padding: 24,
+        border: `1px solid ${BORDA}`,
+        boxShadow: "0 8px 30px -12px rgba(80,50,138,.18)",
+        marginBottom: 14,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+function Badge({ children }: any) {
+  return (
+    <span
+      style={{
+        fontSize: 11.5,
+        fontWeight: 700,
+        background: LARANJA_TINT,
+        color: LARANJA,
+        padding: "5px 11px",
+        borderRadius: 99,
+        letterSpacing: 0.5,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 function Titulo({ icon: Icon, children, sub }: any) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19} color={ROXO} /></div>
-        <h2 className="h" style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{children}</h2>
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: ROXO_TINT,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon size={19} color={ROXO} />
+        </div>
+        <h2 className="h" style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>
+          {children}
+        </h2>
       </div>
-      {sub && <p style={{ fontSize: 13, color: CINZA, margin: "8px 0 0", lineHeight: 1.5 }}>{sub}</p>}
+      {sub && (
+        <p style={{ fontSize: 13, color: CINZA, margin: "8px 0 0", lineHeight: 1.5 }}>{sub}</p>
+      )}
     </div>
   );
 }
 function Campo({ icon: Icon, label, children, obrig }: any) {
   return (
     <label style={{ display: "block", marginBottom: 16 }}>
-      <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, fontWeight: 600, color: ROXO_DARK, marginBottom: 7 }}>
-        {Icon && <Icon size={15} color={ROXO} />} {label} {obrig && <span style={{ color: LARANJA }}>*</span>}
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          color: ROXO_DARK,
+          marginBottom: 7,
+        }}
+      >
+        {Icon && <Icon size={15} color={ROXO} />} {label}{" "}
+        {obrig && <span style={{ color: LARANJA }}>*</span>}
       </span>
       {children}
     </label>
@@ -59,56 +176,195 @@ function Campo({ icon: Icon, label, children, obrig }: any) {
 }
 function Pill({ ativo, onClick, children }: any) {
   return (
-    <button type="button" onClick={onClick} style={{
-      padding: "10px 14px", borderRadius: 11, fontSize: 13.5, cursor: "pointer", textAlign: "left",
-      border: `1.5px solid ${ativo ? ROXO : BORDA}`, background: ativo ? ROXO_TINT : "#fff",
-      color: ativo ? ROXO_DARK : CINZA, fontWeight: ativo ? 600 : 500, fontFamily: "inherit", lineHeight: 1.35,
-    }}>{children}</button>
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: "10px 14px",
+        borderRadius: 11,
+        fontSize: 13.5,
+        cursor: "pointer",
+        textAlign: "left",
+        border: `1.5px solid ${ativo ? ROXO : BORDA}`,
+        background: ativo ? ROXO_TINT : "#fff",
+        color: ativo ? ROXO_DARK : CINZA,
+        fontWeight: ativo ? 600 : 500,
+        fontFamily: "inherit",
+        lineHeight: 1.35,
+      }}
+    >
+      {children}
+    </button>
   );
 }
 function DivCampo({ label, opts, val, on }: any) {
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: ROXO_DARK, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: ROXO_DARK, marginBottom: 8 }}>
+        {label}
+      </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
         {opts.map((o: string) => (
-          <button type="button" key={o} onClick={() => on(o)} style={{
-            padding: "8px 13px", borderRadius: 99, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
-            border: `1.5px solid ${val === o ? ROXO : BORDA}`, background: val === o ? ROXO_TINT : "#fff",
-            color: val === o ? ROXO_DARK : CINZA, fontWeight: val === o ? 700 : 500,
-            opacity: o === "Prefiro não responder" && val !== o ? 0.75 : 1,
-          }}>{o}</button>
+          <button
+            type="button"
+            key={o}
+            onClick={() => on(o)}
+            style={{
+              padding: "8px 13px",
+              borderRadius: 99,
+              fontSize: 12.5,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              border: `1.5px solid ${val === o ? ROXO : BORDA}`,
+              background: val === o ? ROXO_TINT : "#fff",
+              color: val === o ? ROXO_DARK : CINZA,
+              fontWeight: val === o ? 700 : 500,
+              opacity: o === "Prefiro não responder" && val !== o ? 0.75 : 1,
+            }}
+          >
+            {o}
+          </button>
         ))}
       </div>
     </div>
   );
 }
 function Linha({ k, v }: any) {
-  return <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: `1px solid ${BORDA}`, fontSize: 13.5, gap: 12 }}>
-    <span style={{ color: CINZA, flexShrink: 0 }}>{k}</span><span style={{ fontWeight: 600, color: ROXO_DARK, textAlign: "right", maxWidth: "60%", overflowWrap: "anywhere", wordBreak: "break-word", minWidth: 0 }}>{v}</span>
-  </div>;
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        padding: "10px 0",
+        borderBottom: `1px solid ${BORDA}`,
+        fontSize: 13.5,
+        gap: 12,
+      }}
+    >
+      <span style={{ color: CINZA, flexShrink: 0 }}>{k}</span>
+      <span
+        style={{
+          fontWeight: 600,
+          color: ROXO_DARK,
+          textAlign: "right",
+          maxWidth: "60%",
+          overflowWrap: "anywhere",
+          wordBreak: "break-word",
+          minWidth: 0,
+        }}
+      >
+        {v}
+      </span>
+    </div>
+  );
 }
 function Nav({ back, next, pode, textoNext = "Continuar", aviso }: any) {
   return (
     <div>
-      {aviso && <div style={{ fontSize: 12, color: LARANJA, marginBottom: 10, fontWeight: 600 }}>{aviso}</div>}
-      <div data-nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, gap: 10 }}>
-        <button type="button" onClick={back} style={{ background: "none", border: "none", color: CINZA, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, fontFamily: "inherit", fontSize: 14, minHeight: 44, padding: "0 8px" }}><ChevronLeft size={17} /> Voltar</button>
-        <button type="button" onClick={next} disabled={!pode} style={{ background: pode ? ROXO : "#D8D2E6", color: "#fff", border: "none", padding: "12px 22px", borderRadius: 12, fontSize: 14.5, fontWeight: 700, cursor: pode ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit", minHeight: 48 }}>{textoNext} <ChevronRight size={17} /></button>
+      {aviso && (
+        <div style={{ fontSize: 12, color: LARANJA, marginBottom: 10, fontWeight: 600 }}>
+          {aviso}
+        </div>
+      )}
+      <div
+        data-nav
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 20,
+          gap: 10,
+        }}
+      >
+        <button
+          type="button"
+          onClick={back}
+          style={{
+            background: "none",
+            border: "none",
+            color: CINZA,
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 5,
+            fontFamily: "inherit",
+            fontSize: 14,
+            minHeight: 44,
+            padding: "0 8px",
+          }}
+        >
+          <ChevronLeft size={17} /> Voltar
+        </button>
+        <button
+          type="button"
+          onClick={next}
+          disabled={!pode}
+          style={{
+            background: pode ? ROXO : "#D8D2E6",
+            color: "#fff",
+            border: "none",
+            padding: "12px 22px",
+            borderRadius: 12,
+            fontSize: 14.5,
+            fontWeight: 700,
+            cursor: pode ? "pointer" : "not-allowed",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            fontFamily: "inherit",
+            minHeight: 48,
+          }}
+        >
+          {textoNext} <ChevronRight size={17} />
+        </button>
       </div>
     </div>
   );
 }
 function MatchRing({ match, label }: any) {
-  const r = 34, c = 2 * Math.PI * r;
+  const r = 34,
+    c = 2 * Math.PI * r;
   const cor = match >= 85 ? VERDE : match >= 70 ? LARANJA : match >= 55 ? "#CA8A04" : "#DC2626";
   return (
     <div style={{ textAlign: "center" }}>
       <svg width="92" height="92" viewBox="0 0 92 92">
         <circle cx="46" cy="46" r={r} fill="none" stroke="#EEEAF6" strokeWidth="9" />
-        <circle cx="46" cy="46" r={r} fill="none" stroke={cor} strokeWidth="9" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c - (c * match) / 100} transform="rotate(-90 46 46)" />
-        <text x="46" y="42" textAnchor="middle" fontSize="22" fontWeight="800" fill={cor} fontFamily="Outfit">{match}%</text>
-        <text x="46" y="58" textAnchor="middle" fontSize="9" fill="#888" fontFamily="Plus Jakarta Sans">match</text>
+        <circle
+          cx="46"
+          cy="46"
+          r={r}
+          fill="none"
+          stroke={cor}
+          strokeWidth="9"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c - (c * match) / 100}
+          transform="rotate(-90 46 46)"
+        />
+        <text
+          x="46"
+          y="42"
+          textAnchor="middle"
+          fontSize="22"
+          fontWeight="800"
+          fill={cor}
+          fontFamily="Outfit"
+        >
+          {match}%
+        </text>
+        <text
+          x="46"
+          y="58"
+          textAnchor="middle"
+          fontSize="9"
+          fill="#888"
+          fontFamily="Plus Jakarta Sans"
+        >
+          match
+        </text>
       </svg>
       <div style={{ fontSize: 12, fontWeight: 700, color: cor, marginTop: -4 }}>{label}</div>
     </div>
@@ -117,8 +373,27 @@ function MatchRing({ match, label }: any) {
 function Box({ titulo, icon: Icon, cor, items }: any) {
   return (
     <div style={{ background: ROXO_TINT, borderRadius: 12, padding: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12.5, color: cor, marginBottom: 9 }}><Icon size={14} /> {titulo}</div>
-      {(items || []).map((t: string, i: number) => <div key={i} style={{ fontSize: 12.5, color: CINZA, marginBottom: 6, display: "flex", gap: 6 }}><span style={{ color: cor }}>•</span> {t}</div>)}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontWeight: 700,
+          fontSize: 12.5,
+          color: cor,
+          marginBottom: 9,
+        }}
+      >
+        <Icon size={14} /> {titulo}
+      </div>
+      {(items || []).map((t: string, i: number) => (
+        <div
+          key={i}
+          style={{ fontSize: 12.5, color: CINZA, marginBottom: 6, display: "flex", gap: 6 }}
+        >
+          <span style={{ color: cor }}>•</span> {t}
+        </div>
+      ))}
     </div>
   );
 }
@@ -126,7 +401,12 @@ function Mini({ label, v, sub }: any) {
   return (
     <div style={{ flex: 1, border: `1px solid ${BORDA}`, borderRadius: 12, padding: "12px 14px" }}>
       <div style={{ fontSize: 11.5, color: CINZA, fontWeight: 600 }}>{label}</div>
-      <div className="h" style={{ fontSize: 22, fontWeight: 800, color: ROXO, lineHeight: 1.1, margin: "2px 0" }}>{v}</div>
+      <div
+        className="h"
+        style={{ fontSize: 22, fontWeight: 800, color: ROXO, lineHeight: 1.1, margin: "2px 0" }}
+      >
+        {v}
+      </div>
       <div style={{ fontSize: 10.5, color: "#9b93b0" }}>{sub}</div>
     </div>
   );
@@ -134,7 +414,20 @@ function Mini({ label, v, sub }: any) {
 function NivelBadge({ nivel }: any) {
   const cor = corNivel(nivel);
   const txt = nivel === "alta" ? "Alta" : nivel === "media" ? "Média" : "Baixa";
-  return <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: cor, padding: "2px 9px", borderRadius: 99 }}>{txt}</span>;
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: "#fff",
+        background: cor,
+        padding: "2px 9px",
+        borderRadius: 99,
+      }}
+    >
+      {txt}
+    </span>
+  );
 }
 
 function HeaderRoxo({
@@ -150,18 +443,81 @@ function HeaderRoxo({
 }) {
   const custom = !!marca;
   return (
-    <div style={{ background: ROXO, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, position: "sticky", top: 0, zIndex: 30 }}>
-      {branding && <BrandingStyle cor_primaria={branding.cor_primaria} cor_sidebar={branding.cor_sidebar} cor_botao={branding.cor_botao} />}
+    <div
+      style={{
+        background: ROXO,
+        padding: "14px 18px",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+      }}
+    >
+      {branding && (
+        <BrandingStyle
+          cor_primaria={branding.cor_primaria}
+          cor_sidebar={branding.cor_sidebar}
+          cor_botao={branding.cor_botao}
+        />
+      )}
       <MarcaEstrela size={34} branca src={logo} alt={marca || "Distribuidora Estrela"} />
       {custom ? (
-        <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 0.5, lineHeight: 1.1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marca}</div>
+        <div
+          className="h"
+          style={{
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: 19,
+            letterSpacing: 0.5,
+            lineHeight: 1.1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {marca}
+        </div>
       ) : (
         <div style={{ lineHeight: 1 }}>
-          <div className="h" style={{ color: "#fff", fontWeight: 700, letterSpacing: 2, fontSize: 11, opacity: 0.85 }}>DISTRIBUIDORA</div>
-          <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}>ESTRELA</div>
+          <div
+            className="h"
+            style={{
+              color: "#fff",
+              fontWeight: 700,
+              letterSpacing: 2,
+              fontSize: 11,
+              opacity: 0.85,
+            }}
+          >
+            DISTRIBUIDORA
+          </div>
+          <div
+            className="h"
+            style={{ color: "#fff", fontWeight: 800, fontSize: 19, letterSpacing: 1 }}
+          >
+            ESTRELA
+          </div>
         </div>
       )}
-      <div data-header-sub style={{ marginLeft: "auto", color: "#fff", fontSize: 12, opacity: 0.8, display: "flex", alignItems: "center", gap: 6, minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+      <div
+        data-header-sub
+        style={{
+          marginLeft: "auto",
+          color: "#fff",
+          fontSize: 12,
+          opacity: 0.8,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          minWidth: 0,
+          overflow: "hidden",
+          whiteSpace: "nowrap",
+          textOverflow: "ellipsis",
+        }}
+      >
         <Headphones size={15} /> {titulo}
       </div>
     </div>
@@ -173,7 +529,11 @@ function FormPublico() {
   const vagaQ = useQuery({
     queryKey: ["vaga-publica", token],
     queryFn: async (): Promise<Vaga | null> => {
-      const { data, error } = await supabase.from("vagas").select("*").eq("link_token", token).maybeSingle();
+      const { data, error } = await supabase
+        .from("vagas")
+        .select("*")
+        .eq("link_token", token)
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
@@ -185,26 +545,45 @@ function FormPublico() {
     queryKey: ["empresa-branding", empresaId],
     enabled: !!empresaId,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_empresa_branding" as any, { p_empresa_id: empresaId });
+      const { data, error } = await supabase.rpc("get_empresa_branding" as any, {
+        p_empresa_id: empresaId,
+      });
       if (error) throw error;
       const row: any = Array.isArray(data) ? data[0] : data;
-      return (row ?? null) as
-        | { nome: string | null; logo_path: string | null; cor_primaria: string | null; cor_sidebar: string | null; cor_botao: string | null }
-        | null;
+      return (row ?? null) as {
+        nome: string | null;
+        logo_path: string | null;
+        cor_primaria: string | null;
+        cor_sidebar: string | null;
+        cor_botao: string | null;
+      } | null;
     },
   });
   const marcaNome = brandingQ.data?.nome ?? null;
   const marcaLogo = logoUrl(brandingQ.data?.logo_path ?? null);
   const marcaBranding: Branding | undefined = brandingQ.data
-    ? { cor_primaria: brandingQ.data.cor_primaria, cor_sidebar: brandingQ.data.cor_sidebar, cor_botao: brandingQ.data.cor_botao }
+    ? {
+        cor_primaria: brandingQ.data.cor_primaria,
+        cor_sidebar: brandingQ.data.cor_sidebar,
+        cor_botao: brandingQ.data.cor_botao,
+      }
     : undefined;
   const headerMarca = { logo: marcaLogo, marca: marcaNome, branding: marcaBranding };
 
   if (vagaQ.isLoading) {
     return (
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK }}>
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          background: "#FBFAFE",
+          minHeight: "100vh",
+          color: ROXO_DARK,
+        }}
+      >
         <HeaderRoxo />
-        <div style={{ maxWidth: 720, margin: "40px auto", textAlign: "center", color: CINZA }}>Carregando vaga...</div>
+        <div style={{ maxWidth: 720, margin: "40px auto", textAlign: "center", color: CINZA }}>
+          Carregando vaga...
+        </div>
       </div>
     );
   }
@@ -212,14 +591,55 @@ function FormPublico() {
   const vaga = vagaQ.data;
   if (!vaga) {
     return (
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK }}>
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          background: "#FBFAFE",
+          minHeight: "100vh",
+          color: ROXO_DARK,
+        }}
+      >
         <HeaderRoxo />
         <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 18px" }}>
           <Card>
             <div style={{ textAlign: "center" }}>
               <AlertCircle size={36} color={LARANJA} />
-              <h2 className="h" style={{ fontSize: 22, fontWeight: 800, marginTop: 10 }}>Vaga não encontrada</h2>
-              <p style={{ color: CINZA, fontSize: 14 }}>O link pode ter expirado ou estar incorreto.</p>
+              <h2 className="h" style={{ fontSize: 22, fontWeight: 800, marginTop: 10 }}>
+                Vaga não encontrada
+              </h2>
+              <p style={{ color: CINZA, fontSize: 14 }}>
+                O link pode ter expirado ou estar incorreto.
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Captação por link público desligada nesta vaga: bloqueia o formulário.
+  if ((vaga as any).aceita_inscricao_publica === false) {
+    return (
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          background: "#FBFAFE",
+          minHeight: "100vh",
+          color: ROXO_DARK,
+        }}
+      >
+        <HeaderRoxo titulo={vaga.titulo} {...headerMarca} />
+        <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 18px" }}>
+          <Card>
+            <div style={{ textAlign: "center" }}>
+              <Ban size={36} color={LARANJA} />
+              <h2 className="h" style={{ fontSize: 22, fontWeight: 800, marginTop: 10 }}>
+                Inscrições por link não abertas
+              </h2>
+              <p style={{ color: CINZA, fontSize: 14, lineHeight: 1.55 }}>
+                Esta vaga não está recebendo inscrições por este link no momento. Agradecemos o
+                interesse!
+              </p>
             </div>
           </Card>
         </div>
@@ -230,15 +650,25 @@ function FormPublico() {
   const encerrada = efetivamenteEncerrada(vaga) || vaga.status !== "Aberta";
   if (encerrada) {
     return (
-      <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK }}>
+      <div
+        style={{
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          background: "#FBFAFE",
+          minHeight: "100vh",
+          color: ROXO_DARK,
+        }}
+      >
         <HeaderRoxo titulo={vaga.titulo} {...headerMarca} />
         <div style={{ maxWidth: 560, margin: "60px auto", padding: "0 18px" }}>
           <Card>
             <div style={{ textAlign: "center" }}>
               <Ban size={36} color={LARANJA} />
-              <h2 className="h" style={{ fontSize: 22, fontWeight: 800, marginTop: 10 }}>Inscrições encerradas</h2>
+              <h2 className="h" style={{ fontSize: 22, fontWeight: 800, marginTop: 10 }}>
+                Inscrições encerradas
+              </h2>
               <p style={{ color: CINZA, fontSize: 14, lineHeight: 1.55 }}>
-                As inscrições para a vaga <strong>{vaga.titulo}</strong> não estão mais abertas. Agradecemos o interesse!
+                As inscrições para a vaga <strong>{vaga.titulo}</strong> não estão mais abertas.
+                Agradecemos o interesse!
               </p>
             </div>
           </Card>
@@ -252,8 +682,19 @@ function FormPublico() {
 
 type HeaderMarca = { logo?: string | null; marca?: string | null; branding?: Branding };
 
-const FLOW_BASE = ["intro", "dados", "curriculo", "situacional", "disc", "diversidade", "revisao", "resultado"];
-const FORM_BASE = ["dados", "curriculo", "situacional", "disc", "diversidade", "revisao"];
+// Funil invertido: o currículo vem primeiro — a IA lê e pré-preenche "Seus dados".
+const FLOW_BASE = [
+  "intro",
+  "curriculo",
+  "dados",
+  "situacional",
+  "disc",
+  "diversidade",
+  "revisao",
+  "resultado",
+];
+const FORM_BASE = ["curriculo", "dados", "situacional", "disc", "diversidade", "revisao"];
+const TEMPO_OPCOES = ["Menos de 6 meses", "6 meses a 1 ano", "1 a 3 anos", "Mais de 3 anos"];
 const STEP_META: Record<string, { n: string; icon: any }> = {
   dados: { n: "Seus dados", icon: User },
   curriculo: { n: "Currículo", icon: FileText },
@@ -265,10 +706,16 @@ const STEP_META: Record<string, { n: string; icon: any }> = {
 
 function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: HeaderMarca }) {
   const DISC_BLOCKS = useMemo(() => getDiscBlocks(vaga), [vaga]);
-  const SITUACIONAIS = useMemo(() => vaga.usar_situacional ? getSituacoes(vaga) : [], [vaga]);
+  const SITUACIONAIS = useMemo(() => (vaga.usar_situacional ? getSituacoes(vaga) : []), [vaga]);
   const usarSit = vaga.usar_situacional && SITUACIONAIS.length > 0;
-  const FLOW = useMemo(() => usarSit ? FLOW_BASE : FLOW_BASE.filter((s) => s !== "situacional"), [usarSit]);
-  const FORM_STEPS = useMemo(() => usarSit ? FORM_BASE : FORM_BASE.filter((s) => s !== "situacional"), [usarSit]);
+  const FLOW = useMemo(
+    () => (usarSit ? FLOW_BASE : FLOW_BASE.filter((s) => s !== "situacional")),
+    [usarSit],
+  );
+  const FORM_STEPS = useMemo(
+    () => (usarSit ? FORM_BASE : FORM_BASE.filter((s) => s !== "situacional")),
+    [usarSit],
+  );
 
   // Persistência local: se o candidato sair da tela (background do app, troca de aba,
   // bloqueio do celular) e voltar depois, recuperamos onde parou em vez de reiniciar.
@@ -280,7 +727,9 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
       if (!raw) return {};
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object") return parsed;
-    } catch {}
+    } catch {
+      /* localStorage indisponível ou JSON inválido — recomeça do zero */
+    }
     return {};
   };
   const saved = useMemo(loadSaved, []);
@@ -309,18 +758,38 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
   const [cvAnalysis, setCvAnalysis] = useState<any>(null);
   const [cvLoading, setCvLoading] = useState(false);
   const [cvError, setCvError] = useState("");
+  // Upload antecipado do CV (passo currículo): o submit final REUSA este path.
+  const [cvEnviado, setCvEnviado] = useState<{ path: string; mime: string | null } | null>(null);
+  const [cvLendo, setCvLendo] = useState(false);
+  // Análise devolvida pela leitura antecipada — entra no insert e pula o analisarCv.
+  const [cvAnalise, setCvAnalise] = useState<any>(null);
+  const [prefillAviso, setPrefillAviso] = useState<"" | "ok" | "falha">("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+
+  // Edição manual em "Seus dados" dispensa o banner de pré-preenchimento.
+  const setDado = (k: string, v: any) => {
+    if (prefillAviso === "ok") setPrefillAviso("");
+    set(k, v);
+  };
 
   // Salva progresso a cada mudança de step/respostas. Não persistimos o arquivo do CV
   // (objeto File não é serializável); o candidato precisa reanexar se sair na etapa do CV.
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (step === "resultado") {
-      try { window.localStorage.removeItem(STORAGE_KEY); } catch {}
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* localStorage indisponível — ignora */
+      }
       return;
     }
-    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a })); } catch {}
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a }));
+    } catch {
+      /* localStorage indisponível — ignora */
+    }
   }, [step, a, STORAGE_KEY]);
 
   // Salva também quando a aba/app vai para background (iOS Safari/Android Chrome às vezes
@@ -329,7 +798,11 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
     if (typeof window === "undefined") return;
     const flush = () => {
       if (step === "resultado") return;
-      try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a })); } catch {}
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, a }));
+      } catch {
+        /* localStorage indisponível — ignora */
+      }
     };
     window.addEventListener("pagehide", flush);
     window.addEventListener("visibilitychange", flush);
@@ -342,46 +815,128 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
   const idx = FLOW.indexOf(step);
   const formIdx = FORM_STEPS.indexOf(step);
 
-  const setMais = (bi: number, oi: number) => setA((p) => {
-    const n = { ...p }; n["disc_" + bi + "_mais"] = oi;
-    if (n["disc_" + bi + "_menos"] === oi) delete n["disc_" + bi + "_menos"];
-    return n;
-  });
-  const setMenos = (bi: number, oi: number) => setA((p) => {
-    const n = { ...p }; n["disc_" + bi + "_menos"] = oi;
-    if (n["disc_" + bi + "_mais"] === oi) delete n["disc_" + bi + "_mais"];
-    return n;
-  });
+  const setMais = (bi: number, oi: number) =>
+    setA((p) => {
+      const n = { ...p };
+      n["disc_" + bi + "_mais"] = oi;
+      if (n["disc_" + bi + "_menos"] === oi) delete n["disc_" + bi + "_menos"];
+      return n;
+    });
+  const setMenos = (bi: number, oi: number) =>
+    setA((p) => {
+      const n = { ...p };
+      n["disc_" + bi + "_menos"] = oi;
+      if (n["disc_" + bi + "_mais"] === oi) delete n["disc_" + bi + "_mais"];
+      return n;
+    });
 
-  const discDone = DISC_BLOCKS.filter((_, bi) => a["disc_" + bi + "_mais"] !== undefined && a["disc_" + bi + "_menos"] !== undefined).length;
+  const discDone = DISC_BLOCKS.filter(
+    (_, bi) => a["disc_" + bi + "_mais"] !== undefined && a["disc_" + bi + "_menos"] !== undefined,
+  ).length;
 
   const podeAvancar = useMemo(() => {
     if (step === "dados") return a.nome && a.email && a.celular;
-    if (step === "curriculo") return !!cvPrep && !cvProcessando;
+    if (step === "curriculo") return !!cvPrep && !cvProcessando && !cvLendo;
     if (step === "situacional") return SITUACIONAIS.every((_q, i) => a["sit_" + i]);
     if (step === "disc") return discDone === DISC_BLOCKS.length;
     return true;
-  }, [step, a, discDone, cvPrep, cvProcessando]);
+  }, [step, a, discDone, cvPrep, cvProcessando, cvLendo]);
 
-  const next = () => {
-    if (step === "revisao") { void enviarInscricao(); return; }
-    setStep(FLOW[idx + 1]); window.scrollTo({ top: 0, behavior: "smooth" });
+  const avancar = () => {
+    setStep(FLOW[idx + 1]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  const back = () => { setStep(FLOW[idx - 1]); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const next = () => {
+    if (step === "revisao") {
+      void enviarInscricao();
+      return;
+    }
+    if (step === "curriculo") {
+      void continuarCurriculo();
+      return;
+    }
+    avancar();
+  };
+  const back = () => {
+    setStep(FLOW[idx - 1]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  const resultado = useMemo(() => (step === "resultado" ? computeResults(a, vaga) : null), [step, a, vaga]);
+  const resultado = useMemo(
+    () => (step === "resultado" ? computeResults(a, vaga) : null),
+    [step, a, vaga],
+  );
 
   const textoExtra = (only?: boolean) => {
     const exp = a.exp ? "\nExperiência relatada: " + a.exp : "";
     const mot = a.motivo ? "\nMotivação: " + a.motivo : "";
     const j = exp + mot;
-    return only ? (j || "Nenhuma informação adicional foi fornecida.") : j;
+    return only ? j || "Nenhuma informação adicional foi fornecida." : j;
   };
 
   const vagaContexto = `Vaga: ${vaga.titulo} (${vaga.setor}, ${vaga.modelo}/${vaga.tipo}).\nDescrição: ${vaga.descricao}\nRequisitos: ${vaga.requisitos}\nExperiência desejada: ${vaga.experiencia}`;
 
+  // Passo currículo → "Continuar": sobe o arquivo AGORA (o submit final reusa o
+  // path), pede à IA a leitura e pré-preenche APENAS campos vazios de "Seus dados".
+  // Se a leitura falhar, o fluxo manual segue intacto (o candidato digita tudo).
+  async function continuarCurriculo() {
+    const arquivoCv = cvPrep?.arquivo ?? cvFile;
+    if (!arquivoCv || cvLendo) return;
+    // Voltou e avançou de novo sem trocar o arquivo: já subiu e já leu, só segue.
+    if (cvEnviado && cvAnalise) {
+      avancar();
+      return;
+    }
+    setCvLendo(true);
+    setCvError("");
+    try {
+      let enviado = cvEnviado;
+      if (!enviado) {
+        const ext = arquivoCv.name.split(".").pop() ?? "bin";
+        const empId = (vaga as any).empresa_id;
+        const path = `${empId}/${vaga.id}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, {
+          contentType: arquivoCv.type || undefined,
+          cacheControl: "3600",
+        });
+        if (upErr) throw upErr;
+        enviado = { path, mime: arquivoCv.type || null };
+        setCvEnviado(enviado);
+      }
+      const { formulario, analise } = await lerCurriculo({
+        data: { vagaId: vaga.id, storagePath: enviado.path, mimeType: enviado.mime },
+      });
+      setA((p) => {
+        const n = { ...p };
+        const preencher = (k: string, v: any) => {
+          if (v && typeof v === "string" && !(n[k] && String(n[k]).trim())) n[k] = v;
+        };
+        preencher("nome", formulario?.nome);
+        preencher("email", formulario?.email);
+        preencher("celular", formulario?.celular);
+        preencher("endereco", formulario?.endereco);
+        preencher("setor", formulario?.setor_atual);
+        // "tempo" é um select fechado — só preenche se bater com uma opção.
+        if (formulario?.tempo_empresa && TEMPO_OPCOES.includes(formulario.tempo_empresa)) {
+          preencher("tempo", formulario.tempo_empresa);
+        }
+        preencher("exp", formulario?.experiencia_texto);
+        return n;
+      });
+      if (analise) setCvAnalise(analise);
+      setPrefillAviso("ok");
+    } catch (e) {
+      console.warn("Leitura do currículo falhou (segue fluxo manual):", e);
+      setPrefillAviso("falha");
+    } finally {
+      setCvLendo(false);
+    }
+    avancar();
+  }
+
   async function enviarInscricao() {
-    setSubmitting(true); setSubmitError("");
+    setSubmitting(true);
+    setSubmitError("");
     try {
       const r = computeResults(a, vaga);
 
@@ -399,14 +954,23 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
         setSubmitting(false);
         return;
       }
-      {
+      if (cvEnviado) {
+        // Currículo já subiu no passo de abertura — reusa o mesmo path.
+        cvPath = cvEnviado.path;
+        cvMime = cvEnviado.mime;
+      } else {
+        // Fallback (ex.: upload antecipado falhou): sobe agora, como antes.
         const ext = arquivoCv.name.split(".").pop() ?? "bin";
         const empId = (vaga as any).empresa_id;
         const path = `${empId}/${vaga.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, { contentType: arquivoCv.type || undefined, cacheControl: "3600" });
+        const { error: upErr } = await supabase.storage.from("curriculos").upload(path, arquivoCv, {
+          contentType: arquivoCv.type || undefined,
+          cacheControl: "3600",
+        });
         if (upErr) throw upErr;
         cvPath = path;
         cvMime = arquivoCv.type || null;
+        setCvEnviado({ path, mime: cvMime });
       }
 
       if (a.raca || a.genero || a.orientacao || a.pcd || a.politico) {
@@ -414,19 +978,26 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
           vaga_id: vaga.id,
           empresa_id: (vaga as any).empresa_id,
           unidade_id: (vaga as any).unidade_id ?? null,
-          raca: a.raca ?? null, genero: a.genero ?? null,
-          orientacao: a.orientacao ?? null, pcd: a.pcd ?? null, politico: a.politico ?? null,
+          raca: a.raca ?? null,
+          genero: a.genero ?? null,
+          orientacao: a.orientacao ?? null,
+          pcd: a.pcd ?? null,
+          politico: a.politico ?? null,
         });
         if (divErr) throw divErr;
       }
 
       const discResp: Record<string, any> = {};
       DISC_BLOCKS.forEach((_, bi) => {
-        if (a["disc_" + bi + "_mais"] !== undefined) discResp["b" + bi + "_mais"] = a["disc_" + bi + "_mais"];
-        if (a["disc_" + bi + "_menos"] !== undefined) discResp["b" + bi + "_menos"] = a["disc_" + bi + "_menos"];
+        if (a["disc_" + bi + "_mais"] !== undefined)
+          discResp["b" + bi + "_mais"] = a["disc_" + bi + "_mais"];
+        if (a["disc_" + bi + "_menos"] !== undefined)
+          discResp["b" + bi + "_menos"] = a["disc_" + bi + "_menos"];
       });
       const sitResp: Record<string, string> = {};
-      SITUACIONAIS.forEach((_q, i) => { if (a["sit_" + i]) sitResp["q" + i] = a["sit_" + i]; });
+      SITUACIONAIS.forEach((_q, i) => {
+        if (a["sit_" + i]) sitResp["q" + i] = a["sit_" + i];
+      });
 
       const candId = crypto.randomUUID();
       const { error: insErr } = await supabase.from("candidatos_televendas").insert({
@@ -434,36 +1005,53 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
         vaga_id: vaga.id,
         empresa_id: (vaga as any).empresa_id,
         unidade_id: (vaga as any).unidade_id ?? null,
-        nome: a.nome, email: a.email, celular: a.celular,
-        endereco: a.endereco ?? null, setor_atual: a.setor ?? null, tempo_empresa: a.tempo ?? null,
-        experiencia_texto: a.exp ?? null, motivacao_texto: a.motivo ?? null,
-        cv_storage_path: cvPath, cv_nome_arquivo: a.cvNome ?? null,
-        disc_respostas: discResp, disc_pontuacao: r.discPct,
-        situacionais: sitResp, postura_score: r.sitAvg,
-        perfil_key: r.key, perfil_nome: r.perfil.nome,
-        match_final: r.finalMatch, match_label: r.label,
+        nome: a.nome,
+        email: a.email,
+        celular: a.celular,
+        endereco: a.endereco ?? null,
+        setor_atual: a.setor ?? null,
+        tempo_empresa: a.tempo ?? null,
+        experiencia_texto: a.exp ?? null,
+        motivacao_texto: a.motivo ?? null,
+        cv_storage_path: cvPath,
+        cv_nome_arquivo: a.cvNome ?? null,
+        disc_respostas: discResp,
+        disc_pontuacao: r.discPct,
+        situacionais: sitResp,
+        postura_score: r.sitAvg,
+        perfil_key: r.key,
+        perfil_nome: r.perfil.nome,
+        match_final: r.finalMatch,
+        match_label: r.label,
         lgpd_aceite: !!a.lgpd,
+        // Se a leitura antecipada já gerou a análise, persiste direto no insert.
+        ...(cvAnalise ? { cv_analise: cvAnalise } : {}),
       });
       if (insErr) throw insErr;
 
-      // Roda a análise de currículo SINCRONAMENTE antes de mostrar a tela final.
-      // Se a navegação acontecer antes, a Promise no navegador é abortada e
-      // cv_analise nunca é persistido (recrutador fica sem o bloco de IA).
-      try {
-        await rodarAnalise(candId, cvPath, cvMime);
-      } catch (e) {
-        console.warn("Análise de currículo falhou (inscrição já registrada):", e);
+      // Sem análise antecipada: roda o analisarCv SINCRONAMENTE antes da tela
+      // final (se a navegação acontecer antes, a Promise no navegador é abortada
+      // e cv_analise nunca é persistido — recrutador fica sem o bloco de IA).
+      if (!cvAnalise) {
+        try {
+          await rodarAnalise(candId, cvPath, cvMime);
+        } catch (e) {
+          console.warn("Análise de currículo falhou (inscrição já registrada):", e);
+        }
       }
 
-      setStep("resultado"); window.scrollTo({ top: 0, behavior: "smooth" });
+      setStep("resultado");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
       setSubmitError(err.message || "Erro ao enviar inscrição.");
-    } finally { setSubmitting(false); }
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-
   async function rodarAnalise(candId: string, cvPath: string | null, cvMime: string | null) {
-    setCvLoading(true); setCvError("");
+    setCvLoading(true);
+    setCvError("");
     try {
       let textoBruto: string | null = null;
       const arquivoCv = cvPrep?.arquivo ?? cvFile;
@@ -498,28 +1086,46 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
       // (esse gateway não consegue ler PDF nessa rota). Forçamos mimeType null para a
       // análise rodar apenas com o texto extra do candidato — assim o recrutador
       // ainda recebe um JSON consistente, mas marcado como aderência baixa.
-      const ehPdfSemTexto = !textoBruto && (cvMime === "application/pdf" || (arquivoCv && /\.pdf$/i.test(arquivoCv.name)));
+      const ehPdfSemTexto =
+        !textoBruto &&
+        (cvMime === "application/pdf" || (arquivoCv && /\.pdf$/i.test(arquivoCv.name)));
       const mimeFinal = textoBruto || ehPdfSemTexto ? null : cvMime;
       const extraFinal = ehPdfSemTexto
-        ? textoExtra() + "\n\n[Aviso: o PDF anexado não tinha texto extraível (provavelmente foi escaneado). A análise abaixo baseia-se apenas nas informações que o próprio candidato digitou.]"
+        ? textoExtra() +
+          "\n\n[Aviso: o PDF anexado não tinha texto extraível (provavelmente foi escaneado). A análise abaixo baseia-se apenas nas informações que o próprio candidato digitou.]"
         : textoExtra();
       const parsed = await analisarCv({
-        data: { candidatoId: candId, storagePath: cvPath, mimeType: mimeFinal, textoExtra: extraFinal, textoBruto, vagaContexto },
+        data: {
+          candidatoId: candId,
+          storagePath: cvPath,
+          mimeType: mimeFinal,
+          textoExtra: extraFinal,
+          textoBruto,
+          vagaContexto,
+        },
       });
       setCvAnalysis(parsed);
     } catch (e: any) {
       setCvError(e.message || "Não consegui analisar o currículo automaticamente.");
-    } finally { setCvLoading(false); }
+    } finally {
+      setCvLoading(false);
+    }
   }
 
-  useEffect(() => { if (step !== "resultado") return; }, [step]);
+  useEffect(() => {
+    if (step !== "resultado") return;
+  }, [step]);
 
   return (
-    <div style={{
-      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-      background: `radial-gradient(120% 80% at 50% -10%, ${ROXO_TINT} 0%, #FBFAFE 45%, #FFFFFF 100%)`,
-      minHeight: "100vh", color: ROXO_DARK, padding: "0 0 48px",
-    }}>
+    <div
+      style={{
+        fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+        background: `radial-gradient(120% 80% at 50% -10%, ${ROXO_TINT} 0%, #FBFAFE 45%, #FFFFFF 100%)`,
+        minHeight: "100vh",
+        color: ROXO_DARK,
+        padding: "0 0 48px",
+      }}
+    >
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box} html,body{overflow-x:hidden;max-width:100vw} input:focus,select:focus,textarea:focus{border-color:${ROXO}!important;box-shadow:0 0 0 3px ${ROXO_TINT2}}
         .h{font-family:'Outfit',sans-serif} @keyframes spin{to{transform:rotate(360deg)}} .spin{animation:spin 1s linear infinite}
@@ -550,29 +1156,71 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
       <div data-pad style={{ maxWidth: 720, margin: "0 auto", padding: "0 18px" }}>
         {formIdx >= 0 && (
           <div style={{ margin: "22px 0 26px" }}>
-            <div data-step-counter style={{ fontSize: 12, fontWeight: 700, color: ROXO, marginBottom: 8, letterSpacing: 1 }}>
+            <div
+              data-step-counter
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: ROXO,
+                marginBottom: 8,
+                letterSpacing: 1,
+              }}
+            >
               ETAPA {formIdx + 1} DE {FORM_STEPS.length} — {STEP_META[FORM_STEPS[formIdx]].n}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, gap: 4 }}>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", marginBottom: 9, gap: 4 }}
+            >
               {FORM_STEPS.map((s, i) => {
                 const Ic = STEP_META[s].icon;
-                const done = i < formIdx, cur = i === formIdx;
+                const done = i < formIdx,
+                  cur = i === formIdx;
                 return (
                   <div key={s} style={{ flex: 1, textAlign: "center", minWidth: 0 }}>
-                    <div data-step-circle style={{
-                      width: 34, height: 34, borderRadius: 99, margin: "0 auto 5px",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      background: done ? LARANJA : cur ? ROXO : "#fff",
-                      border: `2px solid ${done ? LARANJA : cur ? ROXO : BORDA}`,
-                      color: done || cur ? "#fff" : "#B6AECB",
-                    }}>{done ? <CheckCircle2 size={15} /> : <Ic size={14} />}</div>
-                    <div data-step-label style={{ fontSize: 10.5, fontWeight: cur ? 700 : 500, color: cur ? ROXO : "#9b93b0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{STEP_META[s].n}</div>
+                    <div
+                      data-step-circle
+                      style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 99,
+                        margin: "0 auto 5px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: done ? LARANJA : cur ? ROXO : "#fff",
+                        border: `2px solid ${done ? LARANJA : cur ? ROXO : BORDA}`,
+                        color: done || cur ? "#fff" : "#B6AECB",
+                      }}
+                    >
+                      {done ? <CheckCircle2 size={15} /> : <Ic size={14} />}
+                    </div>
+                    <div
+                      data-step-label
+                      style={{
+                        fontSize: 10.5,
+                        fontWeight: cur ? 700 : 500,
+                        color: cur ? ROXO : "#9b93b0",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {STEP_META[s].n}
+                    </div>
                   </div>
                 );
               })}
             </div>
             <div style={{ height: 4, background: BORDA, borderRadius: 9 }}>
-              <div style={{ height: 4, borderRadius: 9, background: LARANJA, width: `${(formIdx / (FORM_STEPS.length - 1)) * 100}%`, transition: "width .3s" }} />
+              <div
+                style={{
+                  height: 4,
+                  borderRadius: 9,
+                  background: LARANJA,
+                  width: `${(formIdx / (FORM_STEPS.length - 1)) * 100}%`,
+                  transition: "width .3s",
+                }}
+              />
             </div>
           </div>
         )}
@@ -580,13 +1228,24 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
         {step === "intro" && (
           <Card>
             <Badge>{vaga.setor || "Vaga"}</Badge>
-            <h1 className="h" style={{ fontSize: 27, fontWeight: 800, margin: "14px 0 8px", lineHeight: 1.15 }}>
+            <h1
+              className="h"
+              style={{ fontSize: 27, fontWeight: 800, margin: "14px 0 8px", lineHeight: 1.15 }}
+            >
               Quer fazer parte da vaga de <span style={{ color: LARANJA }}>{vaga.titulo}</span>?
             </h1>
             <p style={{ color: CINZA, fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-              {vaga.descricao || `Este formulário abre o processo seletivo${vaga.interna !== false ? " interno" : ""} da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊`}
+              {vaga.descricao ||
+                `Este formulário abre o processo seletivo${vaga.interna !== false ? " interno" : ""} da Distribuidora Estrela. Responda com sinceridade — não existe resposta certa ou errada. 😊`}
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, margin: "20px 0" }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+                gap: 10,
+                margin: "20px 0",
+              }}
+            >
               {[
                 { i: FileText, t: "Currículo", d: "Análise automática da experiência" },
                 { i: Brain, t: "Perfil DISC", d: "Seu estilo de comportamento" },
@@ -594,12 +1253,32 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
               ].map((x) => (
                 <div key={x.t} style={{ background: ROXO_TINT, borderRadius: 13, padding: 14 }}>
                   <x.i size={19} color={ROXO} />
-                  <div className="h" style={{ fontWeight: 700, fontSize: 13.5, marginTop: 7 }}>{x.t}</div>
+                  <div className="h" style={{ fontWeight: 700, fontSize: 13.5, marginTop: 7 }}>
+                    {x.t}
+                  </div>
                   <div style={{ fontSize: 12, color: CINZA, marginTop: 2 }}>{x.d}</div>
                 </div>
               ))}
             </div>
-            <button type="button" onClick={next} style={{ background: LARANJA, color: "#fff", border: "none", padding: "13px 22px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "inherit", boxShadow: "0 6px 16px -6px " + LARANJA }}>
+            <button
+              type="button"
+              onClick={next}
+              style={{
+                background: LARANJA,
+                color: "#fff",
+                border: "none",
+                padding: "13px 22px",
+                borderRadius: 12,
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 7,
+                fontFamily: "inherit",
+                boxShadow: "0 6px 16px -6px " + LARANJA,
+              }}
+            >
               Começar <ChevronRight size={18} />
             </button>
           </Card>
@@ -607,19 +1286,88 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
 
         {step === "dados" && (
           <Card>
-            <Titulo icon={User} sub="Para entrarmos em contato com você.">Seus dados</Titulo>
-            <Campo icon={User} label="Nome completo" obrig><input style={inputStyle} value={a.nome || ""} onChange={(e) => set("nome", e.target.value)} placeholder="Seu nome" /></Campo>
+            <Titulo icon={User} sub="Para entrarmos em contato com você.">
+              Seus dados
+            </Titulo>
+            {prefillAviso === "ok" && (
+              <div
+                style={{
+                  background: ROXO_TINT,
+                  border: `1.5px solid ${ROXO}55`,
+                  borderRadius: 12,
+                  padding: 13,
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "flex-start",
+                  marginBottom: 16,
+                }}
+              >
+                <CheckCircle2 size={18} color={ROXO} style={{ flexShrink: 0, marginTop: 1 }} />
+                <div style={{ fontSize: 13, color: ROXO_DARK, fontWeight: 600, lineHeight: 1.5 }}>
+                  Preenchemos com o seu currículo — confira e corrija o que precisar.
+                </div>
+              </div>
+            )}
+            {prefillAviso === "falha" && (
+              <div style={{ fontSize: 12.5, color: CINZA, marginBottom: 14, lineHeight: 1.5 }}>
+                Não conseguimos ler automaticamente — preencha seus dados abaixo.
+              </div>
+            )}
+            <Campo icon={User} label="Nome completo" obrig>
+              <input
+                style={inputStyle}
+                value={a.nome || ""}
+                onChange={(e) => setDado("nome", e.target.value)}
+                placeholder="Seu nome"
+              />
+            </Campo>
             <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-              <Campo icon={Mail} label="E-mail" obrig><input style={inputStyle} type="email" value={a.email || ""} onChange={(e) => set("email", e.target.value)} placeholder="voce@email.com" /></Campo>
-              <Campo icon={Phone} label="Celular / WhatsApp" obrig><input style={inputStyle} value={a.celular || ""} onChange={(e) => set("celular", e.target.value)} placeholder="(96) 9 9999-9999" /></Campo>
+              <Campo icon={Mail} label="E-mail" obrig>
+                <input
+                  style={inputStyle}
+                  type="email"
+                  value={a.email || ""}
+                  onChange={(e) => setDado("email", e.target.value)}
+                  placeholder="voce@email.com"
+                />
+              </Campo>
+              <Campo icon={Phone} label="Celular / WhatsApp" obrig>
+                <input
+                  style={inputStyle}
+                  value={a.celular || ""}
+                  onChange={(e) => setDado("celular", e.target.value)}
+                  placeholder="(96) 9 9999-9999"
+                />
+              </Campo>
             </div>
-            <Campo icon={MapPin} label="Endereço (bairro e cidade)"><input style={inputStyle} value={a.endereco || ""} onChange={(e) => set("endereco", e.target.value)} placeholder="Bairro, Cidade - UF" /></Campo>
+            <Campo icon={MapPin} label="Endereço (bairro e cidade)">
+              <input
+                style={inputStyle}
+                value={a.endereco || ""}
+                onChange={(e) => setDado("endereco", e.target.value)}
+                placeholder="Bairro, Cidade - UF"
+              />
+            </Campo>
             {vaga.interna !== false && (
               <div data-grid style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                <Campo label="Setor / função atual"><input style={inputStyle} value={a.setor || ""} onChange={(e) => set("setor", e.target.value)} placeholder="Ex.: Estoque, Caixa..." /></Campo>
+                <Campo label="Setor / função atual">
+                  <input
+                    style={inputStyle}
+                    value={a.setor || ""}
+                    onChange={(e) => setDado("setor", e.target.value)}
+                    placeholder="Ex.: Estoque, Caixa..."
+                  />
+                </Campo>
                 <Campo label="Tempo de empresa">
-                  <select style={inputStyle} value={a.tempo || ""} onChange={(e) => set("tempo", e.target.value)}>
-                    <option value="">Selecione</option><option>Menos de 6 meses</option><option>6 meses a 1 ano</option><option>1 a 3 anos</option><option>Mais de 3 anos</option>
+                  <select
+                    style={inputStyle}
+                    value={a.tempo || ""}
+                    onChange={(e) => setDado("tempo", e.target.value)}
+                  >
+                    <option value="">Selecione</option>
+                    {TEMPO_OPCOES.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
                   </select>
                 </Campo>
               </div>
@@ -630,22 +1378,59 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
 
         {step === "curriculo" && (
           <Card>
-            <Titulo icon={FileText} sub="Atualize seu currículo. O sistema vai ler e analisar automaticamente.">Currículo & experiência</Titulo>
+            <Titulo icon={FileText} sub="A gente lê e preenche seus dados pra você. 😉">
+              Comece pelo seu currículo
+            </Titulo>
             <Campo icon={Upload} label="Anexar currículo (PDF, Word ou imagem) *">
-
-              <div style={{ border: `2px dashed ${cvFile ? ROXO : BORDA}`, borderRadius: 13, padding: 22, textAlign: "center", background: ROXO_TINT }}>
+              <div
+                style={{
+                  border: `2px dashed ${cvFile ? ROXO : BORDA}`,
+                  borderRadius: 13,
+                  padding: 22,
+                  textAlign: "center",
+                  background: ROXO_TINT,
+                }}
+              >
                 <Upload size={26} color={ROXO} style={{ marginBottom: 8 }} />
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: ROXO_DARK, overflowWrap: "anywhere", wordBreak: "break-word" }}>
-                  {cvProcessando ? "Processando arquivo..." : a.cvNome ? `📎 ${a.cvNome}` : "Clique para selecionar o arquivo"}
+                <div
+                  style={{
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: ROXO_DARK,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {cvProcessando
+                    ? "Processando arquivo..."
+                    : a.cvNome
+                      ? `📎 ${a.cvNome}`
+                      : "Clique para selecionar o arquivo"}
                 </div>
                 <input
                   type="file"
                   accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.heic,.heif,application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  style={{ marginTop: 10, fontSize: 12, maxWidth: "100%", display: "block", marginInline: "auto" }}
+                  style={{
+                    marginTop: 10,
+                    fontSize: 12,
+                    maxWidth: "100%",
+                    display: "block",
+                    marginInline: "auto",
+                  }}
                   onChange={async (e) => {
                     const f = e.target.files && e.target.files[0];
-                    setCvAnalysis(null); setCvError(""); setCvPrep(null);
-                    if (!f) { setCvFile(null); set("cvNome", ""); return; }
+                    setCvAnalysis(null);
+                    setCvError("");
+                    setCvPrep(null);
+                    // Arquivo novo invalida o upload antecipado e a leitura anterior.
+                    setCvEnviado(null);
+                    setCvAnalise(null);
+                    setPrefillAviso("");
+                    if (!f) {
+                      setCvFile(null);
+                      set("cvNome", "");
+                      return;
+                    }
                     setCvProcessando(true);
                     try {
                       const prep = await prepararCv(f);
@@ -653,9 +1438,12 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
                       setCvPrep(prep);
                       set("cvNome", prep.arquivo.name);
                     } catch (err: any) {
-                      setCvFile(null); set("cvNome", "");
+                      setCvFile(null);
+                      set("cvNome", "");
                       setCvError(err.message || "Não foi possível processar o arquivo.");
-                    } finally { setCvProcessando(false); }
+                    } finally {
+                      setCvProcessando(false);
+                    }
                   }}
                 />
                 {cvPrep && (
@@ -669,10 +1457,13 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
                   </div>
                 )}
                 {cvError && (
-                  <div style={{ fontSize: 12, color: "#B91C1C", marginTop: 8, fontWeight: 600 }}>{cvError}</div>
+                  <div style={{ fontSize: 12, color: "#B91C1C", marginTop: 8, fontWeight: 600 }}>
+                    {cvError}
+                  </div>
                 )}
                 <div style={{ fontSize: 11, color: CINZA, marginTop: 8 }}>
-                  PDF é o formato ideal. Imagens são comprimidas automaticamente. Limite: {CV_MAX_ORIGINAL_MB} MB.
+                  PDF é o formato ideal. Imagens são comprimidas automaticamente. Limite:{" "}
+                  {CV_MAX_ORIGINAL_MB} MB.
                 </div>
                 <div style={{ fontSize: 11.5, color: "#B91C1C", marginTop: 6, fontWeight: 600 }}>
                   Campo obrigatório — necessário para gerar sua análise.
@@ -680,95 +1471,306 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
               </div>
             </Campo>
             <Campo label="Já trabalhou com algo relacionado à vaga? Conte rapidamente.">
-              <textarea style={{ ...inputStyle, minHeight: 88, resize: "vertical" }} value={a.exp || ""} onChange={(e) => set("exp", e.target.value)} />
+              <textarea
+                style={{ ...inputStyle, minHeight: 88, resize: "vertical" }}
+                value={a.exp || ""}
+                onChange={(e) => set("exp", e.target.value)}
+              />
             </Campo>
             <Campo label="Por que você quer essa vaga?">
-              <textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={a.motivo || ""} onChange={(e) => set("motivo", e.target.value)} placeholder="Conte com suas palavras..." />
+              <textarea
+                style={{ ...inputStyle, minHeight: 70, resize: "vertical" }}
+                value={a.motivo || ""}
+                onChange={(e) => set("motivo", e.target.value)}
+                placeholder="Conte com suas palavras..."
+              />
             </Campo>
-            <Nav back={back} next={next} pode={podeAvancar} aviso={!cvPrep ? "Anexe seu currículo para continuar." : (cvProcessando ? "Aguarde o processamento do arquivo..." : "")} />
+            <Nav
+              back={back}
+              next={next}
+              pode={podeAvancar}
+              textoNext={
+                cvLendo ? (
+                  <>
+                    <Loader2 size={16} className="spin" /> Lendo seu currículo...
+                  </>
+                ) : (
+                  "Continuar"
+                )
+              }
+              aviso={
+                !cvPrep
+                  ? "Anexe seu currículo para continuar."
+                  : cvProcessando
+                    ? "Aguarde o processamento do arquivo..."
+                    : cvLendo
+                      ? "Lendo seu currículo — leva só alguns segundos."
+                      : ""
+              }
+            />
           </Card>
         )}
 
         {step === "situacional" && (
           <Card>
-            <Titulo icon={MessageCircle} sub="Imagine que você já está na vaga. Escolha o que mais combina com você.">Situações reais de atendimento</Titulo>
+            <Titulo
+              icon={MessageCircle}
+              sub="Imagine que você já está na vaga. Escolha o que mais combina com você."
+            >
+              Situações reais de atendimento
+            </Titulo>
             {SITUACIONAIS.map((q, i) => (
               <div key={i} style={{ marginBottom: 22 }}>
-                <div className="h" style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10, color: ROXO_DARK }}>
+                <div
+                  className="h"
+                  style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 10, color: ROXO_DARK }}
+                >
                   <span style={{ color: LARANJA }}>{i + 1}.</span> {q.titulo}
                 </div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {q.options.map((o, oi) => <Pill key={oi} ativo={a["sit_" + i] === "o" + oi} onClick={() => set("sit_" + i, "o" + oi)}>{o.txt}</Pill>)}
+                  {q.options.map((o, oi) => (
+                    <Pill
+                      key={oi}
+                      ativo={a["sit_" + i] === "o" + oi}
+                      onClick={() => set("sit_" + i, "o" + oi)}
+                    >
+                      {o.txt}
+                    </Pill>
+                  ))}
                 </div>
               </div>
             ))}
-            <Nav back={back} next={next} pode={podeAvancar} aviso={!podeAvancar ? "Responda todas as situações para continuar." : ""} />
+            <Nav
+              back={back}
+              next={next}
+              pode={podeAvancar}
+              aviso={!podeAvancar ? "Responda todas as situações para continuar." : ""}
+            />
           </Card>
         )}
 
         {step === "disc" && (
           <Card>
-            <Titulo icon={Brain} sub="Em cada bloco, marque a frase que MAIS combina e a que MENOS combina com você. Todas são qualidades.">Seu estilo</Titulo>
+            <Titulo
+              icon={Brain}
+              sub="Em cada bloco, marque a frase que MAIS combina e a que MENOS combina com você. Todas são qualidades."
+            >
+              Seu estilo
+            </Titulo>
             {DISC_BLOCKS.map((b, bi) => (
-              <div key={bi} style={{ marginBottom: 16, padding: 14, borderRadius: 14, background: ROXO_TINT }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 700, color: ROXO, marginBottom: 10 }}>
-                  <span>BLOCO {bi + 1} DE {DISC_BLOCKS.length}</span><span style={{ color: CINZA, fontWeight: 600 }}>1 "Mais" + 1 "Menos"</span>
+              <div
+                key={bi}
+                style={{ marginBottom: 16, padding: 14, borderRadius: 14, background: ROXO_TINT }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 11.5,
+                    fontWeight: 700,
+                    color: ROXO,
+                    marginBottom: 10,
+                  }}
+                >
+                  <span>
+                    BLOCO {bi + 1} DE {DISC_BLOCKS.length}
+                  </span>
+                  <span style={{ color: CINZA, fontWeight: 600 }}>1 "Mais" + 1 "Menos"</span>
                 </div>
                 {b.opcoes.map((o, oi) => {
                   const mais = a["disc_" + bi + "_mais"] === oi;
                   const menos = a["disc_" + bi + "_menos"] === oi;
                   return (
-                    <div key={oi} data-disc-row style={{ display: "flex", alignItems: "center", gap: 8, background: "#fff", border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`, borderRadius: 11, padding: "7px 8px", marginBottom: 7 }}>
-                      <button type="button" onClick={() => setMais(bi, oi)} style={tagBtn(mais, ROXO)}>+ Mais</button>
-                      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 500, color: ROXO_DARK, lineHeight: 1.3 }}>{o.txt}</span>
-                      <button type="button" onClick={() => setMenos(bi, oi)} style={tagBtn(menos, LARANJA)}>− Menos</button>
+                    <div
+                      key={oi}
+                      data-disc-row
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        background: "#fff",
+                        border: `1.5px solid ${mais ? ROXO : menos ? LARANJA : BORDA}`,
+                        borderRadius: 11,
+                        padding: "7px 8px",
+                        marginBottom: 7,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setMais(bi, oi)}
+                        style={tagBtn(mais, ROXO)}
+                      >
+                        + Mais
+                      </button>
+                      <span
+                        style={{
+                          flex: 1,
+                          fontSize: 13.5,
+                          fontWeight: 500,
+                          color: ROXO_DARK,
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        {o.txt}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setMenos(bi, oi)}
+                        style={tagBtn(menos, LARANJA)}
+                      >
+                        − Menos
+                      </button>
                     </div>
                   );
                 })}
               </div>
             ))}
-            <Nav back={back} next={next} pode={podeAvancar} aviso={!podeAvancar ? `Faltam ${DISC_BLOCKS.length - discDone} bloco(s) para completar.` : ""} />
+            <Nav
+              back={back}
+              next={next}
+              pode={podeAvancar}
+              aviso={
+                !podeAvancar
+                  ? `Faltam ${DISC_BLOCKS.length - discDone} bloco(s) para completar.`
+                  : ""
+              }
+            />
           </Card>
         )}
 
         {step === "diversidade" && (
           <Card>
-            <Titulo icon={Users} sub="Censo de diversidade da Estrela.">Diversidade & inclusão</Titulo>
-            <div style={{ background: LARANJA_TINT, border: `1.5px solid ${LARANJA}33`, borderRadius: 12, padding: 14, display: "flex", gap: 11, marginBottom: 20 }}>
+            <Titulo icon={Users} sub="Censo de diversidade da Estrela.">
+              Diversidade & inclusão
+            </Titulo>
+            <div
+              style={{
+                background: LARANJA_TINT,
+                border: `1.5px solid ${LARANJA}33`,
+                borderRadius: 12,
+                padding: 14,
+                display: "flex",
+                gap: 11,
+                marginBottom: 20,
+              }}
+            >
               <ShieldCheck size={20} color={LARANJA} style={{ flexShrink: 0, marginTop: 1 }} />
               <div style={{ fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.55 }}>
-                Esta etapa é <strong>100% opcional e sigilosa</strong>. As respostas <strong>não influenciam em nada</strong> a sua avaliação no processo — servem apenas para a empresa acompanhar a diversidade do time, conforme a LGPD. Você pode marcar <em>"Prefiro não responder"</em> em qualquer pergunta.
+                Esta etapa é <strong>100% opcional e sigilosa</strong>. As respostas{" "}
+                <strong>não influenciam em nada</strong> a sua avaliação no processo — servem apenas
+                para a empresa acompanhar a diversidade do time, conforme a LGPD. Você pode marcar{" "}
+                <em>"Prefiro não responder"</em> em qualquer pergunta.
               </div>
             </div>
-            <DivCampo label="Cor / raça (autodeclaração — padrão IBGE)" opts={COR_RACA} val={a.raca} on={(v: string) => set("raca", v)} />
-            <DivCampo label="Identidade de gênero" opts={GENERO} val={a.genero} on={(v: string) => set("genero", v)} />
-            <DivCampo label="Orientação sexual" opts={ORIENTACAO} val={a.orientacao} on={(v: string) => set("orientacao", v)} />
-            <DivCampo label="Você é pessoa com deficiência (PCD)?" opts={PCD} val={a.pcd} on={(v: string) => set("pcd", v)} />
-            <DivCampo label="Posicionamento político (autodeclaração)" opts={POLITICO} val={a.politico} on={(v: string) => set("politico", v)} />
+            <DivCampo
+              label="Cor / raça (autodeclaração — padrão IBGE)"
+              opts={COR_RACA}
+              val={a.raca}
+              on={(v: string) => set("raca", v)}
+            />
+            <DivCampo
+              label="Identidade de gênero"
+              opts={GENERO}
+              val={a.genero}
+              on={(v: string) => set("genero", v)}
+            />
+            <DivCampo
+              label="Orientação sexual"
+              opts={ORIENTACAO}
+              val={a.orientacao}
+              on={(v: string) => set("orientacao", v)}
+            />
+            <DivCampo
+              label="Você é pessoa com deficiência (PCD)?"
+              opts={PCD}
+              val={a.pcd}
+              on={(v: string) => set("pcd", v)}
+            />
+            <DivCampo
+              label="Posicionamento político (autodeclaração)"
+              opts={POLITICO}
+              val={a.politico}
+              on={(v: string) => set("politico", v)}
+            />
             <Nav back={back} next={next} pode />
           </Card>
         )}
 
         {step === "revisao" && (
           <Card>
-            <Titulo icon={CheckCircle2} sub="Confira antes de enviar.">Revisão</Titulo>
+            <Titulo icon={CheckCircle2} sub="Confira antes de enviar.">
+              Revisão
+            </Titulo>
             <Linha k="Vaga" v={vaga.titulo} />
-            <Linha k="Nome" v={a.nome} /><Linha k="E-mail" v={a.email} /><Linha k="Celular" v={a.celular} />
+            <Linha k="Nome" v={a.nome} />
+            <Linha k="E-mail" v={a.email} />
+            <Linha k="Celular" v={a.celular} />
             {vaga.interna !== false && (
               <>
                 <Linha k="Setor / função atual" v={a.setor || "—"} />
                 <Linha k="Tempo de empresa" v={a.tempo || "—"} />
               </>
             )}
-            <Linha k="Endereço" v={a.endereco || "—"} /><Linha k="Currículo" v={a.cvNome || "Não anexado"} />
-            {usarSit && <Linha k="Situações respondidas" v={`${SITUACIONAIS.filter((_q, i) => a["sit_" + i]).length}/${SITUACIONAIS.length}`} />}
+            <Linha k="Endereço" v={a.endereco || "—"} />
+            <Linha k="Currículo" v={a.cvNome || "Não anexado"} />
+            {usarSit && (
+              <Linha
+                k="Situações respondidas"
+                v={`${SITUACIONAIS.filter((_q, i) => a["sit_" + i]).length}/${SITUACIONAIS.length}`}
+              />
+            )}
             <Linha k="Blocos DISC respondidos" v={`${discDone}/${DISC_BLOCKS.length}`} />
-            <label style={{ display: "flex", gap: 9, alignItems: "flex-start", margin: "18px 0", fontSize: 12.5, color: CINZA, lineHeight: 1.5 }}>
-              <input type="checkbox" checked={!!a.lgpd} onChange={(e) => set("lgpd", e.target.checked)} style={{ marginTop: 2 }} />
-              <span>Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei 13.709/2018).</span>
+            <label
+              style={{
+                display: "flex",
+                gap: 9,
+                alignItems: "flex-start",
+                margin: "18px 0",
+                fontSize: 12.5,
+                color: CINZA,
+                lineHeight: 1.5,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={!!a.lgpd}
+                onChange={(e) => set("lgpd", e.target.checked)}
+                style={{ marginTop: 2 }}
+              />
+              <span>
+                Autorizo o uso dos meus dados pela Distribuidora Estrela exclusivamente para este
+                processo seletivo{vaga.interna !== false ? " interno" : ""}, conforme a LGPD (Lei
+                13.709/2018).
+              </span>
             </label>
-            {submitError && <div style={{ fontSize: 12.5, color: "#B91C1C", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 10, padding: 11, marginBottom: 10 }}>{submitError}</div>}
-            <Nav back={back} next={next} pode={!!a.lgpd && !submitting && !cvLoading} textoNext={cvLoading ? "Analisando currículo..." : submitting ? "Enviando..." : "Enviar inscrição"} aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""} />
+            {submitError && (
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: "#B91C1C",
+                  background: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  borderRadius: 10,
+                  padding: 11,
+                  marginBottom: 10,
+                }}
+              >
+                {submitError}
+              </div>
+            )}
+            <Nav
+              back={back}
+              next={next}
+              pode={!!a.lgpd && !submitting && !cvLoading}
+              textoNext={
+                cvLoading
+                  ? "Analisando currículo..."
+                  : submitting
+                    ? "Enviando..."
+                    : "Enviar inscrição"
+              }
+              aviso={!a.lgpd ? "Marque o consentimento para enviar." : ""}
+            />
           </Card>
         )}
 
@@ -776,23 +1778,369 @@ function FormularioVaga({ vaga, headerMarca }: { vaga: Vaga; headerMarca?: Heade
           <>
             <Card>
               <div style={{ textAlign: "center" }}>
-                <div style={{ width: 58, height: 58, borderRadius: 99, background: LARANJA_TINT, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+                <div
+                  style={{
+                    width: 58,
+                    height: 58,
+                    borderRadius: 99,
+                    background: LARANJA_TINT,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: 12,
+                  }}
+                >
                   <ThumbsUp size={28} color={LARANJA} />
                 </div>
-                <h2 className="h" style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>Inscrição enviada, {(a.nome || "").split(" ")[0]}! 🎉</h2>
+                <h2 className="h" style={{ fontSize: 22, fontWeight: 800, margin: "0 0 6px" }}>
+                  Inscrição enviada, {(a.nome || "").split(" ")[0]}! 🎉
+                </h2>
                 <p style={{ color: CINZA, fontSize: 14, margin: 0, lineHeight: 1.55 }}>
-                  Recebemos sua candidatura para <strong>{vaga.titulo}</strong>. O RH vai analisar e entrar em contato pelo e-mail e WhatsApp informados. Boa sorte!
+                  Recebemos sua candidatura para <strong>{vaga.titulo}</strong>. O RH vai analisar e
+                  entrar em contato pelo e-mail e WhatsApp informados. Boa sorte!
                 </p>
               </div>
             </Card>
 
-            <div style={{ background: "#F0EDF7", borderRadius: 12, padding: 14, display: "flex", gap: 11, fontSize: 12, color: CINZA, lineHeight: 1.55 }}>
+            <OfertaContaPortal vaga={vaga} email={(a.email || "").trim()} nome={a.nome || ""} />
+
+            <div
+              style={{
+                background: "#F0EDF7",
+                borderRadius: 12,
+                padding: 14,
+                display: "flex",
+                gap: 11,
+                fontSize: 12,
+                color: CINZA,
+                lineHeight: 1.55,
+              }}
+            >
               <ShieldCheck size={18} color={ROXO} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>Seus dados são tratados com sigilo, em conformidade com a LGPD. Apenas o RH da Distribuidora Estrela tem acesso à análise.</span>
+              <span>
+                Seus dados são tratados com sigilo, em conformidade com a LGPD. Apenas o RH da
+                Distribuidora Estrela tem acesso à análise.
+              </span>
             </div>
           </>
         )}
       </div>
     </div>
+  );
+}
+
+// ============ Oferta de conta do Portal do Candidato (tela final) ============
+
+const btnPortal = (pode: boolean): React.CSSProperties => ({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  width: "100%",
+  minHeight: 48,
+  background: pode ? ROXO : "#D8D2E6",
+  color: "#fff",
+  border: "none",
+  padding: "12px 22px",
+  borderRadius: 12,
+  fontSize: 14.5,
+  fontWeight: 700,
+  cursor: pode ? "pointer" : "not-allowed",
+  fontFamily: "inherit",
+  textDecoration: "none",
+  boxSizing: "border-box",
+});
+const btnPortalGhost: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  width: "100%",
+  minHeight: 44,
+  background: "#fff",
+  color: ROXO,
+  border: `1.5px solid ${ROXO}`,
+  padding: "10px 18px",
+  borderRadius: 12,
+  fontSize: 13.5,
+  fontWeight: 700,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textDecoration: "none",
+  boxSizing: "border-box",
+};
+
+/**
+ * Oferece a conta do Portal do Candidato após a inscrição. Só aparece quando a
+ * empresa da vaga tem o portal habilitado (RPC anon `empresa_tem_portal`,
+ * fail-closed). O aceite formal do termo é registrado no próprio portal
+ * (garantirContaCandidato) — aqui o checkbox apenas libera o cadastro.
+ */
+function OfertaContaPortal({ vaga, email, nome }: { vaga: Vaga; email: string; nome: string }) {
+  const empresaId = (vaga as any).empresa_id as string | undefined;
+  const temPortalQ = useQuery({
+    queryKey: ["empresa-tem-portal", empresaId],
+    enabled: !!empresaId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("empresa_tem_portal" as any, {
+        p_empresa_id: empresaId,
+      });
+      if (error) throw error;
+      return data === true;
+    },
+  });
+  // Sessão Supabase existente (ex.: candidato que já tem conta do portal logada).
+  const sessaoQ = useQuery({
+    queryKey: ["portal-oferta-sessao"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user ?? null,
+  });
+
+  const [senha, setSenha] = useState("");
+  const [aceitouTermo, setAceitouTermo] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [erro, setErro] = useState("");
+  const [enviado, setEnviado] = useState(false);
+  const [jaTemConta, setJaTemConta] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
+
+  if (temPortalQ.data !== true || !email) return null;
+
+  const redirectEntrar = () =>
+    (typeof window !== "undefined" ? window.location.origin : "") + "/portal/entrar";
+
+  async function criarConta() {
+    setCriando(true);
+    setErro("");
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: senha,
+        options: { emailRedirectTo: redirectEntrar(), data: { nome } },
+      });
+      if (error) {
+        if (/already registered/i.test(error.message)) {
+          setJaTemConta(true);
+          return;
+        }
+        throw error;
+      }
+      // Com confirmação de e-mail ligada, e-mail já cadastrado volta SEM erro,
+      // mas com identities vazias (anti-enumeração do Supabase).
+      if (data.user && (data.user.identities?.length ?? 0) === 0) {
+        setJaTemConta(true);
+        return;
+      }
+      setEnviado(true);
+    } catch (e: any) {
+      setErro(e.message || "Não foi possível criar a conta. Tente novamente.");
+    } finally {
+      setCriando(false);
+    }
+  }
+
+  async function reenviar() {
+    setReenviando(true);
+    setErro("");
+    setReenviado(false);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: redirectEntrar() },
+      });
+      if (error) throw error;
+      setReenviado(true);
+    } catch (e: any) {
+      setErro(e.message || "Não foi possível reenviar o e-mail.");
+    } finally {
+      setReenviando(false);
+    }
+  }
+
+  const podeCriar = senha.length >= 8 && aceitouTermo && !criando;
+
+  return (
+    <Card>
+      <Titulo
+        icon={Star}
+        sub="Crie sua conta gratuita para ver a etapa do processo, sua entrevista (quando houver) e manter seus dados atualizados."
+      >
+        Acompanhe sua candidatura
+      </Titulo>
+
+      {sessaoQ.data ? (
+        <>
+          <p style={{ fontSize: 13.5, color: CINZA, lineHeight: 1.55, margin: "0 0 14px" }}>
+            Você já está conectado(a). Abra o portal para vincular esta candidatura e acompanhar
+            cada etapa.
+          </p>
+          <a href="/portal" style={btnPortal(true)}>
+            Abrir meu portal <ChevronRight size={17} />
+          </a>
+        </>
+      ) : jaTemConta ? (
+        <>
+          <div
+            style={{
+              background: ROXO_TINT,
+              borderRadius: 12,
+              padding: 14,
+              fontSize: 13,
+              color: ROXO_DARK,
+              lineHeight: 1.6,
+              marginBottom: 12,
+            }}
+          >
+            Você já tem conta — entre no portal para acompanhar esta candidatura.
+          </div>
+          <a href="/portal/entrar" style={btnPortal(true)}>
+            Entrar no portal <ChevronRight size={17} />
+          </a>
+        </>
+      ) : enviado ? (
+        <>
+          <div
+            style={{
+              background: ROXO_TINT,
+              borderRadius: 12,
+              padding: 14,
+              display: "flex",
+              gap: 10,
+              fontSize: 13,
+              color: ROXO_DARK,
+              lineHeight: 1.6,
+              marginBottom: 12,
+            }}
+          >
+            <CheckCircle2 size={18} color={VERDE} style={{ flexShrink: 0, marginTop: 2 }} />
+            <span>
+              Enviamos um link de confirmação para <strong>{email}</strong>. Depois de confirmar,{" "}
+              <a href="/portal/entrar" style={{ color: ROXO, fontWeight: 700 }}>
+                entre no portal
+              </a>{" "}
+              e vincule sua candidatura com os 4 últimos dígitos do seu celular.
+            </span>
+          </div>
+          {reenviado && (
+            <div style={{ fontSize: 12.5, color: VERDE, fontWeight: 600, marginBottom: 10 }}>
+              E-mail reenviado. Confira também a caixa de spam.
+            </div>
+          )}
+          {erro && (
+            <div
+              style={{
+                fontSize: 12.5,
+                color: "#B91C1C",
+                background: "#FEF2F2",
+                border: "1px solid #FECACA",
+                borderRadius: 10,
+                padding: 11,
+                marginBottom: 10,
+              }}
+            >
+              {erro}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void reenviar()}
+            disabled={reenviando}
+            style={btnPortalGhost}
+          >
+            {reenviando ? <Loader2 size={16} className="spin" /> : <Mail size={16} />} Reenviar
+            e-mail de confirmação
+          </button>
+        </>
+      ) : (
+        <>
+          <Campo icon={Mail} label="E-mail (o mesmo da inscrição)">
+            <input
+              style={{ ...inputStyle, background: "#F5F3FA", color: CINZA }}
+              type="email"
+              value={email}
+              readOnly
+              disabled
+            />
+          </Campo>
+          <Campo icon={ShieldCheck} label="Senha (mínimo 8 caracteres)" obrig>
+            <input
+              style={inputStyle}
+              type="password"
+              autoComplete="new-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="Crie uma senha"
+            />
+          </Campo>
+          <details
+            style={{
+              background: ROXO_TINT,
+              borderRadius: 11,
+              padding: "10px 13px",
+              marginBottom: 12,
+            }}
+          >
+            <summary style={{ fontSize: 12.5, fontWeight: 700, color: ROXO, cursor: "pointer" }}>
+              Ler o termo de uso do portal
+            </summary>
+            <div
+              style={{
+                whiteSpace: "pre-wrap",
+                fontSize: 12,
+                color: CINZA,
+                lineHeight: 1.55,
+                marginTop: 8,
+              }}
+            >
+              {TERMO_PORTAL}
+            </div>
+          </details>
+          <label
+            style={{
+              display: "flex",
+              gap: 9,
+              alignItems: "flex-start",
+              margin: "0 0 14px",
+              fontSize: 12.5,
+              color: CINZA,
+              lineHeight: 1.5,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={aceitouTermo}
+              onChange={(e) => setAceitouTermo(e.target.checked)}
+              style={{ marginTop: 2 }}
+            />
+            <span>Li e aceito o termo de uso do Portal do Candidato.</span>
+          </label>
+          {erro && (
+            <div
+              style={{
+                fontSize: 12.5,
+                color: "#B91C1C",
+                background: "#FEF2F2",
+                border: "1px solid #FECACA",
+                borderRadius: 10,
+                padding: 11,
+                marginBottom: 10,
+              }}
+            >
+              {erro}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void criarConta()}
+            disabled={!podeCriar}
+            style={btnPortal(podeCriar)}
+          >
+            {criando ? <Loader2 size={16} className="spin" /> : null}{" "}
+            {criando ? "Criando conta..." : "Criar minha conta"}
+          </button>
+        </>
+      )}
+    </Card>
   );
 }

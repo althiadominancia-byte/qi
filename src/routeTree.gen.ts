@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as DefinirSenhaRouteImport } from './routes/definir-senha'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CandidatoRouteRouteImport } from './routes/_candidato/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SCodeRouteImport } from './routes/s.$code'
+import { Route as PortalEntrarRouteImport } from './routes/portal.entrar'
 import { Route as ETokenRouteImport } from './routes/e.$token'
 import { Route as CTokenRouteImport } from './routes/c.$token'
+import { Route as CandidatoPortalRouteImport } from './routes/_candidato/portal'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
@@ -23,8 +26,11 @@ import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedNiveisRouteImport } from './routes/_authenticated/niveis'
 import { Route as AuthenticatedLideresRouteImport } from './routes/_authenticated/lideres'
 import { Route as AuthenticatedIdentidadeRouteImport } from './routes/_authenticated/identidade'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as CandidatoPortalPerfilRouteImport } from './routes/_candidato/portal.perfil'
+import { Route as CandidatoPortalIdRouteImport } from './routes/_candidato/portal.$id'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
 import { Route as AuthenticatedCandidatoIdRouteImport } from './routes/_authenticated/candidato.$id'
 import { Route as ApiPublicHooksAvaliacoesRouteImport } from './routes/api/public/hooks/avaliacoes'
@@ -37,6 +43,10 @@ const DefinirSenhaRoute = DefinirSenhaRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatoRouteRoute = CandidatoRouteRouteImport.update({
+  id: '/_candidato',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -53,6 +63,11 @@ const SCodeRoute = SCodeRouteImport.update({
   path: '/s/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PortalEntrarRoute = PortalEntrarRouteImport.update({
+  id: '/portal/entrar',
+  path: '/portal/entrar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ETokenRoute = ETokenRouteImport.update({
   id: '/e/$token',
   path: '/e/$token',
@@ -62,6 +77,11 @@ const CTokenRoute = CTokenRouteImport.update({
   id: '/c/$token',
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatoPortalRoute = CandidatoPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => CandidatoRouteRoute,
 } as any)
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
@@ -98,6 +118,11 @@ const AuthenticatedIdentidadeRoute = AuthenticatedIdentidadeRouteImport.update({
   path: '/identidade',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCatalogoRoute = AuthenticatedCatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -107,6 +132,16 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const CandidatoPortalPerfilRoute = CandidatoPortalPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => CandidatoPortalRoute,
+} as any)
+const CandidatoPortalIdRoute = CandidatoPortalIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CandidatoPortalRoute,
 } as any)
 const AuthenticatedPreviaIdRoute = AuthenticatedPreviaIdRouteImport.update({
   id: '/previa/$id',
@@ -132,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/identidade': typeof AuthenticatedIdentidadeRoute
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
@@ -139,11 +175,15 @@ export interface FileRoutesByFullPath {
   '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
   '/e/$token': typeof ETokenRoute
+  '/portal/entrar': typeof PortalEntrarRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/portal/$id': typeof CandidatoPortalIdRoute
+  '/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRoutesByTo {
@@ -152,6 +192,7 @@ export interface FileRoutesByTo {
   '/definir-senha': typeof DefinirSenhaRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/catalogo': typeof AuthenticatedCatalogoRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/identidade': typeof AuthenticatedIdentidadeRoute
   '/lideres': typeof AuthenticatedLideresRoute
   '/niveis': typeof AuthenticatedNiveisRoute
@@ -159,21 +200,27 @@ export interface FileRoutesByTo {
   '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
+  '/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
   '/e/$token': typeof ETokenRoute
+  '/portal/entrar': typeof PortalEntrarRoute
   '/s/$code': typeof SCodeRoute
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/portal/$id': typeof CandidatoPortalIdRoute
+  '/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_candidato': typeof CandidatoRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/definir-senha': typeof DefinirSenhaRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/catalogo': typeof AuthenticatedCatalogoRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/identidade': typeof AuthenticatedIdentidadeRoute
   '/_authenticated/lideres': typeof AuthenticatedLideresRoute
   '/_authenticated/niveis': typeof AuthenticatedNiveisRoute
@@ -181,11 +228,15 @@ export interface FileRoutesById {
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
+  '/_candidato/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
   '/e/$token': typeof ETokenRoute
+  '/portal/entrar': typeof PortalEntrarRoute
   '/s/$code': typeof SCodeRoute
   '/_authenticated/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/_authenticated/previa/$id': typeof AuthenticatedPreviaIdRoute
+  '/_candidato/portal/$id': typeof CandidatoPortalIdRoute
+  '/_candidato/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
 export interface FileRouteTypes {
@@ -196,6 +247,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/dashboard'
     | '/identidade'
     | '/lideres'
     | '/niveis'
@@ -203,11 +255,15 @@ export interface FileRouteTypes {
     | '/planos'
     | '/super'
     | '/usuarios'
+    | '/portal'
     | '/c/$token'
     | '/e/$token'
+    | '/portal/entrar'
     | '/s/$code'
     | '/candidato/$id'
     | '/previa/$id'
+    | '/portal/$id'
+    | '/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -216,6 +272,7 @@ export interface FileRouteTypes {
     | '/definir-senha'
     | '/admin'
     | '/catalogo'
+    | '/dashboard'
     | '/identidade'
     | '/lideres'
     | '/niveis'
@@ -223,20 +280,26 @@ export interface FileRouteTypes {
     | '/planos'
     | '/super'
     | '/usuarios'
+    | '/portal'
     | '/c/$token'
     | '/e/$token'
+    | '/portal/entrar'
     | '/s/$code'
     | '/candidato/$id'
     | '/previa/$id'
+    | '/portal/$id'
+    | '/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/_candidato'
     | '/auth'
     | '/definir-senha'
     | '/_authenticated/admin'
     | '/_authenticated/catalogo'
+    | '/_authenticated/dashboard'
     | '/_authenticated/identidade'
     | '/_authenticated/lideres'
     | '/_authenticated/niveis'
@@ -244,21 +307,27 @@ export interface FileRouteTypes {
     | '/_authenticated/planos'
     | '/_authenticated/super'
     | '/_authenticated/usuarios'
+    | '/_candidato/portal'
     | '/c/$token'
     | '/e/$token'
+    | '/portal/entrar'
     | '/s/$code'
     | '/_authenticated/candidato/$id'
     | '/_authenticated/previa/$id'
+    | '/_candidato/portal/$id'
+    | '/_candidato/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  CandidatoRouteRoute: typeof CandidatoRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   CTokenRoute: typeof CTokenRoute
   ETokenRoute: typeof ETokenRoute
+  PortalEntrarRoute: typeof PortalEntrarRoute
   SCodeRoute: typeof SCodeRoute
   ApiPublicHooksAvaliacoesRoute: typeof ApiPublicHooksAvaliacoesRoute
 }
@@ -277,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_candidato': {
+      id: '/_candidato'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof CandidatoRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -300,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/portal/entrar': {
+      id: '/portal/entrar'
+      path: '/portal/entrar'
+      fullPath: '/portal/entrar'
+      preLoaderRoute: typeof PortalEntrarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/e/$token': {
       id: '/e/$token'
       path: '/e/$token'
@@ -313,6 +396,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/c/$token'
       preLoaderRoute: typeof CTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_candidato/portal': {
+      id: '/_candidato/portal'
+      path: '/portal'
+      fullPath: '/portal'
+      preLoaderRoute: typeof CandidatoPortalRouteImport
+      parentRoute: typeof CandidatoRouteRoute
     }
     '/_authenticated/usuarios': {
       id: '/_authenticated/usuarios'
@@ -363,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIdentidadeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/catalogo': {
       id: '/_authenticated/catalogo'
       path: '/catalogo'
@@ -376,6 +473,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_candidato/portal/perfil': {
+      id: '/_candidato/portal/perfil'
+      path: '/perfil'
+      fullPath: '/portal/perfil'
+      preLoaderRoute: typeof CandidatoPortalPerfilRouteImport
+      parentRoute: typeof CandidatoPortalRoute
+    }
+    '/_candidato/portal/$id': {
+      id: '/_candidato/portal/$id'
+      path: '/$id'
+      fullPath: '/portal/$id'
+      preLoaderRoute: typeof CandidatoPortalIdRouteImport
+      parentRoute: typeof CandidatoPortalRoute
     }
     '/_authenticated/previa/$id': {
       id: '/_authenticated/previa/$id'
@@ -404,6 +515,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCatalogoRoute: typeof AuthenticatedCatalogoRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIdentidadeRoute: typeof AuthenticatedIdentidadeRoute
   AuthenticatedLideresRoute: typeof AuthenticatedLideresRoute
   AuthenticatedNiveisRoute: typeof AuthenticatedNiveisRoute
@@ -418,6 +530,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCatalogoRoute: AuthenticatedCatalogoRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIdentidadeRoute: AuthenticatedIdentidadeRoute,
   AuthenticatedLideresRoute: AuthenticatedLideresRoute,
   AuthenticatedNiveisRoute: AuthenticatedNiveisRoute,
@@ -432,13 +545,41 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface CandidatoPortalRouteChildren {
+  CandidatoPortalIdRoute: typeof CandidatoPortalIdRoute
+  CandidatoPortalPerfilRoute: typeof CandidatoPortalPerfilRoute
+}
+
+const CandidatoPortalRouteChildren: CandidatoPortalRouteChildren = {
+  CandidatoPortalIdRoute: CandidatoPortalIdRoute,
+  CandidatoPortalPerfilRoute: CandidatoPortalPerfilRoute,
+}
+
+const CandidatoPortalRouteWithChildren = CandidatoPortalRoute._addFileChildren(
+  CandidatoPortalRouteChildren,
+)
+
+interface CandidatoRouteRouteChildren {
+  CandidatoPortalRoute: typeof CandidatoPortalRouteWithChildren
+}
+
+const CandidatoRouteRouteChildren: CandidatoRouteRouteChildren = {
+  CandidatoPortalRoute: CandidatoPortalRouteWithChildren,
+}
+
+const CandidatoRouteRouteWithChildren = CandidatoRouteRoute._addFileChildren(
+  CandidatoRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  CandidatoRouteRoute: CandidatoRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DefinirSenhaRoute: DefinirSenhaRoute,
   CTokenRoute: CTokenRoute,
   ETokenRoute: ETokenRoute,
+  PortalEntrarRoute: PortalEntrarRoute,
   SCodeRoute: SCodeRoute,
   ApiPublicHooksAvaliacoesRoute: ApiPublicHooksAvaliacoesRoute,
 }

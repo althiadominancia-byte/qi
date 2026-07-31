@@ -50,7 +50,8 @@ export const calcularMatch = createServerFn({ method: "POST" })
         .map((h) => {
           const t: any = byName.get(h.nome);
           const peso: PesoVaga = ["essencial", "importante", "desejavel"].includes(h.nivel) ? h.nivel : "importante";
-          return { competencia_id: t.id, nome: t.nome, tipo: t.tipo, peso, nivel_min: null };
+          const nivel_min = typeof h.nivel_min === "number" ? Math.min(5, Math.max(1, Math.round(h.nivel_min))) : null;
+          return { competencia_id: t.id, nome: t.nome, tipo: t.tipo, peso, nivel_min };
         });
     }
 
@@ -69,6 +70,81 @@ export const calcularMatch = createServerFn({ method: "POST" })
     }, { onConflict: "candidato_id,vaga_id" });
     if (error) throw new Error("Falha ao gravar o match: " + error.message);
     return result;
+  });
+
+const SyncInput = z.object({
+  vagaId: z.string().uuid(),
+  habilidades: z.array(z.object({
+    nome: z.string().min(1),
+    nivel: z.string().optional(),        // peso (essencial/importante/desejavel)
+    nivel_min: z.number().nullable().optional(),
+    tipo: z.string().optional(),
+  })).default([]),
+});
+
+/**
+ * Sincroniza as competências de uma vaga (a partir das `habilidades` do formulário)
+ * na tabela `vaga_competencias` — o caminho rico que o QinMatch consome. Mapeia cada
+ * habilidade para a taxonomia por NOME (case-insensitive); se não existir, CRIA a
+ * competência na empresa da vaga. Grava peso + nivel_min e remove as que saíram.
+ * Acesso: gerenciar_vagas + escopo da vaga.
+ */
+export const sincronizarCompetenciasVaga = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => SyncInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const me = await assertPerm((context as any).userId, "gerenciar_vagas");
+    await assertEscopoVaga(me, data.vagaId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const { data: vaga } = await admin.from("vagas").select("empresa_id").eq("id", data.vagaId).maybeSingle();
+    const empresaId = vaga?.empresa_id ?? null;
+
+    // Taxonomia visível para a vaga: globais + da empresa.
+    const orFiltro = empresaId ? `empresa_id.is.null,empresa_id.eq.${empresaId}` : "empresa_id.is.null";
+    const { data: tax } = await admin.from("competencias").select("id, nome, tipo").eq("ativo", true).or(orFiltro);
+    const byName = new Map<string, { id: string; tipo: string }>((tax ?? []).map((t: any) => [String(t.nome).trim().toLowerCase(), { id: t.id, tipo: t.tipo }]));
+
+    const tiposValidos = ["tecnica", "comportamental", "transversal"];
+    const pesosValidos = ["essencial", "importante", "desejavel"];
+    const rows: { vaga_id: string; competencia_id: string; peso: string; nivel_min: number | null }[] = [];
+    const vistos = new Set<string>();
+
+    for (const h of data.habilidades) {
+      const nome = h.nome.trim();
+      if (!nome) continue;
+      const key = nome.toLowerCase();
+      let comp = byName.get(key);
+      if (!comp) {
+        // Cria a competência na taxonomia da empresa (nome novo proposto pela IA/recrutador).
+        const tipo = tiposValidos.includes(h.tipo ?? "") ? h.tipo : "tecnica";
+        const { data: nova, error } = await admin.from("competencias")
+          .insert({ empresa_id: empresaId, nome, tipo, ativo: true })
+          .select("id, tipo").single();
+        if (error) throw new Error("Falha ao criar competência '" + nome + "': " + error.message);
+        comp = { id: nova.id, tipo: nova.tipo };
+        byName.set(key, comp);
+      }
+      if (vistos.has(comp.id)) continue; // dedupe por competência
+      vistos.add(comp.id);
+      const peso = pesosValidos.includes(h.nivel ?? "") ? (h.nivel as string) : "importante";
+      const nivel_min = typeof h.nivel_min === "number" ? Math.min(5, Math.max(1, Math.round(h.nivel_min))) : null;
+      rows.push({ vaga_id: data.vagaId, competencia_id: comp.id, peso, nivel_min });
+    }
+
+    if (rows.length) {
+      const { error } = await admin.from("vaga_competencias").upsert(rows, { onConflict: "vaga_id,competencia_id" });
+      if (error) throw new Error("Falha ao gravar competências da vaga: " + error.message);
+    }
+    // Remove as competências que não estão mais na vaga.
+    const manter = Array.from(vistos);
+    let del = admin.from("vaga_competencias").delete().eq("vaga_id", data.vagaId);
+    if (manter.length) del = del.not("competencia_id", "in", `(${manter.join(",")})`);
+    const { error: delErr } = await del;
+    if (delErr) throw new Error("Falha ao limpar competências antigas: " + delErr.message);
+
+    return { ok: true, total: rows.length };
   });
 
 /** Lê o QinMatch já calculado (candidato × vaga). */

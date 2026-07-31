@@ -433,18 +433,32 @@ function EmpresasTab({ empresas, unidades, loading, onAbrirPainel, onChanged }: 
 
   const [novaEmp, setNovaEmp] = useState(false);
   const [en, setEn] = useState(""); const [ec, setEc] = useState(""); const [em, setEm] = useState("");
+  const [ep, setEp] = useState<string>(""); // plano escolhido na criação
   const [criando, setCriando] = useState(false);
+
+  // Planos disponíveis (para associar já na criação da empresa).
+  const planosQ = useQuery({
+    queryKey: ["planos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("planos" as any).select("id, nome, ordem").eq("ativo", true).order("ordem");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string; ordem: number }[];
+    },
+  });
+  const planos = planosQ.data ?? [];
+  // Default: primeiro plano por ordem (ex.: Básico) assim que a lista carrega.
+  useEffect(() => { if (!ep && planos[0]) setEp(planos[0].id); }, [planos, ep]);
 
   async function criarEmpresa() {
     if (!en.trim() || criando) return;
     setCriando(true);
     try {
-      const { data: emp, error } = await supabase.from("empresas").insert({ nome: en.trim(), cnpj: ec.trim() || null }).select().single();
+      const { data: emp, error } = await supabase.from("empresas").insert({ nome: en.trim(), cnpj: ec.trim() || null, plano_id: ep || null } as any).select().single();
       if (error) throw error;
       const matrizNome = em.trim() || "Matriz";
       const { error: e2 } = await supabase.from("unidades").insert({ empresa_id: emp.id, nome: matrizNome, tipo: "matriz" });
       if (e2) throw e2;
-      setEn(""); setEc(""); setEm(""); setNovaEmp(false);
+      setEn(""); setEc(""); setEm(""); setEp(planos[0]?.id ?? ""); setNovaEmp(false);
       onChanged();
     } catch (e: any) { alert(e.message); }
     finally { setCriando(false); }
@@ -466,10 +480,16 @@ function EmpresasTab({ empresas, unidades, loading, onAbrirPainel, onChanged }: 
       {novaEmp && (
         <div style={{ background: "#fff", border: `1.5px solid ${ROXO}55`, borderRadius: 14, padding: 16, marginBottom: 14 }}>
           <div className="h" style={{ fontWeight: 700, fontSize: 14, marginBottom: 12 }}>Cadastrar empresa</div>
-          <div data-empinp style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <div data-empinp style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
             <Campo label="Nome da empresa"><input style={inp} value={en} onChange={(e) => setEn(e.target.value)} /></Campo>
             <Campo label="CNPJ"><input style={inp} value={ec} onChange={(e) => setEc(e.target.value)} placeholder="00.000.000/0001-00" /></Campo>
             <Campo label="Nome da matriz"><input style={inp} value={em} onChange={(e) => setEm(e.target.value)} placeholder="Matriz — Cidade" /></Campo>
+            <Campo label="Plano contratado">
+              <select style={inp} value={ep} onChange={(e) => setEp(e.target.value)}>
+                {planos.length === 0 && <option value="">Sem plano</option>}
+                {planos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              </select>
+            </Campo>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 9 }}>
             <button onClick={() => setNovaEmp(false)} style={btnSec}>Cancelar</button>
@@ -516,6 +536,27 @@ function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpres
     },
   });
   const podeFilial = featQ.data?.multiplas_unidades !== false; // permissivo enquanto carrega
+
+  // Plano contratado desta empresa (associação editável aqui, junto da empresa).
+  const qc = useQueryClient();
+  const [salvandoPlano, setSalvandoPlano] = useState(false);
+  const planosQ = useQuery({
+    queryKey: ["planos"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("planos" as any).select("id, nome, ordem").eq("ativo", true).order("ordem");
+      if (error) throw error;
+      return (data ?? []) as { id: string; nome: string; ordem: number }[];
+    },
+  });
+  const planos = planosQ.data ?? [];
+  async function trocarPlano(planoId: string) {
+    setSalvandoPlano(true);
+    const { error } = await supabase.from("empresas").update({ plano_id: planoId || null } as any).eq("id", empresa.id);
+    setSalvandoPlano(false);
+    if (error) { alert(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["empresa-features", empresa.id] }); // reavalia entitlements
+    onChanged();
+  }
 
   async function addFilial() {
     if (!novoNome.trim() || criando) return;
@@ -565,6 +606,27 @@ function EmpresaCard({ empresa, unidades, aberta, onToggleAberta, onToggleEmpres
               <Layers size={12} /> Múltiplas unidades não está no plano desta empresa — só a matriz. Ajuste em Planos.
             </div>
           )}
+
+          {/* Plano contratado (entitlements) */}
+          <div style={{ borderTop: `1px solid ${BORDA}`, marginTop: 14, paddingTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ width: 30, height: 30, borderRadius: 8, background: ROXO_TINT, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <ShieldCheck size={15} color={ROXO} />
+            </div>
+            <div style={{ flex: "1 1 160px" }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: ROXO_DARK }}>Plano contratado</div>
+              <div style={{ fontSize: 11, color: "#9b93b0" }}>Define as features liberadas para esta empresa.</div>
+            </div>
+            <select
+              style={{ ...inp, width: "auto", minWidth: 170, flexShrink: 0 }}
+              value={(empresa as any).plano_id ?? ""}
+              disabled={salvandoPlano || planos.length === 0}
+              onChange={(e) => trocarPlano(e.target.value)}
+            >
+              {planos.length === 0 && <option value="">Sem plano</option>}
+              {planos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+            {salvandoPlano && <Loader2 size={15} className="spin" color={ROXO} />}
+          </div>
 
           {/* Identidade visual (white-label) */}
           <div style={{ borderTop: `1px solid ${BORDA}`, marginTop: 14, paddingTop: 12 }}>

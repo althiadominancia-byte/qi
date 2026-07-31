@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  LayoutDashboard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
@@ -26,15 +27,25 @@ import type { PermKey } from "@/lib/recrutamento/perms";
 import { resolveFeatures, hasFeature, type FeatureKey } from "@/lib/recrutamento/features";
 import { ROXO, PLATAFORMA } from "@/lib/recrutamento/data";
 
-type LeafTo = "/admin" | "/catalogo" | "/lideres" | "/niveis" | "/permissoes" | "/super" | "/identidade" | "/usuarios" | "/planos";
+type LeafTo =
+  | "/admin"
+  | "/dashboard"
+  | "/catalogo"
+  | "/lideres"
+  | "/niveis"
+  | "/permissoes"
+  | "/super"
+  | "/identidade"
+  | "/usuarios"
+  | "/planos";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
   label: string;
   icon: React.ComponentType<{ size?: number }>;
-  perm?: PermKey;            // exige permissão efetiva de aplicação (super passa)
-  soAdminEmpresa?: boolean;  // exige role admin_empresa (não faz sentido p/ super)
-  feature?: FeatureKey;      // exige entitlement (feature liberada no plano da empresa)
+  perm?: PermKey; // exige permissão efetiva de aplicação (super passa)
+  soAdminEmpresa?: boolean; // exige role admin_empresa (não faz sentido p/ super)
+  feature?: FeatureKey; // exige entitlement (feature liberada no plano da empresa)
   tab?: "empresas" | "usuarios"; // item do /super: deep-link da aba
 };
 type NavGroup = {
@@ -43,7 +54,12 @@ type NavGroup = {
   label: string;
   icon: React.ComponentType<{ size?: number }>;
   perm?: PermKey;
-  children: { to: LeafTo; label: string; icon: React.ComponentType<{ size?: number }>; feature?: FeatureKey }[];
+  children: {
+    to: LeafTo;
+    label: string;
+    icon: React.ComponentType<{ size?: number }>;
+    feature?: FeatureKey;
+  }[];
 };
 type NavItem = NavLeaf | NavGroup;
 
@@ -87,6 +103,7 @@ const TEMA_PLATAFORMA: SidebarTheme = {
 // Plano de USO DA APLICAÇÃO (dentro de uma empresa). Itens escondidos conforme
 // a permissão efetiva do usuário. super_admin impersonando vê tudo.
 const NAV_APP: NavItem[] = [
+  { kind: "leaf", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
   {
     kind: "group",
@@ -101,8 +118,21 @@ const NAV_APP: NavItem[] = [
     ],
   },
   { kind: "leaf", to: "/usuarios", label: "Usuários", icon: Users, perm: "gerenciar_usuarios" },
-  { kind: "leaf", to: "/permissoes", label: "Permissões", icon: ShieldCheck, perm: "gerenciar_usuarios" },
-  { kind: "leaf", to: "/identidade", label: "Identidade visual", icon: Palette, soAdminEmpresa: true, feature: "white_label" },
+  {
+    kind: "leaf",
+    to: "/permissoes",
+    label: "Permissões",
+    icon: ShieldCheck,
+    perm: "gerenciar_usuarios",
+  },
+  {
+    kind: "leaf",
+    to: "/identidade",
+    label: "Identidade visual",
+    icon: Palette,
+    soAdminEmpresa: true,
+    feature: "white_label",
+  },
 ];
 
 // Plano de GESTÃO DO SAAS (governança da plataforma). Só super_admin, fora de
@@ -110,16 +140,10 @@ const NAV_APP: NavItem[] = [
 const NAV_SAAS: NavItem[] = [
   { kind: "leaf", to: "/super", label: "Empresas & unidades", icon: Building2, tab: "empresas" },
   { kind: "leaf", to: "/super", label: "Usuários", icon: Users, tab: "usuarios" },
-  { kind: "leaf", to: "/planos", label: "Planos & contratações", icon: Layers },
+  { kind: "leaf", to: "/planos", label: "Configuração de planos", icon: Layers },
 ];
 
-export function AppSidebar({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const fetchScope = useServerFn(getMyScope);
@@ -148,15 +172,19 @@ export function AppSidebar({
     queryKey: ["sidebar-empresa", currentEmpresa],
     enabled: impersonando,
     queryFn: async () => {
-      const { data } = await supabase.from("empresas").select("nome").eq("id", currentEmpresa!).maybeSingle();
+      const { data } = await supabase
+        .from("empresas")
+        .select("nome")
+        .eq("id", currentEmpresa!)
+        .maybeSingle();
       return data?.nome ?? null;
     },
   });
   const marcaNome = neutro
     ? "Plataforma"
     : impersonando
-      ? (empresaImpQ.data || "Empresa")
-      : (scope?.empresa_nome || "Estrela");
+      ? empresaImpQ.data || "Empresa"
+      : scope?.empresa_nome || "Estrela";
 
   // Entitlements efetivos da empresa ativa: super impersonando busca da empresa
   // aberta (RPC); demais papéis herdam do scope. Enquanto carrega => permissivo.
@@ -164,19 +192,27 @@ export function AppSidebar({
     queryKey: ["sidebar-features", currentEmpresa],
     enabled: impersonando,
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_empresa_features" as any, { p_empresa_id: currentEmpresa! });
+      const { data } = await supabase.rpc("get_empresa_features" as any, {
+        p_empresa_id: currentEmpresa!,
+      });
       return resolveFeatures((data ?? null) as any, null);
     },
   });
-  const features: Record<string, boolean> | null = impersonando ? (featuresImpQ.data ?? null) : (scope?.features ?? null);
+  const features: Record<string, boolean> | null = impersonando
+    ? (featuresImpQ.data ?? null)
+    : (scope?.features ?? null);
 
   // Gating de item. A FEATURE (entitlement da empresa) aplica a todos, inclusive
   // super impersonando. A PERMISSÃO de usuário é que o super ignora.
   const podeVer = (item: NavItem): boolean => {
     if (contexto === "saas") return true;
     if (item.kind === "leaf" && item.feature && !hasFeature(features, item.feature)) return false;
-    if (isSuper) return true;
+    // Itens exclusivos do admin_empresa (ex.: /identidade, autoatendimento da
+    // própria marca) NÃO aparecem para o super — ele edita a marca de cada
+    // empresa pelo card em /super. Checado ANTES do atalho de super, senão o
+    // super clicaria e cairia em /identidade sem empresa própria (bounce).
     if (item.kind === "leaf" && item.soAdminEmpresa) return isAdminEmpresa;
+    if (isSuper) return true;
     if (item.perm) return !!scope?.perms?.[item.perm];
     return true;
   };
@@ -189,7 +225,9 @@ export function AppSidebar({
   }
 
   function voltarGestao() {
-    try { sessionStorage.removeItem("empresa_ativa_id"); } catch {}
+    try {
+      sessionStorage.removeItem("empresa_ativa_id");
+    } catch {}
     navigate({ to: "/super", search: { tab: "empresas" } as any });
   }
 
@@ -234,14 +272,35 @@ export function AppSidebar({
         {!collapsed && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             {neutro ? (
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: PLATAFORMA.primary, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: PLATAFORMA.primary,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
                 <Layers size={16} color="#fff" />
               </div>
             ) : (
               <MarcaEstrela size={28} branca src={customLogo} alt={marcaNome} />
             )}
             <div style={{ lineHeight: 1.1, minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marcaNome}</div>
+              <div
+                style={{
+                  fontWeight: 800,
+                  fontSize: 14,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {marcaNome}
+              </div>
               <div style={{ fontSize: 11, color: T.muted }}>Recrutamento</div>
             </div>
           </div>
@@ -268,42 +327,97 @@ export function AppSidebar({
         </button>
       </div>
 
-
-
       {/* Faixa de gestão — super_admin impersonando uma empresa */}
-      {impersonando && (
-        collapsed ? (
+      {impersonando &&
+        (collapsed ? (
           <button
             onClick={voltarGestao}
             title={`Gerenciando ${marcaNome} — voltar à gestão`}
             style={{
-              margin: "8px auto 0", width: 40, height: 40, borderRadius: 10,
-              background: T.btnBg, color: T.text, border: `1px solid ${T.btnBorder}`,
-              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              margin: "8px auto 0",
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: T.btnBg,
+              color: T.text,
+              border: `1px solid ${T.btnBorder}`,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             <ArrowLeft size={16} />
           </button>
         ) : (
-          <div style={{ margin: "8px 8px 0", padding: "9px 11px", borderRadius: 10, background: T.hover, border: `1px solid ${T.border}` }}>
-            <div style={{ fontSize: 9.5, letterSpacing: 1.2, textTransform: "uppercase", color: T.muted, fontWeight: 700 }}>Gerenciando</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{marcaNome}</div>
+          <div
+            style={{
+              margin: "8px 8px 0",
+              padding: "9px 11px",
+              borderRadius: 10,
+              background: T.hover,
+              border: `1px solid ${T.border}`,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 9.5,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+                color: T.muted,
+                fontWeight: 700,
+              }}
+            >
+              Gerenciando
+            </div>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 700,
+                color: T.text,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {marcaNome}
+            </div>
             <button
               onClick={voltarGestao}
               style={{
-                marginTop: 7, width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                background: T.btnBg, color: T.text, border: `1px solid ${T.btnBorder}`, borderRadius: 8,
-                padding: "6px 8px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                marginTop: 7,
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                background: T.btnBg,
+                color: T.text,
+                border: `1px solid ${T.btnBorder}`,
+                borderRadius: 8,
+                padding: "6px 8px",
+                fontSize: 11.5,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
               }}
             >
               <ArrowLeft size={13} /> Voltar à gestão
             </button>
           </div>
-        )
-      )}
+        ))}
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: "10px 8px", display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 2, alignContent: "start" }}>
+      <nav
+        style={{
+          flex: 1,
+          padding: "10px 8px",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr)",
+          gap: 2,
+          alignContent: "start",
+        }}
+      >
         {nav.map((item) => {
           if (!podeVer(item)) return null;
           if (item.kind === "leaf") {
@@ -313,7 +427,8 @@ export function AppSidebar({
             if (item.tab) {
               // item do plano SaaS: aba do /super
               search = { tab: item.tab };
-              active = location.pathname.startsWith("/super") && (currentTab ?? "empresas") === item.tab;
+              active =
+                location.pathname.startsWith("/super") && (currentTab ?? "empresas") === item.tab;
             } else {
               const needsEmpresa = item.to !== "/super" && item.to !== "/identidade";
               search = needsEmpresa && empresaParam ? { empresa: empresaParam } : undefined;
@@ -341,7 +456,13 @@ export function AppSidebar({
                 }}
               >
                 <Icon size={18} />
-                {!collapsed && <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.label}</span>}
+                {!collapsed && (
+                  <span
+                    style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+                  >
+                    {item.label}
+                  </span>
+                )}
               </Link>
             );
           }
@@ -420,7 +541,9 @@ function NavGroupItem({
 }) {
   const childActive = group.children.some((c) => isActivePath(c.to));
   const [open, setOpen] = useState(childActive);
-  useEffect(() => { if (childActive) setOpen(true); }, [childActive]);
+  useEffect(() => {
+    if (childActive) setOpen(true);
+  }, [childActive]);
 
   const Icon = group.icon;
   const T = theme;
@@ -482,7 +605,10 @@ function NavGroupItem({
         <span style={{ flex: 1 }}>{group.label}</span>
         <ChevronDown
           size={14}
-          style={{ transition: "transform .15s", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+          style={{
+            transition: "transform .15s",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
         />
       </button>
       {open && (
@@ -520,13 +646,17 @@ function NavGroupItem({
   );
 }
 
-
 function labelRole(r: string) {
   switch (r) {
-    case "super_admin": return "Super Admin";
-    case "admin_empresa": return "Admin da empresa";
-    case "recrutador": return "Recrutador";
-    case "visualizador": return "Visualizador";
-    default: return r;
+    case "super_admin":
+      return "Super Admin";
+    case "admin_empresa":
+      return "Admin da empresa";
+    case "recrutador":
+      return "Recrutador";
+    case "visualizador":
+      return "Visualizador";
+    default:
+      return r;
   }
 }

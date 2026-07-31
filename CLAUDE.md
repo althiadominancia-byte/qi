@@ -58,6 +58,14 @@ Duas camadas, ambas em português:
 
 A lógica de permissões do frontend e os presets ficam em `src/lib/recrutamento/perms.ts` (`PERM_KEYS`, `PRESET`, `resolveEfetivas`, `hasPerm`). As server functions revalidam a autorização carregando o usuário via `supabaseAdmin` e chamando `user_effective_perms` — nunca confie no cliente. `getMyScope` (`scope.functions.ts`) retorna o `UserScope` completo (papel, empresa, acesso a unidades, permissões efetivas) usado para montar a sidebar e o gating da UI.
 
+### Planos e entitlements (regra de plataforma)
+Este é um **SaaS comercial multi-tenant**: o dono da plataforma (`super_admin`) vende acesso às empresas por **plano**. Cada plano liga/desliga **features** (entitlements). As chaves de feature ficam em `src/lib/recrutamento/features.ts` (`FEATURE_KEYS`, `FEATURE_LABELS`, `PLAN_PRESETS`, `resolveFeatures`); os planos são modelos na tabela `planos` e cada empresa aponta para um via `empresas.plano_id` (+ override esparso em `empresas.features`). Features efetivas = `plano.features` sobrescrito pelo override da empresa (`resolveFeatures`); o hook `useFeatures()` resolve isso na UI.
+
+- **`/planos`** (só `super_admin`) configura os **modelos de plano** e quais features cada um libera. Ela **não** atribui plano a empresa.
+- A **atribuição do plano a cada empresa** é feita em **Empresas & Unidades** (`/super`), na criação da empresa e no card dela.
+
+**REGRA OBRIGATÓRIA — todo módulo novo alimenta a tabela de planos:** ao criar qualquer módulo/recurso comercializável (ex.: Passaporte, QinMatch, Entrevista IA), adicione uma **feature key** correspondente em `features.ts` (com label/desc e inclusão nos `PLAN_PRESETS`) e faça o **gating por entitlement** na UI e nas server functions, além do gating por permissão. Sem isso o módulo não pode ser vendido/controlado por plano. Módulo sem entitlement = bug de produto.
+
 ### Constantes de domínio e lógica de avaliação
 `src/lib/recrutamento/data.ts` é a fonte da verdade para cores da marca, blocos DISC, questões situacionais e pontuação (`computeResults`). O cabeçalho avisa: **não altere o conteúdo do DISC/situacionais sem revisão do RH.** Os helpers de upload/compressão do currículo (no navegador) estão em `src/lib/recrutamento/cv-upload.ts`.
 

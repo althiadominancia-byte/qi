@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { gerarPerfilVaga, excluirVaga } from "@/lib/recrutamento.functions";
+import { sincronizarCompetenciasVaga } from "@/lib/qinmatch.functions";
 import { encerrarVaga as encerrarVagaFn, listCandidatosDaVaga, getContratacaoByVaga, reenviarAvaliacao, marcarAvaliacaoRespondida } from "@/lib/encerramento.functions";
 import { selecionarParaEntrevista, removerEntrevista } from "@/lib/jornada.functions";
 import { listLideresDaVaga } from "@/lib/lideres.functions";
@@ -55,14 +56,13 @@ export type Candidato = {
   entrevista_obs?: string | null;
   nao_contratado_motivo?: "vaga_preenchida" | "encerramento_insucesso" | null;
 };
-type DivRow = { raca: string | null; genero: string | null; orientacao: string | null; pcd: string | null; politico: string | null };
 
 const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", border: `1.5px solid ${BORDA}`, borderRadius: 10, fontSize: 13.5, outline: "none", background: "#fff", color: ROXO_DARK, fontFamily: "inherit" };
 
 function AdminPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const [aba, setAba] = useState<"vagas" | "candidatos" | "diversidade">("vagas");
+  const [aba, setAba] = useState<"vagas" | "candidatos">("vagas");
   const [editando, setEditando] = useState<Vaga | null>(null);
   const [vagaSel, setVagaSel] = useState<string | null>(null);
   
@@ -70,6 +70,7 @@ function AdminPage() {
 
   const fetchScope = useServerFn(getMyScope);
   const excluirVagaFn = useServerFn(excluirVaga);
+  const syncCompVaga = useServerFn(sincronizarCompetenciasVaga);
   const scopeQ = useQuery({ queryKey: ["my-scope"], queryFn: () => fetchScope() });
   const scope = scopeQ.data;
   const isSuper = scope?.role === "super_admin";
@@ -151,17 +152,6 @@ function AdminPage() {
     enabled: !isSuper || !!empresaAtivaId,
   });
 
-  const diversidadeQ = useQuery({
-    queryKey: ["diversidade", empresaAtivaId ?? "all"],
-    queryFn: async () => {
-      let q: any = supabase.from("diversidade_candidatos").select("raca,genero,orientacao,pcd,politico").limit(2000);
-      if (empresaAtivaId) q = q.eq("empresa_id", empresaAtivaId);
-      const { data, error } = await q;
-      if (error) throw error;
-      return (data ?? []) as unknown as DivRow[];
-    },
-    enabled: aba === "diversidade" && (!isSuper || !!empresaAtivaId),
-  });
 
   const vagas = vagasQ.data ?? [];
   const vagaAtual = vagas.find((v) => v.id === vagaSel) || vagas[0] || null;
@@ -183,20 +173,31 @@ function AdminPage() {
       experiencia: v.experiencia, escolaridade: v.escolaridade, requisitos: v.requisitos,
       usar_situacional: v.usar_situacional,
       interna: v.interna ?? true,
+      aceita_inscricao_publica: (v as any).aceita_inscricao_publica ?? true,
       motivo: (v as any).motivo ?? "",
       departamento_id: (v as any).departamento_id,
       setor_id: (v as any).setor_id,
     };
     if ((v as any).unidade_id) payload.unidade_id = (v as any).unidade_id;
-    if ((v as any).id) {
-      const { error } = await supabase.from("vagas").update(payload).eq("id", (v as any).id);
+    let vagaId: string | undefined = (v as any).id;
+    if (vagaId) {
+      const { error } = await supabase.from("vagas").update(payload).eq("id", vagaId);
       if (error) { alert("Erro ao salvar: " + error.message); return; }
     } else {
       if (!empresaAtivaId) { alert("Selecione uma empresa antes de criar a vaga."); return; }
       const unidadeId = (v as any).unidade_id || unidadePadraoId;
       if (!unidadeId) { alert("Cadastre ou selecione uma unidade antes de criar a vaga."); return; }
-      const { error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId, unidade_id: unidadeId });
+      const { data: nova, error } = await supabase.from("vagas").insert({ ...payload, empresa_id: empresaAtivaId, unidade_id: unidadeId }).select("id").single();
       if (error) { alert("Erro ao criar: " + error.message); return; }
+      vagaId = (nova as any)?.id;
+    }
+    // Sincroniza as competências da vaga (vaga_competencias) — caminho rico do QinMatch.
+    if (vagaId) {
+      try {
+        await syncCompVaga({ data: { vagaId, habilidades: (v.habilidades ?? []) as any } });
+      } catch (e: any) {
+        alert("Vaga salva, mas falhou ao sincronizar competências para o match: " + (e?.message || e));
+      }
     }
     setEditando(null);
     qc.invalidateQueries({ queryKey: ["vagas"] });
@@ -316,8 +317,7 @@ function AdminPage() {
 
       <div data-pad style={{ maxWidth: 980, margin: "0 auto", padding: "0 18px" }}>
         <div data-tabs style={{ display: "flex", gap: 6, margin: "18px 0", flexWrap: "wrap" }}>
-          {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users], ["diversidade", "Diversidade (agregado)", BarChart3]] as const)
-            .filter(([k]) => k !== "diversidade" || has("diversidade"))
+          {([["vagas", "Vagas", Briefcase], ["candidatos", "Candidatos", Users]] as const)
             .map(([k, t, Ic]) => (
             <button key={k} onClick={() => { setAba(k as any); setEditando(null); }} style={{
               display: "flex", alignItems: "center", gap: 7, padding: "9px 16px", borderRadius: 11, cursor: "pointer", fontFamily: "inherit",
@@ -351,7 +351,6 @@ function AdminPage() {
             onAbrir={(c: Candidato) => navigate({ to: "/candidato/$id", params: { id: c.id } })} />
         )}
 
-        {aba === "diversidade" && has("diversidade") && <Diversidade rows={diversidadeQ.data ?? []} loading={diversidadeQ.isLoading} />}
       </div>
 
 
@@ -519,6 +518,7 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
   const set = (k: string, val: any) => setV((p: any) => ({ ...p, [k]: val }));
   const [novaHab, setNovaHab] = useState("");
   const [nivelNovaHab, setNivelNovaHab] = useState<NivelHab>("importante");
+  const [nivelMinNovaHab, setNivelMinNovaHab] = useState<number>(3);
   const [novaComp, setNovaComp] = useState("");
   const [simPerfil, setSimPerfil] = useState<PerfilKey>("comunicador");
   const [simPostura, setSimPostura] = useState(85);
@@ -559,8 +559,9 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
 
   const setPeso = (k: PerfilKey, val: number) => setV((p: any) => ({ ...p, pesos: { ...p.pesos, [k]: val } }));
   const setNivelHabValor = (i: number, nivel: NivelHab) => setV((p: any) => { const h = [...p.habilidades]; h[i] = { ...h[i], nivel }; return { ...p, habilidades: h }; });
+  const setNivelMinHab = (i: number, nivel_min: number) => setV((p: any) => { const h = [...p.habilidades]; h[i] = { ...h[i], nivel_min }; return { ...p, habilidades: h }; });
 
-  const addHab = () => { if (novaHab.trim()) { setV((p: any) => ({ ...p, habilidades: [...p.habilidades, { nome: novaHab.trim(), nivel: nivelNovaHab }] })); setNovaHab(""); } };
+  const addHab = () => { if (novaHab.trim()) { setV((p: any) => ({ ...p, habilidades: [...p.habilidades, { nome: novaHab.trim(), nivel: nivelNovaHab, nivel_min: nivelMinNovaHab }] })); setNovaHab(""); } };
   const rmHab = (i: number) => setV((p: any) => ({ ...p, habilidades: p.habilidades.filter((_: any, j: number) => j !== i) }));
   const addComp = () => { if (novaComp.trim()) { setV((p: any) => ({ ...p, competencias: [...p.competencias, novaComp.trim()] })); setNovaComp(""); } };
   const rmComp = (i: number) => setV((p: any) => ({ ...p, competencias: p.competencias.filter((_: any, j: number) => j !== i) }));
@@ -569,12 +570,21 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
     if (!v.titulo.trim()) { setErroIA("Preencha ao menos o título da vaga antes de gerar."); return; }
     setGerando(true); setErroIA("");
     try {
-      const g: any = await gerarPerfilVaga({ data: { titulo: v.titulo, setor: v.setor, modelo: v.modelo, tipo: v.tipo, descricao: v.descricao } });
+      const g: any = await gerarPerfilVaga({ data: { titulo: v.titulo, setor: v.setor, modelo: v.modelo, tipo: v.tipo, descricao: v.descricao, empresaId } });
       const pesosNum = Object.fromEntries(Object.entries(g.pesos || {}).map(([k, val]) => [k, Math.max(0, Math.min(100, Number(val) || 0))]));
+      // A IA devolve {nome, tipo, peso, nivel_min}; o objeto habilidade usa `nivel` = peso.
+      const habsIA = Array.isArray(g.habilidades)
+        ? g.habilidades.filter((h: any) => h?.nome).map((h: any) => ({
+            nome: String(h.nome).trim(),
+            nivel: ["essencial", "importante", "desejavel"].includes(h.peso) ? h.peso : (["essencial", "importante", "desejavel"].includes(h.nivel) ? h.nivel : "importante"),
+            nivel_min: typeof h.nivel_min === "number" ? Math.min(5, Math.max(1, Math.round(h.nivel_min))) : 3,
+            tipo: ["tecnica", "comportamental", "transversal"].includes(h.tipo) ? h.tipo : undefined,
+          }))
+        : [];
       setV((p: any) => ({
         ...p, pesos: { ...p.pesos, ...pesosNum },
         descricao: (typeof g.descricao === "string" && g.descricao.trim()) ? g.descricao.trim() : p.descricao,
-        habilidades: Array.isArray(g.habilidades) && g.habilidades.length ? g.habilidades : p.habilidades,
+        habilidades: habsIA.length ? habsIA : p.habilidades,
         competencias: Array.isArray(g.competencias) && g.competencias.length ? g.competencias : p.competencias,
         experiencia: g.experiencia || p.experiencia, escolaridade: g.escolaridade || p.escolaridade, requisitos: g.requisitos || p.requisitos,
       }));
@@ -629,6 +639,12 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
           <input type="checkbox" checked={!!v.interna} onChange={(e) => set("interna", e.target.checked)} />
           <strong>Vaga interna</strong> — apenas colaboradores da empresa podem se candidatar (exibe setor/função e tempo de empresa no formulário)
         </label>
+        {has("inscricao_publica") && (
+          <label style={{ display: "flex", gap: 9, alignItems: "center", fontSize: 13, color: ROXO_DARK, marginTop: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={(v as any).aceita_inscricao_publica ?? true} onChange={(e) => set("aceita_inscricao_publica", e.target.checked)} />
+            <span><strong>Aceitar inscrição por link público</strong> — libera o formulário (link) para candidatos se inscreverem. Desligado, o link responde "inscrições não abertas".</span>
+          </label>
+        )}
         <CampoLabel label="Unidade">
           <select style={inp} value={v.unidade_id || ""} onChange={(e) => set("unidade_id", e.target.value)}>
             <option value="" disabled>Selecione a unidade</option>
@@ -734,10 +750,13 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
       <CardBox><Cab icon={Settings2} t="Habilidades" />
         <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
           {v.habilidades.map((h: any, i: number) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px 8px 12px", border: `1px solid ${BORDA}`, borderRadius: 11 }}>
-              <span style={{ flex: 1, fontSize: 13.5, color: ROXO_DARK }}>{h.nome}</span>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px 8px 12px", border: `1px solid ${BORDA}`, borderRadius: 11, flexWrap: "wrap" }}>
+              <span style={{ flex: "1 1 130px", fontSize: 13.5, color: ROXO_DARK }}>{h.nome}</span>
               <select value={h.nivel} onChange={(e) => setNivelHabValor(i, e.target.value as NivelHab)} style={selNivel(h.nivel)}>
                 <option value="essencial">Essencial</option><option value="importante">Importante</option><option value="desejavel">Desejável</option>
+              </select>
+              <select value={h.nivel_min ?? 3} onChange={(e) => setNivelMinHab(i, Number(e.target.value))} style={selMin} title="Nível mínimo exigido (1 a 5)">
+                {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Nível {n}</option>)}
               </select>
               <button onClick={() => rmHab(i)} style={{ background: "none", border: "none", cursor: "pointer", color: "#C9C1DC", display: "flex" }}><X size={16} /></button>
             </div>
@@ -749,7 +768,13 @@ function ConstrutorVaga({ vaga, empresaId, unidades, onSave, onCancel, has }: { 
           <select value={nivelNovaHab} onChange={(e) => setNivelNovaHab(e.target.value as NivelHab)} style={selNivel(nivelNovaHab)}>
             <option value="essencial">Essencial</option><option value="importante">Importante</option><option value="desejavel">Desejável</option>
           </select>
+          <select value={nivelMinNovaHab} onChange={(e) => setNivelMinNovaHab(Number(e.target.value))} style={selMin} title="Nível mínimo exigido (1 a 5)">
+            {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>Nível {n}</option>)}
+          </select>
           <button onClick={addHab} style={btnAdd}><Plus size={16} /></button>
+        </div>
+        <div style={{ fontSize: 11, color: "#9b93b0", marginTop: 8 }}>
+          <strong>Peso</strong> = prioridade da competência · <strong>Nível</strong> = proficiência mínima exigida (1 básico → 5 especialista). Alimenta o QinMatch.
         </div>
       </CardBox>
 
@@ -1415,45 +1440,6 @@ export function Detalhe({ c, vaga, onClose }: { c: Candidato; vaga: Vaga | null;
   );
 }
 
-function Diversidade({ rows, loading }: { rows: DivRow[]; loading: boolean }) {
-  if (loading) return <div style={{ textAlign: "center", padding: 30, color: CINZA }}>Carregando...</div>;
-  const N = rows.length;
-  const dist = (campo: keyof DivRow) => {
-    const m: Record<string, number> = {};
-    rows.forEach((c) => { const v = c[campo]; if (v) m[v] = (m[v] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  };
-  const grupos: [string, keyof DivRow][] = [["Cor / raça", "raca"], ["Identidade de gênero", "genero"], ["Orientação sexual", "orientacao"], ["Pessoa com deficiência", "pcd"], ["Posicionamento político", "politico"]];
-  return (
-    <>
-      <div style={{ background: LARANJA_TINT, border: `1.5px solid ${LARANJA}33`, borderRadius: 12, padding: 14, display: "flex", gap: 11, marginBottom: 16 }}>
-        <ShieldCheck size={20} color={LARANJA} style={{ flexShrink: 0, marginTop: 1 }} />
-        <div style={{ fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.55 }}>
-          Dados <strong>agregados e anônimos</strong>, com base em {N} inscritos. Não estão vinculados a candidatos e <strong>não influenciam a seleção</strong>, conforme a LGPD.
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 14 }}>
-        {grupos.map(([titulo, campo]) => (
-          <div key={campo} style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 16 }}>
-            <div className="h" style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: ROXO_DARK }}>{titulo}</div>
-            {N > 0 && dist(campo).map(([k, v]) => (
-              <div key={k} style={{ marginBottom: 9 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 3 }}>
-                  <span style={{ color: k === "Prefiro não responder" ? "#9b93b0" : ROXO_DARK }}>{k}</span>
-                  <span style={{ fontWeight: 700, color: ROXO }}>{v} · {Math.round((v / N) * 100)}%</span>
-                </div>
-                <div style={{ height: 8, background: "#F0EDF7", borderRadius: 9 }}>
-                  <div style={{ height: 8, width: `${(v / N) * 100}%`, background: k === "Prefiro não responder" ? "#C9C1DC" : ROXO, borderRadius: 9 }} />
-                </div>
-              </div>
-            ))}
-            {N === 0 && <div style={{ fontSize: 12, color: CINZA }}>Sem dados ainda.</div>}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
 
 /* ====== utilitários visuais ====== */
 const btnSec: React.CSSProperties = { background: "#fff", color: ROXO, border: `1.5px solid ${BORDA}`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
@@ -1462,6 +1448,7 @@ const btnEnc: React.CSSProperties = { background: "#fff", color: VERMELHO, borde
 const btnDel: React.CSSProperties = { background: "#fff", color: VERMELHO, border: `1.5px solid ${VERMELHO}55`, padding: "9px 14px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit" };
 const btnAdd: React.CSSProperties = { background: ROXO, color: "#fff", border: "none", padding: "10px 14px", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", fontFamily: "inherit" };
 const selNivel = (n: string): React.CSSProperties => ({ padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${BORDA}`, fontSize: 12, fontWeight: 700, color: n === "essencial" ? VERMELHO : n === "importante" ? LARANJA : "#7C7791", background: "#fff", cursor: "pointer", fontFamily: "inherit" });
+const selMin: React.CSSProperties = { padding: "6px 10px", borderRadius: 8, border: `1.5px solid ${BORDA}`, fontSize: 12, fontWeight: 700, color: ROXO_DARK, background: "#fff", cursor: "pointer", fontFamily: "inherit" };
 
 function CardBox({ children, destaque }: any) {
   return <div style={{ background: "#fff", border: `1px solid ${destaque ? ROXO + "33" : BORDA}`, borderRadius: 14, padding: 18, boxShadow: destaque ? "0 8px 24px -16px rgba(80,50,138,.25)" : undefined }}>{children}</div>;

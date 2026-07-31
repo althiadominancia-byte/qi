@@ -69,7 +69,9 @@ function AuthLayout() {
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", width: "100%" }}>
+    // Altura fixa da viewport + overflow oculto: a PÁGINA não rola; só o <main>
+    // rola internamente. Assim o sidebar fica parado ao girar o scroll.
+    <div style={{ display: "flex", height: "100vh", width: "100%", overflow: "hidden" }}>
       {branding && (
         <BrandingStyle
           cor_primaria={branding.cor_primaria}
@@ -78,7 +80,7 @@ function AuthLayout() {
         />
       )}
       <AppSidebar collapsed={collapsed} onToggle={toggle} />
-      <main style={{ flex: 1, minWidth: 0 }}>
+      <main style={{ flex: 1, minWidth: 0, height: "100vh", overflowY: "auto" }}>
         <Outlet />
       </main>
     </div>

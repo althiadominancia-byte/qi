@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# segredos locais — NUNCA commitar
+.env.local
+.env.local.*

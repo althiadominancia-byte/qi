@@ -103,15 +103,36 @@ const GerarVagaInput = z.object({
   modelo: z.string().optional().default(""),
   tipo: z.string().optional().default(""),
   descricao: z.string().optional().default(""),
+  empresaId: z.string().uuid().optional(),
 });
 
 export const gerarPerfilVaga = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => GerarVagaInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertPerm((context as any).userId, "gerenciar_vagas");
+    const me = await assertPerm((context as any).userId, "gerenciar_vagas");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Ancora a IA na taxonomia de competências (globais + da empresa) para os nomes
+    // baterem com `vaga_competencias`/QinMatch. A IA pode propor novas se faltar algo.
+    const empresaId = data.empresaId ?? me.empresa_id ?? null;
+    const orFiltro = empresaId ? `empresa_id.is.null,empresa_id.eq.${empresaId}` : "empresa_id.is.null";
+    const { data: tax } = await (supabaseAdmin as any)
+      .from("competencias").select("nome, tipo").eq("ativo", true).or(orFiltro);
+    const taxonomia: { nome: string; tipo: string }[] = tax ?? [];
+    const listaComp = taxonomia.length
+      ? taxonomia.map((t) => `${t.nome} (${t.tipo})`).join("; ")
+      : "(taxonomia vazia — proponha competências pertinentes ao cargo)";
+
     const prompt = `Você é especialista em RH. Com base nos dados de uma vaga, gere um PERFIL recomendado para preenchê-la e também uma DESCRIÇÃO reescrita, mais clara, organizada e fácil de entender, para ficar no topo do formulário. Responda SOMENTE com JSON válido, sem markdown, neste formato:
-{"descricao":"texto reescrito da vaga","pesos":{"comunicador":0,"fechador":0,"diplomatico":0,"executor":0,"analitico":0},"habilidades":[{"nome":"","nivel":"essencial|importante|desejavel"}],"competencias":["",""],"experiencia":"texto curto","escolaridade":"texto curto","requisitos":"texto curto"}
+{"descricao":"texto reescrito da vaga","pesos":{"comunicador":0,"fechador":0,"diplomatico":0,"executor":0,"analitico":0},"habilidades":[{"nome":"","tipo":"tecnica|comportamental|transversal","peso":"essencial|importante|desejavel","nivel_min":1}],"competencias":["",""],"experiencia":"texto curto","escolaridade":"texto curto","requisitos":"texto curto"}
+
+Sobre o campo "habilidades" (o mais importante — alimenta o cálculo de compatibilidade):
+- Liste de 4 a 7 competências que a vaga exige.
+- PREFIRA usar os nomes EXATOS da LISTA DE COMPETÊNCIAS abaixo (copie o nome como está). Só proponha um nome novo se nenhum da lista servir; nesse caso escolha o "tipo" adequado.
+- "peso": essencial (indispensável), importante (conta bastante) ou desejavel (diferencial).
+- "nivel_min": proficiência mínima esperada de 1 (básico) a 5 (especialista), coerente com a senioridade da vaga.
+- "tipo": tecnica (conhecimento/ferramenta específica), comportamental (relacional/atitude) ou transversal (aprende/resolve/adapta — vale em vários cargos).
 
 Sobre o campo "descricao":
 - Reescreva a descrição original deixando-a mais clara, profissional e organizada, sem inventar informações que não estejam nos dados fornecidos.
@@ -125,7 +146,9 @@ Os pesos (0–100) indicam o quanto cada perfil comportamental é ideal para EST
 - diplomatico (perfil I/S): paciência, escuta, colaboração, relacionamento.
 - executor (perfil D): decisão rápida, produtividade, foco em entrega.
 - analitico (perfil C): precisão, organização, regras, qualidade, dados.
-Notas coerentes com a função (ex.: vendas → comunicador/fechador altos; conferência/técnico → analitico/executor altos). No máximo 7 habilidades e 5 competências. Português do Brasil. Seja conciso.
+Notas coerentes com a função (ex.: vendas → comunicador/fechador altos; conferência/técnico → analitico/executor altos). No máximo 5 competências comportamentais no campo "competencias". Português do Brasil. Seja conciso.
+
+LISTA DE COMPETÊNCIAS (taxonomia): ${listaComp}
 
 DADOS DA VAGA:
 Título: ${data.titulo}
@@ -155,7 +178,7 @@ const GerarFormularioInput = z.object({
 
 function ctxVaga(d: any): string {
   const habs = Array.isArray(d.habilidades) && d.habilidades.length
-    ? d.habilidades.map((h: any) => typeof h === "string" ? h : `${h?.nome ?? ""}${h?.nivel ? ` (${h.nivel})` : ""}`).filter(Boolean).join(", ")
+    ? d.habilidades.map((h: any) => typeof h === "string" ? h : `${h?.nome ?? ""}${h?.nivel ? ` (${h.nivel}${h?.nivel_min ? `, nível mín. ${h.nivel_min}` : ""})` : ""}`).filter(Boolean).join(", ")
     : "(não informadas)";
   const comps = Array.isArray(d.competencias) && d.competencias.length ? d.competencias.join(", ") : "(não informadas)";
   const pesos = d.pesos && Object.keys(d.pesos).length

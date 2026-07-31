@@ -207,7 +207,10 @@ export type Vaga = {
   data_limite: string | null;
   link_token: string;
   pesos: VagaPesos;
-  habilidades: { nome: string; nivel: NivelHab }[];
+  // `nivel` = PESO/prioridade (essencial/importante/desejavel); `nivel_min` = proficiência
+  // exigida (1–5); `tipo` = tipo da competência (para ancorar/criar na taxonomia). Esses
+  // campos alimentam a tabela `vaga_competencias`, consumida pelo QinMatch.
+  habilidades: { nome: string; nivel: NivelHab; nivel_min?: number | null; tipo?: string }[];
   competencias: string[];
   experiencia: string;
   escolaridade: string;
@@ -217,6 +220,8 @@ export type Vaga = {
   situacoes: Situacao[];
   formulario_aprovado: boolean;
   interna: boolean;
+  // Captação por link público: liga/desliga o formulário /c/$token desta vaga.
+  aceita_inscricao_publica: boolean;
   motivo: string;
   created_at?: string;
 };
@@ -240,6 +245,7 @@ export const novaVagaVazia = (): Omit<Vaga, "id" | "link_token"> & { link_token?
   usar_situacional: true,
   disc_blocks: [], situacoes: [], formulario_aprovado: false,
   interna: true,
+  aceita_inscricao_publica: true,
   motivo: "",
 });
 

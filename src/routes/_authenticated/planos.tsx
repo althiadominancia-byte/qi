@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Layers, Plus, Save, Loader2, Check, X, Building2 } from "lucide-react";
+import { Layers, Plus, Save, Loader2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { FEATURE_KEYS, FEATURE_LABELS, PLAN_PRESETS, type FeatureKey } from "@/lib/recrutamento/features";
@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_authenticated/planos")({
 });
 
 type Plano = { id: string; nome: string; descricao: string | null; features: Record<string, boolean>; ordem: number; ativo: boolean };
-type EmpresaRow = { id: string; nome: string; plano_id: string | null };
 
 function PlanosPage() {
   const navigate = useNavigate();
@@ -37,18 +36,7 @@ function PlanosPage() {
       return (data ?? []) as any as Plano[];
     },
   });
-  const empresasQ = useQuery({
-    queryKey: ["planos:empresas"],
-    enabled: isSuper,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("empresas").select("id, nome, plano_id" as any).order("nome");
-      if (error) throw error;
-      return (data ?? []) as any as EmpresaRow[];
-    },
-  });
-
   const planos = planosQ.data ?? [];
-  const empresas = empresasQ.data ?? [];
 
   if (scopeQ.isLoading) return <div style={{ padding: 40, textAlign: "center", color: CINZA, fontFamily: "system-ui" }}>Carregando...</div>;
   if (scope && !isSuper) return null;
@@ -62,13 +50,6 @@ function PlanosPage() {
     qc.invalidateQueries({ queryKey: ["planos"] });
   }
 
-  async function atribuir(empresaId: string, planoId: string) {
-    const { error } = await supabase.from("empresas").update({ plano_id: planoId } as any).eq("id", empresaId);
-    if (error) { alert(error.message); return; }
-    qc.invalidateQueries({ queryKey: ["planos:empresas"] });
-    qc.invalidateQueries({ queryKey: ["my-scope"] });
-  }
-
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
@@ -78,7 +59,7 @@ function PlanosPage() {
 
       <div style={{ background: ROXO, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10, position: "sticky", top: 0, zIndex: 30 }}>
         <Layers size={20} color="#fff" />
-        <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Planos & contratações</div>
+        <div className="h" style={{ color: "#fff", fontWeight: 800, fontSize: 17 }}>Configuração de planos</div>
       </div>
 
       <div style={{ maxWidth: 940, margin: "0 auto", padding: "18px" }}>
@@ -91,28 +72,9 @@ function PlanosPage() {
           {planos.map((p) => <PlanoCard key={p.id} plano={p} onSaved={() => qc.invalidateQueries({ queryKey: ["planos"] })} />)}
         </div>
 
-        {/* Atribuição por empresa */}
-        <div className="h" style={{ fontWeight: 800, fontSize: 15, margin: "26px 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
-          <Building2 size={17} color={ROXO} /> Plano de cada empresa
-        </div>
-        <div style={{ display: "grid", gap: 8 }}>
-          {empresas.map((e) => (
-            <div key={e.id} style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 160, fontWeight: 700, fontSize: 14 }}>{e.nome}</div>
-              <select value={e.plano_id ?? ""} onChange={(ev) => atribuir(e.id, ev.target.value)} style={{ ...inp, width: "auto", minWidth: 180 }}>
-                <option value="">Sem plano (tudo liberado)</option>
-                {planos.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-              </select>
-            </div>
-          ))}
-          {!empresasQ.isLoading && empresas.length === 0 && (
-            <div style={{ color: CINZA, fontSize: 13 }}>Nenhuma empresa cadastrada.</div>
-          )}
-        </div>
-
         <div style={{ marginTop: 20, background: ROXO_TINT, border: `1px solid ${BORDA}`, borderRadius: 12, padding: 14, fontSize: 12.5, color: ROXO_DARK, lineHeight: 1.55 }}>
-          O plano define os recursos liberados para a empresa (entitlements). Recursos desligados ficam ocultos no painel dela.
-          Exceções pontuais por empresa (override) podem ser adicionadas depois; hoje a empresa herda o plano.
+          Aqui você define os <strong>modelos de plano</strong> e quais recursos (entitlements) cada um libera.
+          A <strong>atribuição do plano a cada empresa</strong> é feita em <strong>Empresas &amp; Unidades</strong>, no card da empresa.
         </div>
       </div>
     </div>
