@@ -6,11 +6,14 @@ import {
   AlertCircle,
   Briefcase,
   Building2,
+  CalendarClock,
+  ClipboardList,
   CheckCircle2,
   ChevronRight,
   Link2,
   Loader2,
   Mail,
+  Send,
   ShieldCheck,
   UserRound,
   X,
@@ -24,6 +27,8 @@ import {
   TERMO_PORTAL_VERSAO,
   excluirMinhaConta,
   aplicarPerfilNaCandidatura,
+  listarMeusConvites,
+  responderConvite,
 } from "@/lib/portal-candidato.functions";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -331,6 +336,31 @@ function ListaCandidaturas() {
   const [erroExcluir, setErroExcluir] = useState("");
   const apagarConta = useServerFn(excluirMinhaConta);
   const projPerfil = useServerFn(aplicarPerfilNaCandidatura);
+  const fetchConvites = useServerFn(listarMeusConvites);
+  const responder = useServerFn(responderConvite);
+  const convitesQ = useQuery({
+    queryKey: ["meus-convites"],
+    queryFn: () => fetchConvites() as Promise<any>,
+    retry: false,
+  });
+  const [respondendo, setRespondendo] = useState<string | null>(null);
+  const [conviteErro, setConviteErro] = useState("");
+  async function onResponderConvite(conviteId: string, aceitar: boolean) {
+    setRespondendo(conviteId);
+    try {
+      const r: any = await responder({ data: { conviteId, aceitar } as any });
+      if (r?.aceito && r?.candidatoId) {
+        // Projeta o perfil neutro na nova candidatura (mesmo padrão do vínculo).
+        projPerfil({ data: { candidatoId: r.candidatoId } }).catch(() => {});
+        await qc.invalidateQueries({ queryKey: ["meu-portal"] });
+      }
+      await qc.invalidateQueries({ queryKey: ["meus-convites"] });
+    } catch (e: any) {
+      setConviteErro(e?.message || "Não foi possível responder o convite.");
+    } finally {
+      setRespondendo(null);
+    }
+  }
   async function excluirConta() {
     if (excluindo || confirmaTexto.trim().toUpperCase() !== "EXCLUIR") return;
     setExcluindo(true);
@@ -509,6 +539,93 @@ function ListaCandidaturas() {
           Acompanhe aqui cada vaga em que você se inscreveu.
         </p>
 
+        {/* Sua agenda — entrevistas marcadas em todas as candidaturas */}
+        {candidaturas.filter(
+          (c) =>
+            c.portal_ativo &&
+            c.entrevista &&
+            ["Agendada", "Em andamento", "Agendada (sem gravação)"].includes(
+              c.entrevista.status_rotulo,
+            ),
+        ).length > 0 && (
+          <div
+            style={{
+              background: ROXO,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 14,
+              color: "#fff",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <CalendarClock size={16} color={LARANJA} />
+              <span className="h" style={{ fontWeight: 800, fontSize: 15 }}>
+                Sua agenda
+              </span>
+            </div>
+            {candidaturas
+              .filter(
+                (c) =>
+                  c.portal_ativo &&
+                  c.entrevista &&
+                  ["Agendada", "Em andamento", "Agendada (sem gravação)"].includes(
+                    c.entrevista.status_rotulo,
+                  ),
+              )
+              .map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    flexWrap: "wrap",
+                    background: "rgba(255,255,255,.08)",
+                    borderRadius: 12,
+                    padding: "11px 13px",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800 }}>
+                      Entrevista — {c.vaga_titulo || "Vaga"}
+                    </div>
+                    <div style={{ fontSize: 12, opacity: 0.85 }}>
+                      {c.empresa_nome || "Empresa"}
+                      {c.entrevista.agendada_para
+                        ? ` · ${fmtDataHora(c.entrevista.agendada_para)}`
+                        : ""}
+                      {c.entrevista.status_rotulo === "Em andamento" ? " · acontecendo agora" : ""}
+                    </div>
+                  </div>
+                  {c.entrevista.link_token ? (
+                    <a
+                      href={`/e/${c.entrevista.link_token}`}
+                      target="_blank"
+                      rel="noopener"
+                      style={{
+                        background: LARANJA,
+                        color: "#fff",
+                        borderRadius: 10,
+                        padding: "9px 15px",
+                        fontSize: 12.5,
+                        fontWeight: 800,
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Entrar na sala →
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: 12, fontWeight: 700, opacity: 0.85 }}>
+                      {c.entrevista.status_rotulo}
+                    </span>
+                  )}
+                </div>
+              ))}
+          </div>
+        )}
+
         {/* Meu perfil (Cadastro Neutro) — o perfil é da pessoa, vale p/ todas as vagas */}
         <button
           onClick={() => navigate({ to: "/portal/perfil" as any })}
@@ -551,6 +668,222 @@ function ListaCandidaturas() {
           </div>
           <ChevronRight size={18} color={ROXO} />
         </button>
+
+        {/* Convites de empresas (modelo empresa-puxa) */}
+        {(convitesQ.data?.convites ?? []).filter((cv: any) => cv.status === "pendente").length >
+          0 && (
+          <div
+            style={{
+              background: "#fff",
+              border: `1.5px solid ${LARANJA}55`,
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 10,
+              }}
+            >
+              <Send size={16} color={LARANJA} />
+              <span className="h" style={{ fontWeight: 800, fontSize: 15, color: ROXO_DARK }}>
+                Você foi convidado(a)!
+              </span>
+            </div>
+            {conviteErro && (
+              <div
+                style={{
+                  fontSize: 12.5,
+                  color: "#B91C1C",
+                  background: "#FEF2F2",
+                  border: "1px solid #FECACA",
+                  borderRadius: 10,
+                  padding: 10,
+                  marginBottom: 10,
+                }}
+              >
+                {conviteErro}
+              </div>
+            )}
+            {(convitesQ.data?.convites ?? [])
+              .filter((cv: any) => cv.status === "pendente")
+              .map((cv: any) => (
+                <div
+                  key={cv.id}
+                  style={{
+                    border: `1px solid ${BORDA}`,
+                    borderRadius: 12,
+                    padding: "12px 14px",
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 800, color: ROXO_DARK }}>
+                    {cv.vaga?.titulo ?? "Vaga"}
+                    {cv.vaga?.setor ? ` — ${cv.vaga.setor}` : ""}
+                  </div>
+                  <div style={{ fontSize: 12.5, color: CINZA, margin: "2px 0 8px" }}>
+                    {cv.empresa?.nome ?? "Empresa"} viu seu perfil no banco de talentos e quer você
+                    no processo.
+                  </div>
+                  {cv.mensagem && (
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        color: ROXO_DARK,
+                        background: ROXO_TINT,
+                        borderRadius: 10,
+                        padding: "8px 10px",
+                        marginBottom: 10,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      “{cv.mensagem}”
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => onResponderConvite(cv.id, true)}
+                      disabled={respondendo === cv.id}
+                      style={{
+                        background: respondendo === cv.id ? "#D8D2E6" : ROXO,
+                        color: "#fff",
+                        border: "none",
+                        padding: "9px 16px",
+                        borderRadius: 10,
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        cursor: respondendo === cv.id ? "wait" : "pointer",
+                        fontFamily: "inherit",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      {respondendo === cv.id ? (
+                        <Loader2 size={13} className="spin" />
+                      ) : (
+                        <CheckCircle2 size={13} />
+                      )}
+                      Aceitar e participar
+                    </button>
+                    <button
+                      onClick={() => onResponderConvite(cv.id, false)}
+                      disabled={respondendo === cv.id}
+                      style={{
+                        background: "none",
+                        border: `1.5px solid ${BORDA}`,
+                        color: CINZA,
+                        padding: "9px 14px",
+                        borderRadius: 10,
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      Agora não
+                    </button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+
+        {/* Pendências — o que falta fazer, com atalho direto */}
+        {(() => {
+          const flags = portalQ.data?.perfil_flags;
+          const pend: { chave: string; texto: string; destino: () => void }[] = [];
+          if (flags && !flags.tem_celular) {
+            pend.push({
+              chave: "celular",
+              texto: "Complete seus dados — as empresas precisam do seu celular",
+              destino: () => navigate({ to: "/portal/perfil" as any }),
+            });
+          }
+          if (flags && !flags.tem_cv) {
+            pend.push({
+              chave: "cv",
+              texto: "Envie ou crie seu currículo no seu perfil",
+              destino: () => navigate({ to: "/portal/perfil" as any }),
+            });
+          }
+          for (const c of candidaturas) {
+            if (!c.portal_ativo || !c.pendencias) continue;
+            if (c.pendencias.avaliacoes) {
+              pend.push({
+                chave: `av-${c.id}`,
+                texto: `Responda as avaliações da vaga ${c.vaga_titulo || ""}`.trim(),
+                destino: () => navigate({ to: "/portal/$id" as any, params: { id: c.id } as any }),
+              });
+            }
+            if (c.pendencias.video) {
+              pend.push({
+                chave: `vid-${c.id}`,
+                texto: `Grave seu vídeo de apresentação — ${c.vaga_titulo || "vaga"}`,
+                destino: () => navigate({ to: "/portal/$id" as any, params: { id: c.id } as any }),
+              });
+            }
+          }
+          if (!pend.length) return null;
+          return (
+            <div
+              style={{
+                background: "#fff",
+                border: `1px solid ${BORDA}`,
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 14,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <ClipboardList size={16} color={ROXO} />
+                <span className="h" style={{ fontWeight: 800, fontSize: 15, color: ROXO_DARK }}>
+                  Pendências
+                </span>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: "#fff",
+                    background: LARANJA,
+                    borderRadius: 99,
+                    padding: "2px 8px",
+                  }}
+                >
+                  {pend.length}
+                </span>
+              </div>
+              {pend.map((item) => (
+                <button
+                  key={item.chave}
+                  onClick={item.destino}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    width: "100%",
+                    textAlign: "left",
+                    background: "none",
+                    border: "none",
+                    borderBottom: `1px solid ${BORDA}`,
+                    padding: "10px 2px",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <span style={{ fontSize: 13, color: ROXO_DARK, flex: 1, lineHeight: 1.45 }}>
+                    {item.texto}
+                  </span>
+                  <ChevronRight size={15} color={CINZA} style={{ flexShrink: 0 }} />
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Candidaturas vinculadas */}
         {candidaturas.map((c) =>

@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   LayoutDashboard,
+  UserRound,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
@@ -37,7 +38,8 @@ type LeafTo =
   | "/super"
   | "/identidade"
   | "/usuarios"
-  | "/planos";
+  | "/planos"
+  | "/talentos";
 type NavLeaf = {
   kind: "leaf";
   to: LeafTo;
@@ -105,6 +107,14 @@ const TEMA_PLATAFORMA: SidebarTheme = {
 const NAV_APP: NavItem[] = [
   { kind: "leaf", to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { kind: "leaf", to: "/admin", label: "Vagas", icon: Briefcase },
+  {
+    kind: "leaf",
+    to: "/talentos",
+    label: "Banco de Talentos",
+    icon: UserRound,
+    perm: "ver_candidatos",
+    feature: "banco_talentos",
+  },
   {
     kind: "group",
     id: "cadastro",

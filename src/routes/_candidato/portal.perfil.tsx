@@ -35,6 +35,7 @@ import {
   enviarMeuCurriculoConta,
   urlMeuCurriculoConta,
   gerarMeuCurriculo,
+  setMinhaVisibilidadePool,
 } from "@/lib/portal-candidato.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { ROXO, ROXO_DARK, ROXO_TINT, LARANJA, CINZA, BORDA, VERDE } from "@/lib/recrutamento/data";
@@ -228,6 +229,7 @@ function MeuPerfilPage() {
   const enviarCv = useServerFn(enviarMeuCurriculoConta);
   const urlCv = useServerFn(urlMeuCurriculoConta);
   const gerarCv = useServerFn(gerarMeuCurriculo);
+  const setVisibilidade = useServerFn(setMinhaVisibilidadePool);
 
   const perfilQ = useQuery({
     queryKey: ["meu-perfil"],
@@ -1348,6 +1350,61 @@ function MeuPerfilPage() {
                 Ir para minhas candidaturas
               </button>
             </div>
+            {/* Consentimento: aparecer no banco de talentos (empresa-puxa) */}
+            <button
+              onClick={() =>
+                setVisibilidade({ data: { visivel: !d?.visivel_pool } as any }).then(invalidar)
+              }
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                maxWidth: 340,
+                margin: "16px auto 0",
+                textAlign: "left",
+                background: d?.visivel_pool ? "#F0FDF4" : "#fff",
+                border: `1.5px solid ${d?.visivel_pool ? "#BBF7D0" : BORDA}`,
+                borderRadius: 12,
+                padding: "12px 14px",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <div
+                style={{
+                  width: 38,
+                  height: 22,
+                  borderRadius: 99,
+                  background: d?.visivel_pool ? VERDE : "#D8D2E6",
+                  position: "relative",
+                  flexShrink: 0,
+                  transition: "background .15s",
+                }}
+              >
+                <div
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 99,
+                    background: "#fff",
+                    position: "absolute",
+                    top: 2,
+                    left: d?.visivel_pool ? 18 : 2,
+                    transition: "left .15s",
+                  }}
+                />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: ROXO_DARK }}>
+                  Quero ser encontrado(a) por empresas
+                </div>
+                <div style={{ fontSize: 11.5, color: CINZA, lineHeight: 1.45 }}>
+                  Seu perfil aparece no banco de talentos SEM nome e contato — a empresa só vê seus
+                  dados se você aceitar o convite dela.
+                </div>
+              </div>
+            </button>
             <p style={{ fontSize: 12, color: "#9b93b0", margin: "14px 0 0", lineHeight: 1.5 }}>
               Você pode voltar aqui quando quiser para atualizar qualquer etapa.
             </p>

@@ -23,6 +23,9 @@ export const FEATURE_KEYS = [
   "portal_candidato",
   "video_pitch",
   "inscricao_publica",
+  // FAIL-CLOSED (exposição de perfis do pool): gating server-side em
+  // talentos.functions.ts exige === true.
+  "banco_talentos",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
@@ -55,6 +58,10 @@ export const FEATURE_LABELS: Record<FeatureKey, { nome: string; desc: string }> 
   inscricao_publica: {
     nome: "Inscrição por link público",
     desc: "Divulgar a vaga por link para candidatos externos se inscreverem",
+  },
+  banco_talentos: {
+    nome: "Banco de Talentos & Convites",
+    desc: "Buscar perfis às cegas no pool e convidar candidatos para vagas",
   },
 };
 
@@ -92,6 +99,7 @@ export const PLAN_PRESETS: Record<"basico" | "pro" | "enterprise", PlanoModelo> 
       portal_candidato: true,
       video_pitch: true,
       inscricao_publica: true,
+      banco_talentos: true,
     },
   },
   enterprise: {

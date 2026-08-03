@@ -20,6 +20,7 @@ import { Route as ETokenRouteImport } from './routes/e.$token'
 import { Route as CTokenRouteImport } from './routes/c.$token'
 import { Route as CandidatoPortalRouteImport } from './routes/_candidato/portal'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as AuthenticatedTalentosRouteImport } from './routes/_authenticated/talentos'
 import { Route as AuthenticatedSuperRouteImport } from './routes/_authenticated/super'
 import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated/planos'
 import { Route as AuthenticatedPermissoesRouteImport } from './routes/_authenticated/permissoes'
@@ -87,6 +88,11 @@ const CandidatoPortalRoute = CandidatoPortalRouteImport.update({
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTalentosRoute = AuthenticatedTalentosRouteImport.update({
+  id: '/talentos',
+  path: '/talentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSuperRoute = AuthenticatedSuperRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
+  '/talentos': typeof AuthenticatedTalentosRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/permissoes': typeof AuthenticatedPermissoesRoute
   '/planos': typeof AuthenticatedPlanosRoute
   '/super': typeof AuthenticatedSuperRoute
+  '/talentos': typeof AuthenticatedTalentosRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/_authenticated/permissoes': typeof AuthenticatedPermissoesRoute
   '/_authenticated/planos': typeof AuthenticatedPlanosRoute
   '/_authenticated/super': typeof AuthenticatedSuperRoute
+  '/_authenticated/talentos': typeof AuthenticatedTalentosRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_candidato/portal': typeof CandidatoPortalRouteWithChildren
   '/c/$token': typeof CTokenRoute
@@ -264,6 +273,7 @@ export interface FileRouteTypes {
     | '/permissoes'
     | '/planos'
     | '/super'
+    | '/talentos'
     | '/usuarios'
     | '/portal'
     | '/c/$token'
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/permissoes'
     | '/planos'
     | '/super'
+    | '/talentos'
     | '/usuarios'
     | '/portal'
     | '/c/$token'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/_authenticated/permissoes'
     | '/_authenticated/planos'
     | '/_authenticated/super'
+    | '/_authenticated/talentos'
     | '/_authenticated/usuarios'
     | '/_candidato/portal'
     | '/c/$token'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/usuarios'
       fullPath: '/usuarios'
       preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/talentos': {
+      id: '/_authenticated/talentos'
+      path: '/talentos'
+      fullPath: '/talentos'
+      preLoaderRoute: typeof AuthenticatedTalentosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/super': {
@@ -542,6 +561,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPermissoesRoute: typeof AuthenticatedPermissoesRoute
   AuthenticatedPlanosRoute: typeof AuthenticatedPlanosRoute
   AuthenticatedSuperRoute: typeof AuthenticatedSuperRoute
+  AuthenticatedTalentosRoute: typeof AuthenticatedTalentosRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedCandidatoIdRoute: typeof AuthenticatedCandidatoIdRoute
   AuthenticatedPreviaIdRoute: typeof AuthenticatedPreviaIdRoute
@@ -557,6 +577,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPermissoesRoute: AuthenticatedPermissoesRoute,
   AuthenticatedPlanosRoute: AuthenticatedPlanosRoute,
   AuthenticatedSuperRoute: AuthenticatedSuperRoute,
+  AuthenticatedTalentosRoute: AuthenticatedTalentosRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedCandidatoIdRoute: AuthenticatedCandidatoIdRoute,
   AuthenticatedPreviaIdRoute: AuthenticatedPreviaIdRoute,

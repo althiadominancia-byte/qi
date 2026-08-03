@@ -331,16 +331,23 @@ export const getMeuPortal = createServerFn({ method: "GET" })
 
     const { data: cands } = await admin
       .from("candidatos_televendas")
-      .select("id, vaga_id, empresa_id, etapa, entrevista_data, created_at")
+      // disc_pontuacao/situacionais entram SÓ para calcular flags de pendência —
+      // NUNCA saem na resposta (lista PROIBIDO).
+      .select(
+        "id, vaga_id, empresa_id, etapa, entrevista_data, created_at, disc_pontuacao, situacionais",
+      )
       .eq("conta_id", conta.id)
       .order("created_at", { ascending: false });
     const lista: any[] = cands ?? [];
 
     const vagaIds = [...new Set(lista.map((c) => c.vaga_id).filter(Boolean))] as string[];
     const candIds = lista.map((c) => c.id);
-    const [{ data: vagas }, { data: ents }] = await Promise.all([
+    const [{ data: vagas }, { data: ents }, { data: videos }] = await Promise.all([
       vagaIds.length
-        ? admin.from("vagas").select("id, titulo, empresa_id").in("id", vagaIds)
+        ? admin
+            .from("vagas")
+            .select("id, titulo, empresa_id, usar_situacional, situacoes")
+            .in("id", vagaIds)
         : Promise.resolve({ data: [] }),
       candIds.length
         ? admin
@@ -350,7 +357,11 @@ export const getMeuPortal = createServerFn({ method: "GET" })
             .in("candidato_id", candIds)
             .order("created_at", { ascending: false })
         : Promise.resolve({ data: [] }),
+      candIds.length
+        ? admin.from("candidato_videos").select("candidato_id").in("candidato_id", candIds)
+        : Promise.resolve({ data: [] }),
     ]);
+    const temVideo = new Set((videos ?? []).map((v: any) => v.candidato_id));
     const vagaMap = new Map((vagas ?? []).map((v: any) => [v.id, v]));
     const entMap = indexarEntrevistas((ents ?? []) as EntrevistaRow[]);
 
@@ -366,6 +377,7 @@ export const getMeuPortal = createServerFn({ method: "GET" })
     const empresaMap = new Map((empresas ?? []).map((e: any) => [e.id, e.nome as string]));
 
     const featCache = new Map<string, boolean>();
+    const videoFeatCache = new Map<string, boolean>();
     const candidaturas: any[] = [];
     for (const c of lista) {
       const empresaId = empresaDe(c);
@@ -386,16 +398,36 @@ export const getMeuPortal = createServerFn({ method: "GET" })
         candidaturas.push({ ...base, portal_ativo: false });
         continue;
       }
+      const discPend = !c.disc_pontuacao || Object.keys(c.disc_pontuacao).length === 0;
+      const sitLista = vaga?.usar_situacional === false ? [] : getSituacoes(vaga);
+      const sitPend =
+        sitLista.length > 0 && (!c.situacionais || Object.keys(c.situacionais).length === 0);
+      if (empresaId && !videoFeatCache.has(empresaId)) {
+        videoFeatCache.set(empresaId, await videoHabilitado(empresaId));
+      }
+      const videoPend =
+        !!empresaId && videoFeatCache.get(empresaId) === true && !temVideo.has(c.id);
       candidaturas.push({
         ...base,
         portal_ativo: true,
         etapa_mapeada: mapearEtapa(c.etapa),
         entrevista: montarEntrevistaPublica(entMap.get(c.id)),
+        pendencias: { avaliacoes: discPend || sitPend, video: videoPend },
       });
     }
 
+    const { data: contaFlags } = await admin
+      .from("candidato_contas")
+      .select("celular, cv_storage_path, cv_gerado")
+      .eq("id", conta.id)
+      .maybeSingle();
+
     return {
       candidaturas,
+      perfil_flags: {
+        tem_celular: !!contaFlags?.celular,
+        tem_cv: !!contaFlags?.cv_storage_path || !!contaFlags?.cv_gerado,
+      },
       precisaAceite: (conta.versao_termo ?? "") < TERMO_PORTAL_VERSAO,
     };
   });
@@ -1370,7 +1402,7 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
       admin
         .from("candidato_contas")
         .select(
-          "cv_storage_path, cv_nome_arquivo, cv_gerado, cv_atualizado_em, nome, celular, endereco",
+          "cv_storage_path, cv_nome_arquivo, cv_gerado, cv_atualizado_em, nome, celular, endereco, visivel_pool",
         )
         .eq("id", conta.id)
         .maybeSingle(),
@@ -1388,6 +1420,7 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
         endereco: contaCv?.data?.endereco ?? null,
       },
       formacoes: forms?.data ?? [],
+      visivel_pool: contaCv?.data?.visivel_pool === true,
       cv: {
         tem_arquivo: !!contaCv?.data?.cv_storage_path,
         nome_arquivo: contaCv?.data?.cv_nome_arquivo ?? null,
@@ -2088,4 +2121,126 @@ export const removerFormacaoConta = createServerFn({ method: "POST" })
       .eq("conta_id", conta.id);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+// ============ 21. Convites (modelo empresa-puxa) ============
+// A empresa encontra o fit no pool e convida; o candidato decide aqui.
+// O aceite CRIA a candidatura (com os dados da conta) e projeta o perfil.
+
+const VisibilidadeInput = z.object({ visivel: z.boolean() });
+export const setMinhaVisibilidadePool = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => VisibilidadeInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("candidato_contas")
+      .update({ visivel_pool: data.visivel })
+      .eq("id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true, visivel: data.visivel };
+  });
+
+export const listarMeusConvites = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: convites } = await admin
+      .from("convites")
+      .select(
+        "id, status, mensagem, created_at, respondido_em, candidato_id, vaga:vagas(id, titulo, setor), empresa:empresas(nome, logo_path, cor_primaria)",
+      )
+      .eq("conta_id", conta.id)
+      .neq("status", "cancelado")
+      .order("created_at", { ascending: false })
+      .limit(30);
+    return { convites: convites ?? [] };
+  });
+
+const ResponderConviteInput = z.object({
+  conviteId: z.string().uuid(),
+  aceitar: z.boolean(),
+});
+export const responderConvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ResponderConviteInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const { data: convite } = await admin
+      .from("convites")
+      .select("id, vaga_id, empresa_id, status")
+      .eq("id", data.conviteId)
+      .eq("conta_id", conta.id)
+      .maybeSingle();
+    if (!convite) throw new Error("Convite não encontrado.");
+    if (convite.status !== "pendente") throw new Error("Este convite já foi respondido.");
+
+    if (!data.aceitar) {
+      await admin
+        .from("convites")
+        .update({ status: "recusado", respondido_em: new Date().toISOString() })
+        .eq("id", convite.id);
+      return { ok: true, aceito: false };
+    }
+
+    // Aceite: os dados da conta viram a candidatura (aqui SIM a empresa
+    // passa a ver nome/contato — é o consentimento do titular).
+    const { data: contaFull } = await admin
+      .from("candidato_contas")
+      .select("nome, email, celular, endereco, cv_storage_path, cv_nome_arquivo")
+      .eq("id", conta.id)
+      .maybeSingle();
+    if (!contaFull?.nome || !contaFull?.celular) {
+      throw new Error(
+        "Complete seu nome e celular em Meu perfil antes de aceitar (a empresa precisa falar com você).",
+      );
+    }
+    const { data: vaga } = await admin
+      .from("vagas")
+      .select("id, empresa_id, unidade_id")
+      .eq("id", convite.vaga_id)
+      .maybeSingle();
+    if (!vaga) throw new Error("A vaga deste convite não existe mais.");
+
+    const { data: jaCand } = await admin
+      .from("candidatos_televendas")
+      .select("id")
+      .eq("conta_id", conta.id)
+      .eq("vaga_id", vaga.id)
+      .maybeSingle();
+    let candidatoId = jaCand?.id as string | undefined;
+    if (!candidatoId) {
+      candidatoId = crypto.randomUUID();
+      const { error: insErr } = await admin.from("candidatos_televendas").insert({
+        id: candidatoId,
+        vaga_id: vaga.id,
+        empresa_id: vaga.empresa_id,
+        unidade_id: vaga.unidade_id ?? null,
+        conta_id: conta.id,
+        nome: contaFull.nome,
+        email: contaFull.email,
+        celular: contaFull.celular,
+        endereco: contaFull.endereco ?? null,
+        lgpd_aceite: true,
+      });
+      if (insErr) throw new Error(insErr.message);
+    }
+    await admin
+      .from("convites")
+      .update({
+        status: "aceito",
+        candidato_id: candidatoId,
+        respondido_em: new Date().toISOString(),
+      })
+      .eq("id", convite.id);
+    await registrarAlteracao(candidatoId, vaga.empresa_id ?? null, "convite", null, "aceito").catch(
+      () => {},
+    );
+    return { ok: true, aceito: true, candidatoId };
   });
