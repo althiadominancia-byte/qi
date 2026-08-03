@@ -24,6 +24,48 @@ const LerInput = z.object({
 const MAX_ARQUIVO_MB = 8;
 const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
+/**
+ * Converte um arquivo de currículo em blocos multimodais para a IA:
+ * PDF → document block, imagem → image block, DOCX → texto via mammoth.
+ * Compartilhado entre o funil público (lerCurriculo) e o perfil neutro
+ * (estruturarMeuPerfil / currículo da conta).
+ */
+export async function extrairConteudoCv(
+  ab: ArrayBuffer,
+  mime: string,
+  nomeOuPath: string,
+): Promise<any[]> {
+  if (mime === "application/pdf") {
+    return [
+      {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: "application/pdf",
+          data: Buffer.from(ab).toString("base64"),
+        },
+      },
+    ];
+  }
+  if (mime.startsWith("image/")) {
+    return [
+      {
+        type: "image",
+        source: { type: "base64", media_type: mime, data: Buffer.from(ab).toString("base64") },
+      },
+    ];
+  }
+  if (mime === DOCX_MIME || nomeOuPath.toLowerCase().endsWith(".docx")) {
+    const mammoth = await import("mammoth");
+    const { value } = await mammoth.extractRawText({ buffer: Buffer.from(ab) });
+    if (value?.trim()) {
+      return [{ type: "text", text: "CURRÍCULO (texto extraído):\n" + value.slice(0, 20000) }];
+    }
+  }
+  // .doc antigo e outros: sem extração confiável.
+  return [];
+}
+
 export const lerCurriculo = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => LerInput.parse(d))
   .handler(async ({ data }) => {
@@ -47,33 +89,19 @@ export const lerCurriculo = createServerFn({ method: "POST" })
       if (!data.storagePath.startsWith(prefixo) || data.storagePath.includes("..")) {
         throw new Error("Caminho de arquivo inválido.");
       }
-      const { data: file, error } = await admin.storage.from("curriculos").download(data.storagePath);
+      const { data: file, error } = await admin.storage
+        .from("curriculos")
+        .download(data.storagePath);
       if (error || !file) throw new Error("Não foi possível ler o arquivo enviado.");
       const ab = await file.arrayBuffer();
       if (ab.byteLength > MAX_ARQUIVO_MB * 1024 * 1024) throw new Error("Arquivo grande demais.");
-      const mime = data.mimeType ?? "";
-      if (mime === "application/pdf") {
-        userContent.push({
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: Buffer.from(ab).toString("base64") },
-        });
-      } else if (mime.startsWith("image/")) {
-        userContent.push({
-          type: "image",
-          source: { type: "base64", media_type: mime, data: Buffer.from(ab).toString("base64") },
-        });
-      } else if (mime === DOCX_MIME || data.storagePath.toLowerCase().endsWith(".docx")) {
-        // DOCX → texto puro via mammoth (já disponível no projeto).
-        const mammoth = await import("mammoth");
-        const { value } = await mammoth.extractRawText({ buffer: Buffer.from(ab) });
-        if (value?.trim()) userContent.push({ type: "text", text: "CURRÍCULO (texto extraído):\n" + value.slice(0, 20000) });
-      } else {
-        // .doc antigo e outros: melhor esforço como texto latin1 legível? Não —
-        // sem extração confiável; segue só com o que mais houver.
-      }
+      userContent.push(...(await extrairConteudoCv(ab, data.mimeType ?? "", data.storagePath)));
     }
     if (data.textoBruto?.trim()) {
-      userContent.push({ type: "text", text: "TEXTO INFORMADO PELO CANDIDATO:\n" + data.textoBruto });
+      userContent.push({
+        type: "text",
+        text: "TEXTO INFORMADO PELO CANDIDATO:\n" + data.textoBruto,
+      });
     }
     if (userContent.length === 0) {
       throw new Error("Nada para ler — envie um PDF, imagem ou DOCX.");
@@ -83,7 +111,9 @@ export const lerCurriculo = createServerFn({ method: "POST" })
       `Vaga: ${vaga.titulo ?? ""} (${vaga.setor ?? "geral"})`,
       vaga.descricao ? `Descrição: ${String(vaga.descricao).slice(0, 600)}` : "",
       vaga.requisitos ? `Requisitos: ${String(vaga.requisitos).slice(0, 300)}` : "",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     userContent.push({
       type: "text",

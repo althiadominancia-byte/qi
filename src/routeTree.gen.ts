@@ -30,6 +30,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCatalogoRouteImport } from './routes/_authenticated/catalogo'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as CandidatoPortalPerfilRouteImport } from './routes/_candidato/portal.perfil'
+import { Route as CandidatoPortalCurriculoRouteImport } from './routes/_candidato/portal.curriculo'
 import { Route as CandidatoPortalIdRouteImport } from './routes/_candidato/portal.$id'
 import { Route as AuthenticatedPreviaIdRouteImport } from './routes/_authenticated/previa.$id'
 import { Route as AuthenticatedCandidatoIdRouteImport } from './routes/_authenticated/candidato.$id'
@@ -138,6 +139,12 @@ const CandidatoPortalPerfilRoute = CandidatoPortalPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => CandidatoPortalRoute,
 } as any)
+const CandidatoPortalCurriculoRoute =
+  CandidatoPortalCurriculoRouteImport.update({
+    id: '/curriculo',
+    path: '/curriculo',
+    getParentRoute: () => CandidatoPortalRoute,
+  } as any)
 const CandidatoPortalIdRoute = CandidatoPortalIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -183,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
   '/portal/$id': typeof CandidatoPortalIdRoute
+  '/portal/curriculo': typeof CandidatoPortalCurriculoRoute
   '/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
@@ -208,6 +216,7 @@ export interface FileRoutesByTo {
   '/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/previa/$id': typeof AuthenticatedPreviaIdRoute
   '/portal/$id': typeof CandidatoPortalIdRoute
+  '/portal/curriculo': typeof CandidatoPortalCurriculoRoute
   '/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
@@ -236,6 +245,7 @@ export interface FileRoutesById {
   '/_authenticated/candidato/$id': typeof AuthenticatedCandidatoIdRoute
   '/_authenticated/previa/$id': typeof AuthenticatedPreviaIdRoute
   '/_candidato/portal/$id': typeof CandidatoPortalIdRoute
+  '/_candidato/portal/curriculo': typeof CandidatoPortalCurriculoRoute
   '/_candidato/portal/perfil': typeof CandidatoPortalPerfilRoute
   '/api/public/hooks/avaliacoes': typeof ApiPublicHooksAvaliacoesRoute
 }
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/candidato/$id'
     | '/previa/$id'
     | '/portal/$id'
+    | '/portal/curriculo'
     | '/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   fileRoutesByTo: FileRoutesByTo
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/candidato/$id'
     | '/previa/$id'
     | '/portal/$id'
+    | '/portal/curriculo'
     | '/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   id:
@@ -315,6 +327,7 @@ export interface FileRouteTypes {
     | '/_authenticated/candidato/$id'
     | '/_authenticated/previa/$id'
     | '/_candidato/portal/$id'
+    | '/_candidato/portal/curriculo'
     | '/_candidato/portal/perfil'
     | '/api/public/hooks/avaliacoes'
   fileRoutesById: FileRoutesById
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CandidatoPortalPerfilRouteImport
       parentRoute: typeof CandidatoPortalRoute
     }
+    '/_candidato/portal/curriculo': {
+      id: '/_candidato/portal/curriculo'
+      path: '/curriculo'
+      fullPath: '/portal/curriculo'
+      preLoaderRoute: typeof CandidatoPortalCurriculoRouteImport
+      parentRoute: typeof CandidatoPortalRoute
+    }
     '/_candidato/portal/$id': {
       id: '/_candidato/portal/$id'
       path: '/$id'
@@ -547,11 +567,13 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface CandidatoPortalRouteChildren {
   CandidatoPortalIdRoute: typeof CandidatoPortalIdRoute
+  CandidatoPortalCurriculoRoute: typeof CandidatoPortalCurriculoRoute
   CandidatoPortalPerfilRoute: typeof CandidatoPortalPerfilRoute
 }
 
 const CandidatoPortalRouteChildren: CandidatoPortalRouteChildren = {
   CandidatoPortalIdRoute: CandidatoPortalIdRoute,
+  CandidatoPortalCurriculoRoute: CandidatoPortalCurriculoRoute,
   CandidatoPortalPerfilRoute: CandidatoPortalPerfilRoute,
 }
 

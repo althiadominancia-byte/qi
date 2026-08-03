@@ -1345,7 +1345,7 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
     const conta = await carregarConta((context as any).userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
-    const [perfil, comps, exps, prefs] = await Promise.all([
+    const [perfil, comps, exps, prefs, contaCv] = await Promise.all([
       admin
         .from("conta_perfil")
         .select("respostas, resumo_ia, estruturado_em")
@@ -1367,8 +1367,19 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
         .select("disponibilidade, pretensao_min, pretensao_max, modelo_trabalho, interesses")
         .eq("conta_id", conta.id)
         .maybeSingle(),
+      admin
+        .from("candidato_contas")
+        .select("cv_storage_path, cv_nome_arquivo, cv_gerado, cv_atualizado_em")
+        .eq("id", conta.id)
+        .maybeSingle(),
     ]);
     return {
+      cv: {
+        tem_arquivo: !!contaCv?.data?.cv_storage_path,
+        nome_arquivo: contaCv?.data?.cv_nome_arquivo ?? null,
+        tem_gerado: !!contaCv?.data?.cv_gerado,
+        atualizado_em: contaCv?.data?.cv_atualizado_em ?? null,
+      },
       respostas: perfil?.data?.respostas ?? {},
       resumo_ia: perfil?.data?.resumo_ia ?? null,
       estruturado_em: perfil?.data?.estruturado_em ?? null,
@@ -1424,8 +1435,34 @@ export const estruturarMeuPerfil = createServerFn({ method: "POST" })
     const materialCv = (cands ?? [])
       .map((c: any) => ({ analise: c.cv_analise, exp: c.experiencia_texto, setor: c.setor_atual }))
       .filter((c: any) => c.analise || c.exp);
-    if (!temResposta && materialCv.length === 0) {
-      throw new Error("Responda pelo menos uma pergunta do perfil antes de organizar com IA.");
+    // CV enviado na CONTA (neutro): vira bloco multimodal para a IA.
+    const { data: contaCv } = await admin
+      .from("candidato_contas")
+      .select("cv_storage_path, cv_nome_arquivo")
+      .eq("id", conta.id)
+      .maybeSingle();
+    let blocosCv: any[] = [];
+    if (contaCv?.cv_storage_path) {
+      const { data: file } = await admin.storage
+        .from("curriculos")
+        .download(contaCv.cv_storage_path);
+      if (file) {
+        const { extrairConteudoCv } = await import("@/lib/curriculo.functions");
+        const ext = String(contaCv.cv_nome_arquivo ?? contaCv.cv_storage_path).toLowerCase();
+        const mime = ext.endsWith(".pdf")
+          ? "application/pdf"
+          : /\.(jpe?g|png|webp)$/.test(ext)
+            ? "image/" + (ext.endsWith(".png") ? "png" : ext.endsWith(".webp") ? "webp" : "jpeg")
+            : ext.endsWith(".docx")
+              ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              : "";
+        blocosCv = await extrairConteudoCv(await file.arrayBuffer(), mime, ext);
+      }
+    }
+    if (!temResposta && materialCv.length === 0 && blocosCv.length === 0) {
+      throw new Error(
+        "Responda pelo menos uma pergunta do perfil (ou envie um currículo) antes de organizar com IA.",
+      );
     }
 
     // Taxonomia GLOBAL apenas (perfil é da plataforma, não de uma empresa).
@@ -1440,6 +1477,7 @@ export const estruturarMeuPerfil = createServerFn({ method: "POST" })
 
     const { callClaude } = await import("@/lib/recrutamento.functions");
     const out: any = await callClaude([
+      ...blocosCv,
       {
         type: "text",
         text: `Você é analista de carreiras montando o PERFIL PROFISSIONAL NEUTRO de uma pessoa (sem nenhuma vaga em vista — proibido mencionar vagas ou empresas contratantes). Fontes: respostas dela em linguagem livre e, quando houver, material do currículo.
@@ -1535,17 +1573,15 @@ export const salvarMinhaCompetenciaConta = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const conta = await carregarConta((context as any).userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await (supabaseAdmin as any)
-      .from("conta_competencias")
-      .upsert(
-        {
-          conta_id: conta.id,
-          competencia_id: data.competencia_id,
-          nivel: data.nivel,
-          origem: "declarada",
-        },
-        { onConflict: "conta_id,competencia_id" },
-      );
+    const { error } = await (supabaseAdmin as any).from("conta_competencias").upsert(
+      {
+        conta_id: conta.id,
+        competencia_id: data.competencia_id,
+        nivel: data.nivel,
+        origem: "declarada",
+      },
+      { onConflict: "conta_id,competencia_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -1725,4 +1761,202 @@ export const aplicarPerfilNaCandidatura = createServerFn({ method: "POST" })
       "perfil da conta aplicado pelo titular",
     );
     return { ok: true, competencias: compRows.length, experiencias: expRows.length };
+  });
+
+// ==================== 19. Currículo na Conta ====================
+// Dois caminhos: quem TEM currículo envia (e o perfil nasce preenchido);
+// quem NÃO TEM cria um a partir do próprio perfil (com download em PDF).
+
+const EnviarCvConta = z.object({
+  storagePath: z.string().min(5).max(400),
+  nomeArquivo: z.string().min(1).max(200),
+});
+/** Registra o CV enviado na conta (upload client-side em conta/<id>/...). */
+export const enviarMeuCurriculoConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => EnviarCvConta.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const prefixo = `conta/${conta.id}/`;
+    if (!data.storagePath.startsWith(prefixo) || data.storagePath.includes("..")) {
+      throw new Error("Caminho de arquivo inválido.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    // Substitui o anterior (arquivo antigo sai do bucket).
+    const { data: atual } = await admin
+      .from("candidato_contas")
+      .select("cv_storage_path")
+      .eq("id", conta.id)
+      .maybeSingle();
+    if (atual?.cv_storage_path && atual.cv_storage_path !== data.storagePath) {
+      await admin.storage
+        .from("curriculos")
+        .remove([atual.cv_storage_path])
+        .catch(() => {});
+    }
+    const { error } = await admin
+      .from("candidato_contas")
+      .update({
+        cv_storage_path: data.storagePath,
+        cv_nome_arquivo: data.nomeArquivo,
+        cv_atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** URL assinada e curta (90s) do CV da conta. */
+export const urlMeuCurriculoConta = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: c } = await admin
+      .from("candidato_contas")
+      .select("cv_storage_path")
+      .eq("id", conta.id)
+      .maybeSingle();
+    if (!c?.cv_storage_path) throw new Error("Você ainda não enviou um currículo.");
+    const { data: signed, error } = await admin.storage
+      .from("curriculos")
+      .createSignedUrl(c.cv_storage_path, 90);
+    if (error || !signed?.signedUrl) throw new Error("Não foi possível gerar o link.");
+    return { url: signed.signedUrl };
+  });
+
+/** Remove o CV da conta (arquivo + colunas). */
+export const removerMeuCurriculoConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const { data: c } = await admin
+      .from("candidato_contas")
+      .select("cv_storage_path")
+      .eq("id", conta.id)
+      .maybeSingle();
+    if (c?.cv_storage_path) {
+      await admin.storage
+        .from("curriculos")
+        .remove([c.cv_storage_path])
+        .catch(() => {});
+    }
+    const { error } = await admin
+      .from("candidato_contas")
+      .update({
+        cv_storage_path: null,
+        cv_nome_arquivo: null,
+        cv_atualizado_em: new Date().toISOString(),
+      })
+      .eq("id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * Gera um currículo apresentável a partir do PERFIL (para quem não tem).
+ * Honesto por construção: a IA usa SOMENTE o que está no perfil — nunca inventa.
+ */
+export const gerarMeuCurriculo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const [perfil, comps, exps, prefs] = await Promise.all([
+      admin
+        .from("conta_perfil")
+        .select("respostas, resumo_ia")
+        .eq("conta_id", conta.id)
+        .maybeSingle(),
+      admin
+        .from("conta_competencias")
+        .select("nivel, competencia:competencias(nome, tipo)")
+        .eq("conta_id", conta.id),
+      admin
+        .from("conta_experiencias")
+        .select("tipo, titulo, organizacao, inicio, fim, atual, descricao, status_validacao")
+        .eq("conta_id", conta.id),
+      admin
+        .from("conta_preferencias")
+        .select("disponibilidade, modelo_trabalho, interesses")
+        .eq("conta_id", conta.id)
+        .maybeSingle(),
+    ]);
+
+    const temMaterial =
+      (comps?.data ?? []).length > 0 ||
+      (exps?.data ?? []).length > 0 ||
+      Object.values(perfil?.data?.respostas ?? {}).some((v: any) => String(v ?? "").trim());
+    if (!temMaterial) {
+      throw new Error(
+        "Seu perfil ainda está vazio — responda sua história primeiro (e organize com IA).",
+      );
+    }
+
+    const { callClaude } = await import("@/lib/recrutamento.functions");
+    const out: any = await callClaude([
+      {
+        type: "text",
+        text: `Você é um redator de currículos acessível e honesto. Monte um currículo em português do Brasil a partir SOMENTE do material abaixo — NUNCA invente empregos, datas, formações ou habilidades que não estejam no material. Linguagem simples e profissional; trabalho informal/bico/voluntariado é experiência legítima e deve aparecer com dignidade.
+
+Responda SOMENTE com JSON válido, sem markdown:
+{"objetivo":"1 frase com o objetivo profissional (baseado nos interesses; genérico se não houver)","resumo":"2-3 frases de apresentação","experiencias":[{"titulo":"","organizacao":"","periodo":"","descricao":"1-2 frases"}],"formacao":["itens de estudo/curso, se houver"],"habilidades":["nomes das competências"]}
+
+MATERIAL:
+- Nome: ${conta.nome ?? ""}
+- Respostas do perfil: ${JSON.stringify(perfil?.data?.respostas ?? {}).slice(0, 4000)}
+- Resumo já organizado: ${perfil?.data?.resumo_ia ?? ""}
+- Competências: ${JSON.stringify((comps?.data ?? []).map((c: any) => ({ nome: c.competencia?.nome, nivel: c.nivel }))).slice(0, 2000)}
+- Experiências: ${JSON.stringify(exps?.data ?? []).slice(0, 4000)}
+- Preferências: ${JSON.stringify(prefs?.data ?? {}).slice(0, 800)}`,
+      },
+    ]);
+
+    const cvGerado = {
+      cabecalho: {
+        nome: conta.nome ?? "",
+        email: conta.email,
+        // celular vem das candidaturas vinculadas, se houver (dado do titular).
+        celular: null as string | null,
+      },
+      objetivo: out?.objetivo ? String(out.objetivo).slice(0, 300) : null,
+      resumo: out?.resumo ? String(out.resumo).slice(0, 600) : null,
+      experiencias: Array.isArray(out?.experiencias) ? out.experiencias.slice(0, 10) : [],
+      formacao: Array.isArray(out?.formacao) ? out.formacao.slice(0, 8) : [],
+      habilidades: Array.isArray(out?.habilidades) ? out.habilidades.slice(0, 15) : [],
+    };
+    const { data: umaCand } = await admin
+      .from("candidatos_televendas")
+      .select("celular")
+      .eq("conta_id", conta.id)
+      .limit(1)
+      .maybeSingle();
+    if (umaCand?.celular) cvGerado.cabecalho.celular = umaCand.celular;
+
+    const { error } = await admin
+      .from("candidato_contas")
+      .update({ cv_gerado: cvGerado, cv_atualizado_em: new Date().toISOString() })
+      .eq("id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Currículo gerado do titular (para a página /portal/curriculo). */
+export const getMeuCurriculoGerado = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: c } = await (supabaseAdmin as any)
+      .from("candidato_contas")
+      .select("cv_gerado, cv_atualizado_em")
+      .eq("id", conta.id)
+      .maybeSingle();
+    return { cv: c?.cv_gerado ?? null, atualizado_em: c?.cv_atualizado_em ?? null };
   });

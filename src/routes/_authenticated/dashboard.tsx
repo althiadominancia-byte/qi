@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { LayoutDashboard, Briefcase, DoorOpen, UserCheck, Target, Users } from "lucide-react";
+import { LayoutDashboard, Briefcase, DoorOpen, UserCheck, Target, Users, TrendingUp, Clock, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyScope } from "@/lib/scope.functions";
 import { useFeatures } from "@/lib/recrutamento/use-features";
@@ -69,6 +69,18 @@ function DashboardPage() {
     },
   });
 
+  // Candidatos (para o funil de recrutamento).
+  const candQ = useQuery({
+    queryKey: ["dash:candidatos", empresaId],
+    queryFn: async () => {
+      let q: any = supabase.from("candidatos_televendas").select("id,etapa,created_at").limit(8000);
+      if (empresaId) q = q.eq("empresa_id", empresaId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as { id: string; etapa: string; created_at: string }[];
+    },
+  });
+
   // Diversidade (gated pela feature).
   const divQ = useQuery({
     queryKey: ["dash:diversidade", empresaId],
@@ -90,8 +102,34 @@ function DashboardPage() {
     const contrPeriodo = contratados.length;
     const matches = (matchQ.data ?? []).map((x) => x.match_final).filter((n): n is number => typeof n === "number");
     const assert = matches.length ? Math.round(matches.reduce((a, b) => a + b, 0) / matches.length) : null;
-    return { totalVagas: vagas.length, vagasPeriodo: vagasPeriodo.length, abertas, contrPeriodo, assert };
-  }, [vagasQ.data, matchQ.data, cutoff, contratados.length]);
+
+    // Funil: candidatos do período por etapa (etapa é o estágio ATUAL).
+    const cands = (candQ.data ?? []).filter((c) => noPeriodo(c.created_at));
+    const total = cands.length;
+    const emEntrevista = cands.filter((c) => c.etapa === "entrevista").length;
+    const contratadosCand = cands.filter((c) => c.etapa === "contratado").length;
+    const naoContratados = cands.filter((c) => c.etapa === "nao_contratado").length;
+    // Alcance cumulativo (aproximação: quem chegou à entrevista ou além).
+    const alcancouEntrevista = emEntrevista + contratadosCand;
+    const conversao = total ? Math.round((contratadosCand / total) * 100) : null;
+
+    // Tempo médio (dias) da inscrição até a contratação.
+    const cmap = new Map((candQ.data ?? []).map((c) => [c.id, c.created_at]));
+    const dias = contratados
+      .map((c) => {
+        const nasc = c.candidato_id ? cmap.get(c.candidato_id) : undefined;
+        if (!nasc) return null;
+        return (new Date(c.created_at).getTime() - new Date(nasc).getTime()) / 86400000;
+      })
+      .filter((n): n is number => typeof n === "number" && n >= 0);
+    const tempoMedio = dias.length ? Math.round(dias.reduce((a, b) => a + b, 0) / dias.length) : null;
+
+    return {
+      totalVagas: vagas.length, vagasPeriodo: vagasPeriodo.length, abertas, contrPeriodo, assert,
+      funil: { total, alcancouEntrevista, contratado: contratadosCand, naoContratado: naoContratados },
+      conversao, tempoMedio,
+    };
+  }, [vagasQ.data, matchQ.data, candQ.data, cutoff, contratados]);
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif", background: "#FBFAFE", minHeight: "100vh", color: ROXO_DARK, paddingBottom: 40 }}>
@@ -123,6 +161,26 @@ function DashboardPage() {
           <Metrica icon={Target} cor={ROXO} valor={m.assert != null ? `${m.assert}%` : "—"} label="Assertividade (match médio dos contratados)" />
         </div>
 
+        {/* Funil de recrutamento */}
+        <div className="h" style={{ fontWeight: 800, fontSize: 16, margin: "6px 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
+          <Filter size={18} color={ROXO} /> Funil de recrutamento
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(280px, 2fr) 1fr", gap: 14, marginBottom: 26, alignItems: "start" }}>
+          <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 14, padding: 18 }}>
+            <FunilEtapa label="Inscritos" valor={m.funil.total} total={m.funil.total} cor={ROXO} />
+            <FunilEtapa label="Chegaram à entrevista" valor={m.funil.alcancouEntrevista} total={m.funil.total} cor={LARANJA} />
+            <FunilEtapa label="Contratados" valor={m.funil.contratado} total={m.funil.total} cor={VERDE} />
+            <div style={{ fontSize: 11.5, color: "#9b93b0", marginTop: 8, display: "flex", gap: 14, flexWrap: "wrap" }}>
+              <span>Não contratados: <strong style={{ color: CINZA }}>{m.funil.naoContratado}</strong></span>
+              <span>Etapa = estágio atual do candidato no período.</span>
+            </div>
+          </div>
+          <div style={{ display: "grid", gap: 14 }}>
+            <Metrica icon={TrendingUp} cor={VERDE} valor={m.conversao != null ? `${m.conversao}%` : "—"} label="Conversão inscrito → contratado" />
+            <Metrica icon={Clock} cor={ROXO} valor={m.tempoMedio != null ? `${m.tempoMedio}d` : "—"} label="Tempo médio até a contratação" />
+          </div>
+        </div>
+
         {/* Diversidade */}
         <div className="h" style={{ fontWeight: 800, fontSize: 16, margin: "6px 0 12px", display: "flex", alignItems: "center", gap: 8 }}>
           <Users size={18} color={ROXO} /> Diversidade dos inscritos
@@ -130,6 +188,21 @@ function DashboardPage() {
         {has("diversidade")
           ? <DiversidadeAgregada rows={divQ.data ?? []} loading={divQ.isLoading} />
           : <div style={{ background: "#fff", border: `1px solid ${BORDA}`, borderRadius: 12, padding: 16, fontSize: 13, color: CINZA }}>O relatório de diversidade não está incluído no plano desta empresa.</div>}
+      </div>
+    </div>
+  );
+}
+
+function FunilEtapa({ label, valor, total, cor }: { label: string; valor: number; total: number; cor: string }) {
+  const pct = total > 0 ? Math.round((valor / total) * 100) : 0;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 5 }}>
+        <span style={{ color: ROXO_DARK, fontWeight: 600 }}>{label}</span>
+        <span style={{ fontWeight: 700, color: cor }}>{valor} · {pct}%</span>
+      </div>
+      <div style={{ height: 12, background: "#F0EDF7", borderRadius: 8, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: cor, borderRadius: 8, transition: "width .3s ease" }} />
       </div>
     </div>
   );

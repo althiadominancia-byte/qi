@@ -13,6 +13,9 @@ import {
   X,
   Plus,
   CheckCircle2,
+  FileText,
+  Upload,
+  Download,
 } from "lucide-react";
 import {
   getMeuPerfil,
@@ -23,7 +26,12 @@ import {
   salvarExperienciaConta,
   removerExperienciaConta,
   salvarPreferenciasConta,
+  enviarMeuCurriculoConta,
+  urlMeuCurriculoConta,
+  removerMeuCurriculoConta,
+  gerarMeuCurriculo,
 } from "@/lib/portal-candidato.functions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ROXO,
   ROXO_DARK,
@@ -145,6 +153,10 @@ function MeuPerfilPage() {
   const salvarExp = useServerFn(salvarExperienciaConta);
   const removerExp = useServerFn(removerExperienciaConta);
   const salvarPrefs = useServerFn(salvarPreferenciasConta);
+  const enviarCv = useServerFn(enviarMeuCurriculoConta);
+  const urlCv = useServerFn(urlMeuCurriculoConta);
+  const removerCv = useServerFn(removerMeuCurriculoConta);
+  const gerarCv = useServerFn(gerarMeuCurriculo);
 
   const perfilQ = useQuery({
     queryKey: ["meu-perfil"],
@@ -179,6 +191,8 @@ function MeuPerfilPage() {
     interesses: [],
   });
   const [novoInteresse, setNovoInteresse] = useState("");
+  const [enviandoCv, setEnviandoCv] = useState(false);
+  const [gerandoCv, setGerandoCv] = useState(false);
   const [salvandoPrefs, setSalvandoPrefs] = useState(false);
 
   useEffect(() => {
@@ -272,6 +286,51 @@ function MeuPerfilPage() {
       setMsg({ tipo: "erro", texto: e?.message || "Não foi possível salvar as preferências." });
     } finally {
       setSalvandoPrefs(false);
+    }
+  }
+
+  async function onEnviarCvConta(file: File) {
+    setEnviandoCv(true);
+    setMsg(null);
+    try {
+      const ext = (file.name.split(".").pop() || "pdf").toLowerCase();
+      const okTipos = ["pdf", "jpg", "jpeg", "png", "webp", "docx"];
+      if (!okTipos.includes(ext)) throw new Error("Envie PDF, imagem (JPG/PNG/WEBP) ou DOCX.");
+      if (file.size > 8 * 1024 * 1024) throw new Error("Arquivo grande demais (limite 8 MB).");
+      // conta.id = auth user id — o path exigido pela policy é conta/<meu-id>/...
+      const { data: u } = await supabase.auth.getUser();
+      if (!u?.user?.id) throw new Error("Sessão expirada — entre de novo.");
+      const path = `conta/${u.user.id}/cv-${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("curriculos")
+        .upload(path, file, { contentType: file.type || undefined });
+      if (upErr) throw new Error("Falha no envio: " + upErr.message);
+      await enviarCv({ data: { storagePath: path, nomeArquivo: file.name } });
+      // Estrutura o perfil com o CV novo (o "formulário" nasce preenchido).
+      const r: any = await estruturar().catch(() => null);
+      setMsg({
+        tipo: "ok",
+        texto: r
+          ? "Currículo enviado — preenchemos seu perfil com ele. Confira e ajuste!"
+          : "Currículo enviado! Clique em 'Organizar meu perfil com IA' para preencher seu perfil.",
+      });
+      await invalidar();
+    } catch (e: any) {
+      setMsg({ tipo: "erro", texto: e?.message || "Não foi possível enviar o currículo." });
+    } finally {
+      setEnviandoCv(false);
+    }
+  }
+
+  async function onGerarCv() {
+    setGerandoCv(true);
+    setMsg(null);
+    try {
+      await gerarCv();
+      navigate({ to: "/portal/curriculo" as any });
+    } catch (e: any) {
+      setMsg({ tipo: "erro", texto: e?.message || "Não foi possível criar o currículo." });
+      setGerandoCv(false);
     }
   }
 
@@ -406,6 +465,133 @@ function MeuPerfilPage() {
               : "Organizar meu perfil com IA"}
           </button>
         </div>
+      </Card>
+
+      {/* Meu currículo — dois caminhos: enviar o que tem OU criar do zero */}
+      <Card>
+        <TituloSecao icon={FileText}>Meu currículo</TituloSecao>
+        {d?.cv?.tem_arquivo ? (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              marginBottom: 10,
+            }}
+          >
+            <span style={{ fontSize: 13, color: ROXO_DARK, fontWeight: 600, flex: "1 1 160px" }}>
+              📄 {d.cv.nome_arquivo ?? "currículo enviado"}
+            </span>
+            <button
+              onClick={() =>
+                urlCv()
+                  .then((r: any) => window.open(r.url, "_blank", "noopener"))
+                  .catch(() => {})
+              }
+              style={{
+                background: "#fff",
+                color: ROXO,
+                border: `1.5px solid ${BORDA}`,
+                padding: "8px 12px",
+                borderRadius: 10,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Download size={13} /> Baixar
+            </button>
+            <button
+              onClick={() => {
+                if (window.confirm("Remover seu currículo enviado?")) removerCv().then(invalidar);
+              }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#9b93b0",
+                fontSize: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                textDecoration: "underline",
+              }}
+            >
+              remover
+            </button>
+          </div>
+        ) : (
+          <p style={{ fontSize: 13, color: CINZA, margin: "0 0 12px", lineHeight: 1.55 }}>
+            Tem currículo pronto? Envie que a gente preenche seu perfil. Não tem? Sem problema —
+            criamos um para você a partir do seu perfil.
+          </p>
+        )}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: "#fff",
+              color: ROXO,
+              border: `1.5px solid ${BORDA}`,
+              padding: "11px 16px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: enviandoCv ? "wait" : "pointer",
+              fontFamily: "inherit",
+              minHeight: 44,
+            }}
+          >
+            {enviandoCv ? <Loader2 size={15} className="spin" /> : <Upload size={15} />}
+            {enviandoCv
+              ? "Lendo e preenchendo seu perfil..."
+              : d?.cv?.tem_arquivo
+                ? "Substituir currículo"
+                : "Já tenho — enviar arquivo"}
+            <input
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,.docx"
+              style={{ display: "none" }}
+              disabled={enviandoCv}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onEnviarCvConta(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <button
+            onClick={onGerarCv}
+            disabled={gerandoCv || enviandoCv}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 7,
+              background: gerandoCv ? "#D8D2E6" : ROXO,
+              color: "#fff",
+              border: "none",
+              padding: "11px 16px",
+              borderRadius: 12,
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: gerandoCv ? "wait" : "pointer",
+              fontFamily: "inherit",
+              minHeight: 44,
+            }}
+          >
+            {gerandoCv ? <Loader2 size={15} className="spin" /> : <Sparkles size={15} />}
+            {d?.cv?.tem_gerado ? "Ver/atualizar meu currículo" : "Não tenho — criar meu currículo"}
+          </button>
+        </div>
+        <p style={{ fontSize: 11.5, color: "#9b93b0", margin: "10px 0 0", lineHeight: 1.5 }}>
+          Seu formulário é o próprio perfil abaixo — corrija e personalize à vontade; o currículo
+          criado sempre reflete ele.
+        </p>
       </Card>
 
       {/* 2. Resumo */}
