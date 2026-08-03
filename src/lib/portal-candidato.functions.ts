@@ -1345,7 +1345,7 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
     const conta = await carregarConta((context as any).userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
-    const [perfil, comps, exps, prefs, contaCv] = await Promise.all([
+    const [perfil, comps, exps, prefs, contaCv, forms] = await Promise.all([
       admin
         .from("conta_perfil")
         .select("respostas, resumo_ia, estruturado_em")
@@ -1369,11 +1369,25 @@ export const getMeuPerfil = createServerFn({ method: "GET" })
         .maybeSingle(),
       admin
         .from("candidato_contas")
-        .select("cv_storage_path, cv_nome_arquivo, cv_gerado, cv_atualizado_em")
+        .select(
+          "cv_storage_path, cv_nome_arquivo, cv_gerado, cv_atualizado_em, nome, celular, endereco",
+        )
         .eq("id", conta.id)
         .maybeSingle(),
+      admin
+        .from("conta_formacoes")
+        .select("id, titulo, instituicao, ano, status, origem")
+        .eq("conta_id", conta.id)
+        .order("created_at", { ascending: false }),
     ]);
     return {
+      dados: {
+        nome: contaCv?.data?.nome ?? conta.nome ?? null,
+        email: conta.email,
+        celular: contaCv?.data?.celular ?? null,
+        endereco: contaCv?.data?.endereco ?? null,
+      },
+      formacoes: forms?.data ?? [],
       cv: {
         tem_arquivo: !!contaCv?.data?.cv_storage_path,
         nome_arquivo: contaCv?.data?.cv_nome_arquivo ?? null,
@@ -1483,8 +1497,9 @@ export const estruturarMeuPerfil = createServerFn({ method: "POST" })
         text: `Você é analista de carreiras montando o PERFIL PROFISSIONAL NEUTRO de uma pessoa (sem nenhuma vaga em vista — proibido mencionar vagas ou empresas contratantes). Fontes: respostas dela em linguagem livre e, quando houver, material do currículo.
 
 Responda SOMENTE com JSON válido, sem markdown:
-{"resumo":"2-3 frases sobre o perfil profissional, tom respeitoso e simples","competencias":[{"nome":"<EXATAMENTE um nome da LISTA>","nivel":3,"confianca":0.7}],"experiencias":[{"tipo":"formal|informal|voluntariado|projeto|curso","titulo":"","organizacao":"","descricao":"","confianca":0.8,"status_validacao":"consistente_cv|pendente_confirmacao","pendencia":null}]}
+{"resumo":"2-3 frases sobre o perfil profissional, tom respeitoso e simples","dados":{"nome":null,"celular":null,"endereco":null},"respostas_sugeridas":{"sei_fazer":null,"historia_trabalho":null,"interesses":null,"preferencias_texto":null},"formacoes":[{"titulo":"ex.: Ensino médio completo | Técnico em X","instituicao":null,"ano":null,"status":"concluido|cursando|incompleto"}],"competencias":[{"nome":"<EXATAMENTE um nome da LISTA>","nivel":3,"confianca":0.7}],"experiencias":[{"tipo":"formal|informal|voluntariado|projeto|curso","titulo":"","organizacao":"","descricao":"","confianca":0.8,"status_validacao":"consistente_cv|pendente_confirmacao","pendencia":null}]}
 
+REGRAS dos "dados": só o que estiver ESCRITO no material (currículo/respostas) — nunca invente; ausente = null. "endereco" = bairro/cidade. REGRAS das "respostas_sugeridas": rascunho em 1ª PESSOA, tom simples e natural (como a própria pessoa contaria), 2-4 frases cada, montado SÓ com o que está no currículo — "sei_fazer" (o que ela sabe fazer bem), "historia_trabalho" (onde trabalhou/estudou), "interesses" (áreas que os dados sugerem), "preferencias_texto" (só se o material indicar; senão null). Sem informação suficiente = null. REGRAS das "formacoes": escolaridade e cursos formais (ensino fundamental/médio/técnico/superior) — cursos livres curtos podem ir em experiencias tipo "curso".
 REGRAS DE VALIDAÇÃO das experiências: "consistente_cv" só quando a experiência declarada bate com o material do currículo; senão "pendente_confirmacao" com "pendencia" em linguagem simples e acolhedora dizendo o que confirmar ou anexar (ex.: "Confirme quanto tempo você ficou nesse trabalho" ou "Se tiver, anexe uma foto do certificado"). Trabalho informal/bico/voluntariado VALE como experiência (tipo adequado) — nunca desqualifique. Não invente experiências nem competências. Use SOMENTE nomes exatos da LISTA de competências. Máximo 10 competências e 8 experiências.
 
 LISTA DE COMPETÊNCIAS: ${lista}
@@ -1549,10 +1564,54 @@ ${JSON.stringify(materialCv).slice(0, 6000)}`,
       if (error) throw new Error(error.message);
     }
 
+    // Dados pessoais: preenche SÓ o que está vazio na conta (nunca sobrescreve).
+    const dadosIa = out?.dados ?? {};
+    const { data: contaAtual } = await admin
+      .from("candidato_contas")
+      .select("nome, celular, endereco")
+      .eq("id", conta.id)
+      .maybeSingle();
+    const patchDados: Record<string, string> = {};
+    if (!contaAtual?.nome && dadosIa.nome) patchDados.nome = String(dadosIa.nome).slice(0, 200);
+    if (!contaAtual?.celular && dadosIa.celular)
+      patchDados.celular = String(dadosIa.celular).slice(0, 40);
+    if (!contaAtual?.endereco && dadosIa.endereco)
+      patchDados.endereco = String(dadosIa.endereco).slice(0, 300);
+    if (Object.keys(patchDados).length) {
+      await admin.from("candidato_contas").update(patchDados).eq("id", conta.id);
+    }
+
+    // Formações: substitui as de origem IA, preserva as manuais.
+    await admin.from("conta_formacoes").delete().eq("conta_id", conta.id).eq("origem", "ia");
+    const formRows = (out?.formacoes ?? [])
+      .filter((f: any) => f?.titulo)
+      .slice(0, 6)
+      .map((f: any) => ({
+        conta_id: conta.id,
+        titulo: String(f.titulo).slice(0, 200),
+        instituicao: f.instituicao ? String(f.instituicao).slice(0, 200) : null,
+        ano: f.ano ? String(f.ano).slice(0, 20) : null,
+        status: ["cursando", "concluido", "incompleto"].includes(f.status) ? f.status : "concluido",
+        origem: "ia",
+      }));
+    if (formRows.length) {
+      await admin.from("conta_formacoes").insert(formRows);
+    }
+
+    // Respostas abertas: o rascunho da IA preenche SÓ pergunta vazia — o que a
+    // pessoa escreveu com as próprias palavras nunca é sobrescrito.
+    const sugeridas = out?.respostas_sugeridas ?? {};
+    const respostasFinais: Record<string, string> = { ...respostas };
+    for (const k of CHAVES_RESPOSTAS) {
+      if (!String(respostasFinais[k] ?? "").trim() && sugeridas[k]) {
+        respostasFinais[k] = String(sugeridas[k]).slice(0, 2000);
+      }
+    }
+
     await admin.from("conta_perfil").upsert(
       {
         conta_id: conta.id,
-        respostas,
+        respostas: respostasFinais,
         resumo_ia: out?.resumo ? String(out.resumo).slice(0, 600) : null,
         estruturado_em: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -1868,7 +1927,7 @@ export const gerarMeuCurriculo = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
 
-    const [perfil, comps, exps, prefs] = await Promise.all([
+    const [perfil, comps, exps, prefs, forms, contaFull] = await Promise.all([
       admin
         .from("conta_perfil")
         .select("respostas, resumo_ia")
@@ -1887,6 +1946,11 @@ export const gerarMeuCurriculo = createServerFn({ method: "POST" })
         .select("disponibilidade, modelo_trabalho, interesses")
         .eq("conta_id", conta.id)
         .maybeSingle(),
+      admin
+        .from("conta_formacoes")
+        .select("titulo, instituicao, ano, status")
+        .eq("conta_id", conta.id),
+      admin.from("candidato_contas").select("celular, endereco").eq("id", conta.id).maybeSingle(),
     ]);
 
     const temMaterial =
@@ -1914,6 +1978,7 @@ MATERIAL:
 - Resumo já organizado: ${perfil?.data?.resumo_ia ?? ""}
 - Competências: ${JSON.stringify((comps?.data ?? []).map((c: any) => ({ nome: c.competencia?.nome, nivel: c.nivel }))).slice(0, 2000)}
 - Experiências: ${JSON.stringify(exps?.data ?? []).slice(0, 4000)}
+- Formações: ${JSON.stringify(forms?.data ?? []).slice(0, 1500)}
 - Preferências: ${JSON.stringify(prefs?.data ?? {}).slice(0, 800)}`,
       },
     ]);
@@ -1922,8 +1987,8 @@ MATERIAL:
       cabecalho: {
         nome: conta.nome ?? "",
         email: conta.email,
-        // celular vem das candidaturas vinculadas, se houver (dado do titular).
-        celular: null as string | null,
+        celular: (contaFull?.data?.celular ?? null) as string | null,
+        endereco: (contaFull?.data?.endereco ?? null) as string | null,
       },
       objetivo: out?.objetivo ? String(out.objetivo).slice(0, 300) : null,
       resumo: out?.resumo ? String(out.resumo).slice(0, 600) : null,
@@ -1959,4 +2024,68 @@ export const getMeuCurriculoGerado = createServerFn({ method: "GET" })
       .eq("id", conta.id)
       .maybeSingle();
     return { cv: c?.cv_gerado ?? null, atualizado_em: c?.cv_atualizado_em ?? null };
+  });
+
+// ============ 20. Dados pessoais e formação do perfil (v2) ============
+
+const DadosConta = z.object({
+  nome: z.string().min(1).max(200),
+  celular: z.string().max(40).optional().nullable(),
+  endereco: z.string().max(300).optional().nullable(),
+});
+export const salvarMeusDadosConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => DadosConta.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("candidato_contas")
+      .update({ nome: data.nome, celular: data.celular ?? null, endereco: data.endereco ?? null })
+      .eq("id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const FormacaoConta = z.object({
+  id: z.string().uuid().optional(),
+  titulo: z.string().min(1).max(200),
+  instituicao: z.string().max(200).optional().nullable(),
+  ano: z.string().max(20).optional().nullable(),
+  status: z.enum(["cursando", "concluido", "incompleto"]).default("concluido"),
+});
+export const salvarFormacaoConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => FormacaoConta.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const row = {
+      titulo: data.titulo,
+      instituicao: data.instituicao ?? null,
+      ano: data.ano ?? null,
+      status: data.status,
+      origem: "declarada",
+    };
+    const { error } = data.id
+      ? await admin.from("conta_formacoes").update(row).eq("id", data.id).eq("conta_id", conta.id)
+      : await admin.from("conta_formacoes").insert({ ...row, conta_id: conta.id });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const removerFormacaoConta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => IdSo.parse(d))
+  .handler(async ({ data, context }) => {
+    const conta = await carregarConta((context as any).userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin as any)
+      .from("conta_formacoes")
+      .delete()
+      .eq("id", data.id)
+      .eq("conta_id", conta.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

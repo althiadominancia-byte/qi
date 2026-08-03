@@ -188,7 +188,9 @@ function CurriculoPage() {
             {cv.cabecalho?.nome || "—"}
           </h1>
           <div style={{ fontSize: 12.5, color: "#555", marginBottom: 18 }}>
-            {[cv.cabecalho?.email, cv.cabecalho?.celular].filter(Boolean).join(" · ")}
+            {[cv.cabecalho?.email, cv.cabecalho?.celular, cv.cabecalho?.endereco]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
 
           {cv.objetivo && (
