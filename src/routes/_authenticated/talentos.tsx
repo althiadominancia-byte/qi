@@ -2,16 +2,17 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, Send, Loader2, UserRound, X, CheckCircle2, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Search, Send, Loader2, UserRound, X, CheckCircle2, Sparkles, Video } from "lucide-react";
 import { getMyScope } from "@/lib/scope.functions";
 import { useFeatures } from "@/lib/recrutamento/use-features";
 import { listarPoolTalentos, enviarConvite, cancelarConvite } from "@/lib/talentos.functions";
 import { ROXO, ROXO_DARK, ROXO_TINT, BORDA, CINZA, LARANJA, VERDE } from "@/lib/recrutamento/data";
 
-// Banco de Talentos (modelo empresa-puxa): perfis ÀS CEGAS do pool — a empresa
-// vê competências/formação/preferências, NUNCA nome/contato/currículo. O fit
-// vira CONVITE; os dados aparecem só quando o candidato aceita no portal.
+// Banco de Talentos (modelo empresa-puxa, dirigido pelo MOTOR):
+// mostra SÓ talentos com match nas vagas ABERTAS da empresa — o recrutador
+// não escolhe vaga, o fit já vem calculado (QinMatch → convites.status
+// 'sugerido' + match_score). Perfis às cegas: nome/contato/currículo só
+// aparecem quando o candidato ACEITA o convite.
 
 export const Route = createFileRoute("/_authenticated/talentos")({
   head: () => ({ meta: [{ title: "Banco de Talentos" }] }),
@@ -37,6 +38,12 @@ const TIPOS_EXP: Record<string, string> = {
   curso: "Curso",
 };
 
+const STATUS_SUG: Record<string, { rotulo: string; cor: string }> = {
+  pendente: { rotulo: "Convite enviado", cor: LARANJA },
+  aceito: { rotulo: "Aceitou ✓", cor: VERDE },
+  recusado: { rotulo: "Recusou", cor: CINZA },
+};
+
 function TalentosPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -52,33 +59,18 @@ function TalentosPage() {
   }, [scopeQ.isSuccess, scope, podeAcessar, navigate]);
   const podeConvidar = isSuper || !!scope?.perms?.gerenciar_vagas;
 
-  const [vagaId, setVagaId] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [buscaAplicada, setBuscaAplicada] = useState("");
-  const [modal, setModal] = useState<any>(null); // perfil selecionado p/ convite
+  // Convite é por (talento, vaga com match): o modal carrega os dois.
+  const [modal, setModal] = useState<{ perfil: any; vaga: any } | null>(null);
   const [mensagem, setMensagem] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const vagasQ = useQuery({
-    queryKey: ["vagas-abertas-convite"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("vagas")
-        .select("id, titulo, setor")
-        .eq("status", "Aberta")
-        .order("created_at", { ascending: false });
-      return data ?? [];
-    },
-  });
-
   const fetchPool = useServerFn(listarPoolTalentos);
   const poolQ = useQuery({
-    queryKey: ["pool-talentos", vagaId, buscaAplicada],
-    queryFn: () =>
-      fetchPool({
-        data: { vagaId: vagaId || null, busca: buscaAplicada || null },
-      }) as Promise<any>,
+    queryKey: ["pool-talentos", buscaAplicada],
+    queryFn: () => fetchPool({ data: { busca: buscaAplicada || null } }) as Promise<any>,
     enabled: !!scope && podeAcessar,
     retry: false,
   });
@@ -86,12 +78,16 @@ function TalentosPage() {
   const cancelar = useServerFn(cancelarConvite);
 
   async function onEnviarConvite() {
-    if (!modal || !vagaId) return;
+    if (!modal) return;
     setEnviando(true);
     setErro("");
     try {
       await convidar({
-        data: { contaId: modal.conta_id, vagaId, mensagem: mensagem.trim() || null } as any,
+        data: {
+          contaId: modal.perfil.conta_id,
+          vagaId: modal.vaga.vaga_id,
+          mensagem: mensagem.trim() || null,
+        } as any,
       });
       setModal(null);
       setMensagem("");
@@ -112,52 +108,38 @@ function TalentosPage() {
         </h1>
       </div>
       <p style={{ fontSize: 13, color: CINZA, margin: "0 0 18px", lineHeight: 1.55 }}>
-        Perfis às cegas: você vê competências, formação e preferências — os dados pessoais só
-        aparecem quando o candidato <strong>aceita o convite</strong>. Selecione a vaga e convide
-        quem tem fit.
+        O QinMatch cruza suas <strong>vagas abertas</strong> com o pool e mostra aqui só quem tem
+        fit — perfis às cegas: os dados pessoais aparecem quando o candidato{" "}
+        <strong>aceita o convite</strong>.
       </p>
 
-      {/* Filtros */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 18 }}>
-        <select
-          value={vagaId}
-          onChange={(e) => setVagaId(e.target.value)}
-          style={{ ...inp, minWidth: 260 }}
+      {/* Busca */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 18, maxWidth: 480 }}>
+        <input
+          style={{ ...inp, flex: 1 }}
+          placeholder="Filtrar por competência, área, cidade..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && setBuscaAplicada(busca)}
+        />
+        <button
+          onClick={() => setBuscaAplicada(busca)}
+          style={{
+            background: ROXO,
+            color: "#fff",
+            border: "none",
+            borderRadius: 10,
+            padding: "0 14px",
+            cursor: "pointer",
+          }}
         >
-          <option value="">Selecione a vaga para convidar...</option>
-          {(vagasQ.data ?? []).map((v: any) => (
-            <option key={v.id} value={v.id}>
-              {v.titulo} {v.setor ? `— ${v.setor}` : ""}
-            </option>
-          ))}
-        </select>
-        <div style={{ display: "flex", gap: 8, flex: "1 1 260px" }}>
-          <input
-            style={{ ...inp, flex: 1 }}
-            placeholder="Buscar por competência, área, cidade..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && setBuscaAplicada(busca)}
-          />
-          <button
-            onClick={() => setBuscaAplicada(busca)}
-            style={{
-              background: ROXO,
-              color: "#fff",
-              border: "none",
-              borderRadius: 10,
-              padding: "0 14px",
-              cursor: "pointer",
-            }}
-          >
-            <Search size={16} />
-          </button>
-        </div>
+          <Search size={16} />
+        </button>
       </div>
 
       {poolQ.isLoading && (
         <div style={{ padding: 40, textAlign: "center", color: CINZA }}>
-          <Loader2 size={20} className="spin" /> Carregando o pool...
+          <Loader2 size={20} className="spin" /> Cruzando o pool com suas vagas...
         </div>
       )}
       {poolQ.isError && (
@@ -184,14 +166,22 @@ function TalentosPage() {
             textAlign: "center",
             color: CINZA,
             fontSize: 14,
+            lineHeight: 1.6,
           }}
         >
-          Nenhum perfil disponível no pool ainda. Os candidatos aparecem aqui quando montam o perfil
-          no portal e ativam “quero ser encontrado por empresas”.
+          {poolQ.data.sem_vagas ? (
+            <>Nenhuma vaga aberta — o banco mostra talentos com fit nas suas vagas abertas.</>
+          ) : (
+            <>
+              O motor ainda não encontrou talentos com fit nas suas vagas abertas.
+              <br />
+              As sugestões aparecem aqui automaticamente conforme o QinMatch roda sobre o pool.
+            </>
+          )}
         </div>
       )}
 
-      {/* Grid de perfis cegos */}
+      {/* Grid de perfis cegos, ordenados pelo melhor fit */}
       <div
         style={{
           display: "grid",
@@ -247,10 +237,132 @@ function TalentosPage() {
                       CV
                     </span>
                   )}
+                  {p.tem_video && (
+                    <span
+                      style={{
+                        marginLeft: 4,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        color: ROXO,
+                        background: ROXO_TINT,
+                        padding: "2px 7px",
+                        borderRadius: 99,
+                      }}
+                    >
+                      <Video size={9} /> vídeo
+                    </span>
+                  )}
                 </div>
                 {p.cidade && <div style={{ fontSize: 12, color: CINZA }}>{p.cidade}</div>}
               </div>
             </div>
+
+            {/* Fit por vaga aberta (calculado pelo motor) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {p.vagas_match.map((vm: any) => (
+                <div
+                  key={vm.vaga_id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#FAF9FD",
+                    border: `1px solid ${BORDA}`,
+                    borderRadius: 10,
+                    padding: "8px 10px",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: ROXO_DARK,
+                      flex: 1,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {vm.vaga_titulo ?? "Vaga"}
+                  </span>
+                  {typeof vm.match_score === "number" && (
+                    <span
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: vm.match_score >= 75 ? VERDE : LARANJA,
+                      }}
+                    >
+                      {Math.round(vm.match_score)}%
+                    </span>
+                  )}
+                  {vm.status === "sugerido" ? (
+                    podeConvidar && (
+                      <button
+                        onClick={() => {
+                          setErro("");
+                          setModal({ perfil: p, vaga: vm });
+                        }}
+                        style={{
+                          background: ROXO,
+                          color: "#fff",
+                          border: "none",
+                          padding: "6px 11px",
+                          borderRadius: 8,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 5,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <Send size={11} /> Convidar
+                      </button>
+                    )
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        color: STATUS_SUG[vm.status]?.cor ?? CINZA,
+                        whiteSpace: "nowrap",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 5,
+                      }}
+                    >
+                      {vm.status === "aceito" && <CheckCircle2 size={12} />}
+                      {STATUS_SUG[vm.status]?.rotulo ?? vm.status}
+                      {vm.status === "pendente" && podeConvidar && (
+                        <button
+                          onClick={() =>
+                            cancelar({
+                              data: { contaId: p.conta_id, vagaId: vm.vaga_id } as any,
+                            }).then(() => qc.invalidateQueries({ queryKey: ["pool-talentos"] }))
+                          }
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: CINZA,
+                            fontSize: 11,
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                            padding: 0,
+                          }}
+                        >
+                          cancelar
+                        </button>
+                      )}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
             {p.resumo && (
               <p style={{ fontSize: 12.5, color: CINZA, margin: 0, lineHeight: 1.5 }}>
                 <Sparkles size={11} color={LARANJA} /> {p.resumo}
@@ -302,69 +414,6 @@ function TalentosPage() {
                   .join(" · ")}
               </div>
             )}
-            <div style={{ marginTop: "auto" }}>
-              {p.convite_status === "pendente" ? (
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: LARANJA }}>
-                    Convite enviado — aguardando resposta
-                  </span>
-                  {podeConvidar && (
-                    <button
-                      onClick={() =>
-                        cancelar({ data: { contaId: p.conta_id, vagaId } as any }).then(() =>
-                          qc.invalidateQueries({ queryKey: ["pool-talentos"] }),
-                        )
-                      }
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: CINZA,
-                        fontSize: 11.5,
-                        cursor: "pointer",
-                        textDecoration: "underline",
-                      }}
-                    >
-                      cancelar
-                    </button>
-                  )}
-                </div>
-              ) : p.convite_status === "aceito" ? (
-                <span style={{ fontSize: 12, fontWeight: 700, color: VERDE }}>
-                  <CheckCircle2 size={13} /> Aceitou — já está na vaga
-                </span>
-              ) : p.convite_status === "recusado" ? (
-                <span style={{ fontSize: 12, fontWeight: 700, color: CINZA }}>
-                  Recusou o convite
-                </span>
-              ) : (
-                podeConvidar && (
-                  <button
-                    onClick={() => {
-                      setErro("");
-                      setModal(p);
-                    }}
-                    disabled={!vagaId}
-                    title={!vagaId ? "Selecione a vaga primeiro" : undefined}
-                    style={{
-                      background: vagaId ? ROXO : "#D8D2E6",
-                      color: "#fff",
-                      border: "none",
-                      padding: "9px 15px",
-                      borderRadius: 10,
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      cursor: vagaId ? "pointer" : "not-allowed",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    <Send size={13} /> Convidar para a vaga
-                  </button>
-                )
-              )}
-            </div>
           </div>
         ))}
       </div>
@@ -403,7 +452,7 @@ function TalentosPage() {
               }}
             >
               <h3 style={{ fontSize: 16, fontWeight: 800, color: ROXO_DARK, margin: 0 }}>
-                Convidar Talento {modal.iniciais}
+                Convidar Talento {modal.perfil.iniciais}
               </h3>
               <button
                 onClick={() => setModal(null)}
@@ -413,12 +462,12 @@ function TalentosPage() {
               </button>
             </div>
             <p style={{ fontSize: 12.5, color: CINZA, margin: "0 0 12px", lineHeight: 1.5 }}>
-              Vaga:{" "}
-              <strong>
-                {(vagasQ.data ?? []).find((v: any) => v.id === vagaId)?.titulo ?? "—"}
-              </strong>
-              . O candidato recebe o convite no portal e, se aceitar, entra na vaga com o perfil
-              completo.
+              Vaga: <strong>{modal.vaga.vaga_titulo ?? "—"}</strong>
+              {typeof modal.vaga.match_score === "number"
+                ? ` (fit ${Math.round(modal.vaga.match_score)}%)`
+                : ""}
+              . O candidato recebe o convite no portal e por e-mail; aceitando, entra na vaga com o
+              perfil completo.
             </p>
             <textarea
               rows={3}

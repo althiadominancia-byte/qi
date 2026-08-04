@@ -38,11 +38,16 @@ function cidadeDe(endereco: string | null): string | null {
 }
 
 const PoolInput = z.object({
-  vagaId: z.string().uuid().nullable().optional(),
   busca: z.string().max(120).nullable().optional(),
 });
 
-/** Pool de talentos às cegas + status de convite para a vaga selecionada. */
+/**
+ * Banco de Talentos ÀS CEGAS, dirigido pelo MOTOR (regra do dono):
+ * mostra SÓ talentos com match nas vagas ABERTAS da empresa — linhas de
+ * `convites` escritas pelo QinMatch (status 'sugerido' + match_score) e as
+ * já convidadas/respondidas. NUNCA o banco inteiro; o recrutador não
+ * seleciona vaga — o fit já vem calculado por vaga.
+ */
 export const listarPoolTalentos = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => PoolInput.parse(d))
@@ -51,15 +56,39 @@ export const listarPoolTalentos = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
 
+    // Vagas ABERTAS no escopo do usuário (super sem empresa vê todas).
+    let vagasQ = admin.from("vagas").select("id, titulo, setor, empresa_id").eq("status", "Aberta");
+    if (me.empresa_id) vagasQ = vagasQ.eq("empresa_id", me.empresa_id);
+    const { data: vagasAbertas } = await vagasQ;
+    const vagaMap = new Map((vagasAbertas ?? []).map((v: any) => [v.id, v]));
+    if (!vagaMap.size) return { perfis: [], sem_vagas: true };
+
+    // Sugestões do motor + convites já em andamento nessas vagas.
+    const { data: sugestoes } = await admin
+      .from("convites")
+      .select("conta_id, vaga_id, status, match_score")
+      .in("vaga_id", [...vagaMap.keys()])
+      .neq("status", "cancelado")
+      .order("match_score", { ascending: false, nullsFirst: false })
+      .limit(500);
+    const porContaSug = new Map<string, any[]>();
+    for (const sug of sugestoes ?? []) {
+      const arr = porContaSug.get(sug.conta_id) ?? [];
+      arr.push(sug);
+      porContaSug.set(sug.conta_id, arr);
+    }
+    if (!porContaSug.size) return { perfis: [], sem_sugestoes: true };
+
+    // Só contas com opt-in de descobribilidade (o motor também deve filtrar).
     const { data: contas } = await admin
       .from("candidato_contas")
-      .select("id, nome, endereco, cv_storage_path")
+      .select("id, nome, endereco, cv_storage_path, cv_gerado")
       .eq("visivel_pool", true)
-      .limit(200);
+      .in("id", [...porContaSug.keys()]);
     const ids = (contas ?? []).map((c: any) => c.id);
     if (!ids.length) return { perfis: [] };
 
-    const [perfis, comps, forms, exps, prefs, convites] = await Promise.all([
+    const [perfis, comps, forms, exps, prefs, videos] = await Promise.all([
       admin.from("conta_perfil").select("conta_id, resumo_ia").in("conta_id", ids),
       admin
         .from("conta_competencias")
@@ -74,13 +103,7 @@ export const listarPoolTalentos = createServerFn({ method: "GET" })
         .from("conta_preferencias")
         .select("conta_id, disponibilidade, modelo_trabalho, interesses")
         .in("conta_id", ids),
-      data.vagaId
-        ? admin
-            .from("convites")
-            .select("conta_id, status")
-            .eq("vaga_id", data.vagaId)
-            .in("conta_id", ids)
-        : Promise.resolve({ data: [] }),
+      admin.from("candidato_videos").select("conta_id").in("conta_id", ids),
     ]);
     const porConta = (rows: any[] | null) => {
       const m = new Map<string, any[]>();
@@ -96,7 +119,7 @@ export const listarPoolTalentos = createServerFn({ method: "GET" })
     const mForms = porConta(forms?.data);
     const mExps = porConta(exps?.data);
     const mPrefs = new Map<string, any>((prefs?.data ?? []).map((p: any) => [p.conta_id, p]));
-    const mConvite = new Map((convites?.data ?? []).map((c: any) => [c.conta_id, c.status]));
+    const temVideo = new Set((videos?.data ?? []).map((v: any) => v.conta_id));
 
     const busca = (data.busca ?? "").trim().toLowerCase();
     // ALLOWLIST do perfil cego — nome/email/celular/cv NUNCA saem daqui.
@@ -104,7 +127,17 @@ export const listarPoolTalentos = createServerFn({ method: "GET" })
       conta_id: c.id,
       iniciais: iniciais(c.nome),
       cidade: cidadeDe(c.endereco),
-      tem_cv: !!c.cv_storage_path,
+      tem_cv: !!c.cv_storage_path || !!c.cv_gerado,
+      tem_video: temVideo.has(c.id),
+      // Fit por vaga aberta, calculado pelo MOTOR (ordenado por score).
+      vagas_match: (porContaSug.get(c.id) ?? [])
+        .filter((sug: any) => vagaMap.has(sug.vaga_id))
+        .map((sug: any) => ({
+          vaga_id: sug.vaga_id,
+          vaga_titulo: (vagaMap.get(sug.vaga_id) as any)?.titulo ?? null,
+          match_score: sug.match_score,
+          status: sug.status,
+        })),
       resumo: mPerfil.get(c.id)?.resumo_ia ?? null,
       competencias: (mComps.get(c.id) ?? []).map((x: any) => ({
         nome: x.competencia?.nome,
@@ -123,11 +156,14 @@ export const listarPoolTalentos = createServerFn({ method: "GET" })
             interesses: mPrefs.get(c.id).interesses ?? [],
           }
         : null,
-      convite_status: mConvite.get(c.id) ?? null,
     }));
     // Pool útil: só quem já tem alguma substância no perfil.
     lista = lista.filter(
       (p: any) => p.resumo || p.competencias.length || p.experiencias.length || p.tem_cv,
+    );
+    lista.sort(
+      (a: any, b: any) =>
+        (b.vagas_match[0]?.match_score ?? -1) - (a.vagas_match[0]?.match_score ?? -1),
     );
     if (busca) {
       lista = lista.filter((p: any) =>
@@ -178,6 +214,20 @@ export const enviarConvite = createServerFn({ method: "POST" })
       .maybeSingle();
     if (jaCand) throw new Error("Esta pessoa já é candidata desta vaga.");
 
+    // Resposta do candidato é soberana: convite aceito/recusado não se reenvia.
+    const { data: existente } = await admin
+      .from("convites")
+      .select("status")
+      .eq("vaga_id", data.vagaId)
+      .eq("conta_id", data.contaId)
+      .maybeSingle();
+    if (existente?.status === "aceito") throw new Error("Esta pessoa já aceitou o convite.");
+    if (existente?.status === "recusado") {
+      throw new Error("Esta pessoa recusou o convite desta vaga.");
+    }
+    if (existente?.status === "pendente")
+      throw new Error("Convite já enviado — aguardando resposta.");
+
     const { error } = await admin.from("convites").upsert(
       {
         empresa_id: (vaga as any).empresa_id ?? me.empresa_id,
@@ -191,6 +241,32 @@ export const enviarConvite = createServerFn({ method: "POST" })
       { onConflict: "vaga_id,conta_id" },
     );
     if (error) throw new Error(error.message);
+
+    // Notificação por e-mail — fire-and-forget (falha de e-mail nunca trava o convite).
+    (async () => {
+      const [{ data: destinatario }, { data: vagaInfo }] = await Promise.all([
+        admin.from("candidato_contas").select("email, nome").eq("id", data.contaId).maybeSingle(),
+        admin
+          .from("vagas")
+          .select("titulo, empresa:empresas(nome)")
+          .eq("id", data.vagaId)
+          .maybeSingle(),
+      ]);
+      if (!destinatario?.email) return;
+      const { enviarEmail, templateAviso, siteUrl } = await import("@/lib/email.server");
+      const empresaNome = (vagaInfo as any)?.empresa?.nome ?? "Uma empresa";
+      await enviarEmail({
+        para: destinatario.email,
+        assunto: `${empresaNome} te convidou para a vaga ${vagaInfo?.titulo ?? ""}`.trim(),
+        html: templateAviso({
+          titulo: "Você foi convidado(a) para uma vaga! 🎉",
+          corpo: `${empresaNome} viu seu perfil no banco de talentos e quer você no processo da vaga <strong>${vagaInfo?.titulo ?? ""}</strong>. Entre no portal para ver a mensagem e responder — seus dados só são compartilhados se você aceitar.`,
+          ctaRotulo: "Ver convite no portal",
+          ctaUrl: `${siteUrl()}/portal`,
+        }),
+      });
+    })().catch((e) => console.error("[convite] notificação falhou:", e));
+
     return { ok: true };
   });
 

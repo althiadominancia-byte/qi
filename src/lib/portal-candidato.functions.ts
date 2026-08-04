@@ -418,7 +418,7 @@ export const getMeuPortal = createServerFn({ method: "GET" })
 
     const { data: contaFlags } = await admin
       .from("candidato_contas")
-      .select("celular, cv_storage_path, cv_gerado")
+      .select("celular, cv_storage_path, cv_gerado, visivel_pool")
       .eq("id", conta.id)
       .maybeSingle();
 
@@ -427,6 +427,7 @@ export const getMeuPortal = createServerFn({ method: "GET" })
       perfil_flags: {
         tem_celular: !!contaFlags?.celular,
         tem_cv: !!contaFlags?.cv_storage_path || !!contaFlags?.cv_gerado,
+        visivel_pool: contaFlags?.visivel_pool === true,
       },
       precisaAceite: (conta.versao_termo ?? "") < TERMO_PORTAL_VERSAO,
     };
@@ -1160,6 +1161,7 @@ export const salvarMeuVideo = createServerFn({ method: "POST" })
     }
     const { error } = await admin.from("candidato_videos").insert({
       candidato_id: cand.id,
+      conta_id: conta.id,
       empresa_id: empresaId,
       storage_path: data.storagePath,
       duracao_s: data.duracaoS,
@@ -2154,7 +2156,8 @@ export const listarMeusConvites = createServerFn({ method: "GET" })
         "id, status, mensagem, created_at, respondido_em, candidato_id, vaga:vagas(id, titulo, setor), empresa:empresas(nome, logo_path, cor_primaria)",
       )
       .eq("conta_id", conta.id)
-      .neq("status", "cancelado")
+      // 'sugerido' é interno do MOTOR (ranking) — o candidato só vê convite REAL.
+      .in("status", ["pendente", "aceito", "recusado"])
       .order("created_at", { ascending: false })
       .limit(30);
     return { convites: convites ?? [] };

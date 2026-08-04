@@ -239,6 +239,7 @@ function MeuPerfilPage() {
   const d = perfilQ.data;
 
   const [etapa, setEtapa] = useState<Etapa>("curriculo");
+  const [etapaInicialDefinida, setEtapaInicialDefinida] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [ocupadoTexto, setOcupadoTexto] = useState("");
@@ -268,6 +269,14 @@ function MeuPerfilPage() {
     interesses: [],
   });
   const [novoInteresse, setNovoInteresse] = useState("");
+
+  // Quem já montou o perfil não recomeça do currículo: cai na revisão.
+  useEffect(() => {
+    if (!d || etapaInicialDefinida) return;
+    setEtapaInicialDefinida(true);
+    if (d.estruturado_em) setEtapa("fim");
+    else if (d.cv?.tem_arquivo) setEtapa("dados");
+  }, [d, etapaInicialDefinida]);
 
   useEffect(() => {
     if (!d) return;
@@ -1405,8 +1414,23 @@ function MeuPerfilPage() {
                 </div>
               </div>
             </button>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 7,
+                justifyContent: "center",
+                marginTop: 16,
+              }}
+            >
+              {ETAPAS.filter((e) => e.key !== "fim").map((e) => (
+                <button key={e.key} onClick={() => setEtapa(e.key)} style={chipStyle(false)}>
+                  {e.rotulo}
+                </button>
+              ))}
+            </div>
             <p style={{ fontSize: 12, color: "#9b93b0", margin: "14px 0 0", lineHeight: 1.5 }}>
-              Você pode voltar aqui quando quiser para atualizar qualquer etapa.
+              Toque numa etapa acima para revisar ou atualizar.
             </p>
           </div>
         </Card>

@@ -342,6 +342,9 @@ function ListaCandidaturas() {
     queryKey: ["meus-convites"],
     queryFn: () => fetchConvites() as Promise<any>,
     retry: false,
+    // Convite é evento da EMPRESA: o portal aberto precisa perceber sozinho.
+    refetchInterval: 45_000,
+    refetchOnWindowFocus: true,
   });
   const [respondendo, setRespondendo] = useState<string | null>(null);
   const [conviteErro, setConviteErro] = useState("");
@@ -811,6 +814,13 @@ function ListaCandidaturas() {
               destino: () => navigate({ to: "/portal/perfil" as any }),
             });
           }
+          if (flags && !flags.visivel_pool) {
+            pend.push({
+              chave: "pool",
+              texto: "Ative \u201cquero ser encontrado por empresas\u201d para receber convites",
+              destino: () => navigate({ to: "/portal/perfil" as any }),
+            });
+          }
           for (const c of candidaturas) {
             if (!c.portal_ativo || !c.pendencias) continue;
             if (c.pendencias.avaliacoes) {
@@ -884,6 +894,32 @@ function ListaCandidaturas() {
             </div>
           );
         })()}
+
+        {/* Visível no pool e sem candidaturas: explica a dinâmica empresa-puxa */}
+        {portalQ.data?.perfil_flags?.visivel_pool &&
+          candidaturas.length === 0 &&
+          (convitesQ.data?.convites ?? []).filter((cv: any) => cv.status === "pendente").length ===
+            0 && (
+            <div
+              style={{
+                background: "#F0FDF4",
+                border: "1.5px solid #BBF7D0",
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <ShieldCheck size={22} color={VERDE} style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: 13, color: ROXO_DARK, lineHeight: 1.55 }}>
+                <strong>Seu perfil está visível no Banco de Talentos.</strong> Empresas que
+                encontrarem fit com você mandam um convite, que aparece aqui — aceitando, sua
+                candidatura começa na hora.
+              </div>
+            </div>
+          )}
 
         {/* Candidaturas vinculadas */}
         {candidaturas.map((c) =>
